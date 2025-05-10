@@ -1,0 +1,1005 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:55:5
+
+# Error details
+
+```
+Error: page.click: Target crashed 
+Call log:
+  - waiting for locator('[data-testid="btn-confirm-transaction"]')
+
+    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:84:36
+```
+
+# Test source
+
+```ts
+   1 | import { Page } from '@playwright/test';
+   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
+   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   4 | import { createTestSelector } from '@tests/utils';
+   5 |
+   6 | export class TransactionRequestPage {
+   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
+   8 |     TransactionRequestSelectors.BtnConfirmTransaction
+   9 |   );
+  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
+  11 |   readonly transactionRequestPage = createTestSelector(
+  12 |     TransactionRequestSelectors.TransactionRequestPage
+  13 |   );
+  14 |
+  15 |   constructor(readonly page: Page) {}
+  16 |
+  17 |   async clickConfirmTransactionButton() {
+> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
+     |                      ^ Error: page.click: Target crashed 
+  19 |   }
+  20 |
+  21 |   async getDisplayedFeeValue() {
+  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
+  23 |   }
+  24 |
+  25 |   async waitForTransactionRequestError(msg: string) {
+  26 |     return this.page.waitForSelector(`text=${msg}`);
+  27 |   }
+  28 |
+  29 |   async waitForFee() {
+  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
+  31 |   }
+  32 |
+  33 |   async waitForTransactionRequestPage() {
+  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
+  35 |   }
+  36 | }
+  37 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/features/fee-editor/fee-editor.context.ts b/src/app/features/fee-editor/fee-editor.context.ts
+index bbf767f23..53ccadd9e 100644
+--- a/src/app/features/fee-editor/fee-editor.context.ts
++++ b/src/app/features/fee-editor/fee-editor.context.ts
+@@ -4,9 +4,9 @@ import type { MarketData, Money } from '@leather.io/models';
+ 
+ export type FeePriority = 'slow' | 'standard' | 'fast' | 'custom';
+ export const feePriorityTimeMap: Record<FeePriority, string> = {
+-  slow: '~10 – 20min',
++  slow: '~1 hour+',
+   standard: '~30 min',
+-  fast: '~1 hour+',
++  fast: '~10 – 20min',
+   custom: '',
+ };
+ 
+diff --git a/src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes.tsx b/src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes.tsx
+new file mode 100644
+index 000000000..b06300021
+--- /dev/null
++++ b/src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes.tsx
+@@ -0,0 +1,38 @@
++import { Route } from 'react-router-dom';
++
++import { RouteUrls } from '@shared/route-urls';
++
++import { BroadcastErrorSheet } from '@app/components/broadcast-error-dialog/broadcast-error-dialog';
++import { FeeEditor } from '@app/features/fee-editor/fee-editor';
++import { ledgerStacksTxSigningRoutes } from '@app/features/ledger/flows/stacks-tx-signing/ledger-sign-stacks-tx-container';
++import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
++import { AccountGate } from '@app/routes/account-gate';
++import { LedgerStacksGate } from '@app/routes/ledger-stacks-gate';
++
++interface GenerateStacksRpcTransactionRequestRoutesArgs {
++  path: string;
++  container: React.ReactNode;
++  element: React.ReactNode;
++}
++export function generateStacksRpcTransactionRequestRoutes({
++  path,
++  container,
++  element,
++}: GenerateStacksRpcTransactionRequestRoutesArgs) {
++  return (
++    <Route
++      path={path}
++      element={
++        <AccountGate>
++          <LedgerStacksGate>{container}</LedgerStacksGate>
++        </AccountGate>
++      }
++    >
++      <Route index element={element} />
++      <Route path={RouteUrls.FeeEditor} element={<FeeEditor />} />
++      <Route path={RouteUrls.NonceEditor} element={<NonceEditor />} />
++      <Route path={RouteUrls.BroadcastError} element={<BroadcastErrorSheet />} />
++      {ledgerStacksTxSigningRoutes}
++    </Route>
++  );
++}
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx
+index 1edcb944c..234e9587e 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx
+@@ -17,7 +17,7 @@ import { useCurrentStacksNetworkState } from '@app/store/networks/networks.hooks
+ import { RpcStxTransferSip10FtProvider } from './rpc-stx-transfer-sip10-ft.context';
+ import {
+   getDecodedRpcStxTransferSip10FtRequest,
+-  getStacksUnsignedContractCallOptionsForFeeEstimation,
++  getUnsignedStacksContractCallOptionsForFeeEstimation,
+ } from './rpc-stx-transfer-sip10-ft.utils';
+ 
+ interface RpcStxTransferSip10FtContainerProps {
+@@ -30,7 +30,7 @@ export function RpcStxTransferSip10FtContainer({ account }: RpcStxTransferSip10F
+   const navigate = useNavigate();
+ 
+   const rpcRequest = getDecodedRpcStxTransferSip10FtRequest();
+-  const txOptionsForFeeEstimation = getStacksUnsignedContractCallOptionsForFeeEstimation({
++  const txOptionsForFeeEstimation = getUnsignedStacksContractCallOptionsForFeeEstimation({
+     address: account.address,
+     publicKey: account.stxPublicKey,
+     network,
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx
+index 528700020..3a9a6c222 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx
+@@ -1,35 +1,17 @@
+-import { Route } from 'react-router-dom';
+-
+ import { RouteUrls } from '@shared/route-urls';
+ 
+-import { BroadcastErrorSheet } from '@app/components/broadcast-error-dialog/broadcast-error-dialog';
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { ledgerStacksTxSigningRoutes } from '@app/features/ledger/flows/stacks-tx-signing/ledger-sign-stacks-tx-container';
+-import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+-import { AccountGate } from '@app/routes/account-gate';
+-import { LedgerStacksGate } from '@app/routes/ledger-stacks-gate';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+-import { FeeEditor } from '../../features/fee-editor/fee-editor';
+ import { RpcStxTransferSip10Ft } from './rpc-stx-transfer-sip10-ft';
+ import { RpcStxTransferSip10FtContainer } from './rpc-stx-transfer-sip10-ft-container';
+ 
+-export const rpcStxTransferSip10FtRoutes = (
+-  <Route
+-    path={RouteUrls.RpcStxTransferSip10Ft}
+-    element={
+-      <AccountGate>
+-        <LedgerStacksGate>
+-          <CurrentStacksAccountLoader>
+-            {account => <RpcStxTransferSip10FtContainer account={account} />}
+-          </CurrentStacksAccountLoader>
+-        </LedgerStacksGate>
+-      </AccountGate>
+-    }
+-  >
+-    <Route index element={<RpcStxTransferSip10Ft />} />
+-    <Route path={RouteUrls.FeeEditor} element={<FeeEditor />} />
+-    <Route path={RouteUrls.NonceEditor} element={<NonceEditor />} />
+-    <Route path={RouteUrls.BroadcastError} element={<BroadcastErrorSheet />} />
+-    {ledgerStacksTxSigningRoutes}
+-  </Route>
+-);
++export const rpcStxTransferSip10FtRoutes = generateStacksRpcTransactionRequestRoutes({
++  path: RouteUrls.RpcStxTransferSip10Ft,
++  container: (
++    <CurrentStacksAccountLoader>
++      {account => <RpcStxTransferSip10FtContainer account={account} />}
++    </CurrentStacksAccountLoader>
++  ),
++  element: <RpcStxTransferSip10Ft />,
++});
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
+index 3c8d741e5..b25912b10 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
+@@ -15,7 +15,7 @@ import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-transact
+ import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions-with-spend';
+ 
+ import { useRpcStxTransferSip10FtContext } from './rpc-stx-transfer-sip10-ft.context';
+-import { getStacksUnsignedContractCallOptions } from './rpc-stx-transfer-sip10-ft.utils';
++import { getUnsignedStacksContractCallOptions } from './rpc-stx-transfer-sip10-ft.utils';
+ 
+ export function RpcStxTransferSip10Ft() {
+   const { address, isLoadingBalance, rpcRequest, network, publicKey } =
+@@ -29,7 +29,7 @@ export function RpcStxTransferSip10Ft() {
+ 
+   const txOptionsForBroadcast = useMemo(
+     () =>
+-      getStacksUnsignedContractCallOptions({
++      getUnsignedStacksContractCallOptions({
+         address,
+         fee: selectedFee.txFee,
+         network,
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.utils.ts b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.utils.ts
+index 952f7e6c7..d937419e3 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.utils.ts
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.utils.ts
+@@ -72,16 +72,16 @@ function getTransactionOptionsFromRpcRequest(address: string) {
+   };
+ }
+ 
+-interface GetStacksUnsignedContractCallOptionsForFeeEstimationArgs {
++interface GetUnsignedStacksContractCallOptionsForFeeEstimationArgs {
+   address: string;
+   publicKey: string;
+   network: StacksNetwork;
+ }
+-export function getStacksUnsignedContractCallOptionsForFeeEstimation({
++export function getUnsignedStacksContractCallOptionsForFeeEstimation({
+   address,
+   publicKey,
+   network,
+-}: GetStacksUnsignedContractCallOptionsForFeeEstimationArgs): StacksUnsignedContractCallOptions {
++}: GetUnsignedStacksContractCallOptionsForFeeEstimationArgs): StacksUnsignedContractCallOptions {
+   const requestOptions = getTransactionOptionsFromRpcRequest(address);
+ 
+   return {
+@@ -95,20 +95,20 @@ export function getStacksUnsignedContractCallOptionsForFeeEstimation({
+   };
+ }
+ 
+-interface GetStacksUnsignedContractCallOptionsArgs {
++interface GetUnsignedStacksContractCallOptionsArgs {
+   address: string;
+   fee: Money;
+   network: StacksNetwork;
+   nonce: Nonce;
+   publicKey: string;
+ }
+-export function getStacksUnsignedContractCallOptions({
++export function getUnsignedStacksContractCallOptions({
+   address,
+   fee,
+   network,
+   nonce,
+   publicKey,
+-}: GetStacksUnsignedContractCallOptionsArgs): StacksUnsignedContractCallOptions {
++}: GetUnsignedStacksContractCallOptionsArgs): StacksUnsignedContractCallOptions {
+   const requestOptions = getTransactionOptionsFromRpcRequest(address);
+ 
+   return {
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft-container.tsx b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft-container.tsx
+new file mode 100644
+index 000000000..446089ba0
+--- /dev/null
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft-container.tsx
+@@ -0,0 +1,75 @@
++import { Outlet, useNavigate } from 'react-router-dom';
++
++import { isDefined } from '@leather.io/utils';
++
++import { RouteUrls } from '@shared/route-urls';
++
++import { StacksNonceLoader } from '@app/components/loaders/stacks-nonce-loader';
++import { StxBalanceLoader } from '@app/components/loaders/stx-balance-loader';
++import { StacksFeeEditorProvider } from '@app/features/fee-editor/stacks/stacks-fee-editor.provider';
++import { NonceEditorProvider } from '@app/features/nonce-editor/nonce-editor.provider';
++import { useRpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
++import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
++import type { StacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.models';
++import { useCurrentStacksNetworkState } from '@app/store/networks/networks.hooks';
++
++import { RpcStxTransferSip9NftProvider } from './rpc-stx-transfer-sip9-nft.context';
++import {
++  getDecodedRpcStxTransferSip9NftRequest,
++  getUnsignedStacksContractCallOptionsForFeeEstimation,
++} from './rpc-stx-transfer-sip9-nft.utils';
++
++interface RpcStxTransferSip10FtContainerProps {
++  account: StacksAccount;
++}
++export function RpcStxTransferSip9NftContainer({ account }: RpcStxTransferSip10FtContainerProps) {
++  const request = useRpcTransactionRequest();
++  const network = useCurrentStacksNetworkState();
++  const stxMarketData = useCryptoCurrencyMarketDataMeanAverage('STX');
++  const navigate = useNavigate();
++
++  const rpcRequest = getDecodedRpcStxTransferSip9NftRequest();
++  const txOptionsForFeeEstimation = getUnsignedStacksContractCallOptionsForFeeEstimation({
++    address: account.address,
++    publicKey: account.stxPublicKey,
++    network,
++  });
++
++  useBreakOnNonCompliantEntity([account.address, rpcRequest.params.recipient].filter(isDefined));
++
++  return (
++    <StxBalanceLoader address={account.address}>
++      {(balance, isLoadingAdditionalData) => (
++        <StacksNonceLoader>
++          {nonce => (
++            <StacksFeeEditorProvider
++              availableBalance={balance.availableBalance}
++              marketData={stxMarketData}
++              onGoBack={() => navigate(RouteUrls.RpcStxTransferSip10Ft)}
++              txOptions={{ ...txOptionsForFeeEstimation, nonce }}
++            >
++              <NonceEditorProvider
++                nonce={nonce}
++                onGoBack={() => navigate(RouteUrls.RpcStxTransferSip10Ft)}
++              >
++                <RpcStxTransferSip9NftProvider
++                  value={{
++                    ...request,
++                    isLoadingBalance: isLoadingAdditionalData,
++                    address: account.address,
++                    publicKey: account.stxPublicKey,
++                    rpcRequest,
++                    network,
++                  }}
++                >
++                  <Outlet />
++                </RpcStxTransferSip9NftProvider>
++              </NonceEditorProvider>
++            </StacksFeeEditorProvider>
++          )}
++        </StacksNonceLoader>
++      )}
++    </StxBalanceLoader>
++  );
++}
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.context.ts b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.context.ts
+new file mode 100644
+index 000000000..fa1c696c6
+--- /dev/null
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.context.ts
+@@ -0,0 +1,27 @@
++import { createContext, useContext } from 'react';
++
++import type { StacksNetwork } from '@stacks/network';
++
++import type { RpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++
++import type { RpcStxTransferSip9NftRequest } from './rpc-stx-transfer-sip9-nft.utils';
++
++interface RpcStxTransferSip9NfTContext extends RpcTransactionRequest {
++  address: string;
++  rpcRequest: RpcStxTransferSip9NftRequest;
++  network: StacksNetwork;
++  publicKey: string;
++}
++
++const rpcStxTransferSip9NftContext = createContext<RpcStxTransferSip9NfTContext | null>(null);
++
++export function useRpcStxTransferSip9NftContext() {
++  const context = useContext(rpcStxTransferSip9NftContext);
++  if (!context)
++    throw new Error(
++      '`useRpcStxTransferSip9NftContext` must be used within a `RpcStxTransferSip9NftProvider`'
++    );
++  return context;
++}
++
++export const RpcStxTransferSip9NftProvider = rpcStxTransferSip9NftContext.Provider;
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes.tsx b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes.tsx
+new file mode 100644
+index 000000000..155c1d69a
+--- /dev/null
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes.tsx
+@@ -0,0 +1,17 @@
++import { RouteUrls } from '@shared/route-urls';
++
++import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
++
++import { RpcStxTransferSip9Nft } from './rpc-stx-transfer-sip9-nft';
++import { RpcStxTransferSip9NftContainer } from './rpc-stx-transfer-sip9-nft-container';
++
++export const rpcStxTransferSip9NftRoutes = generateStacksRpcTransactionRequestRoutes({
++  path: RouteUrls.RpcStxTransferSip9Nft,
++  container: (
++    <CurrentStacksAccountLoader>
++      {account => <RpcStxTransferSip9NftContainer account={account} />}
++    </CurrentStacksAccountLoader>
++  ),
++  element: <RpcStxTransferSip9Nft />,
++});
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
+index 9bf990e62..e67d55a3d 100644
+--- a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
+@@ -1,25 +1,73 @@
++import { useMemo } from 'react';
++
+ import { stxTransferSip9Nft } from '@leather.io/rpc';
+-import { isDefined } from '@leather.io/utils';
++import { generateStacksUnsignedTransaction } from '@leather.io/stacks';
++import { createMoneyFromDecimal } from '@leather.io/utils';
++
++import { FeeEditor } from '@app/features/fee-editor/fee-editor';
++import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
++import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
++import { useNonceEditorContext } from '@app/features/nonce-editor/nonce-editor.context';
++import { RpcTransactionRequestLayout } from '@app/features/rpc-transaction-request/rpc-transaction-request.layout';
++import { ContractCallDetailsLayout } from '@app/features/rpc-transaction-request/stacks/contract-call-details.layout';
++import { PostConditionsDetailsLayout } from '@app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout';
++import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
++import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions-with-spend';
+ 
+-import { useLegacyRequestBroadcastTransaction } from '@app/common/legacy-requests';
+-import { StacksHighFeeWarningContainer } from '@app/features/stacks-high-fee-warning/stacks-high-fee-warning-container';
+-import { StacksTransactionSigner } from '@app/features/stacks-transaction-request/stacks-transaction-signer';
+-import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
++import { useRpcStxTransferSip9NftContext } from './rpc-stx-transfer-sip9-nft.context';
++import { getUnsignedStacksContractCallOptions } from './rpc-stx-transfer-sip9-nft.utils';
+ 
+ export function RpcStxTransferSip9Nft() {
+-  const { onSignStacksTransaction, stacksTransaction, txPayload, txSender } =
+-    useLegacyRequestBroadcastTransaction(stxTransferSip9Nft.method);
+-  const recipient = 'recipient' in txPayload ? txPayload.recipient : '';
++  const { address, isLoadingBalance, network, publicKey } = useRpcStxTransferSip9NftContext();
++  const { isLoadingFees, marketData, onUserActivatesFeeEditor, selectedFee } =
++    useFeeEditorContext();
++  const { nonce, onUserActivatesNonceEditor } = useNonceEditorContext();
++  const signAndBroadcastTransaction = useSignAndBroadcastStacksTransaction(
++    stxTransferSip9Nft.method
++  );
++
++  const txOptionsForBroadcast = useMemo(
++    () =>
++      getUnsignedStacksContractCallOptions({
++        address,
++        fee: selectedFee.txFee,
++        network,
++        nonce,
++        publicKey,
++      }),
++    [address, network, nonce, publicKey, selectedFee.txFee]
++  );
+ 
+-  useBreakOnNonCompliantEntity([txSender, recipient].filter(isDefined));
++  async function onApproveTransaction() {
++    const unsignedTx = await generateStacksUnsignedTransaction(txOptionsForBroadcast);
++    if (selectedFee.txFee) unsignedTx.setFee(selectedFee.txFee.amount.toNumber());
++    unsignedTx.setNonce(nonce);
++    await signAndBroadcastTransaction(unsignedTx);
++  }
+ 
+   return (
+-    <StacksHighFeeWarningContainer>
+-      <StacksTransactionSigner
+-        onSignStacksTransaction={onSignStacksTransaction}
+-        isMultisig={false}
+-        stacksTransaction={stacksTransaction}
++    <RpcTransactionRequestLayout
++      title="Sign transaction"
++      method={stxTransferSip9Nft.method}
++      helpUrl="" // TODO: Need url
++      actions={
++        <TransactionActionsWithSpend
++          isLoading={isLoadingBalance || isLoadingFees}
++          txAmount={createMoneyFromDecimal(0, 'STX')}
++          onApprove={onApproveTransaction}
++        />
++      }
++    >
++      <PostConditionsDetailsLayout txOptions={txOptionsForBroadcast} />
++      <ContractCallDetailsLayout txOptions={txOptionsForBroadcast} />
++      <FeeEditor.Trigger
++        feeType="fee-value"
++        isLoading={isLoadingFees}
++        marketData={marketData}
++        onEditFee={onUserActivatesFeeEditor}
++        selectedFee={selectedFee}
+       />
+-    </StacksHighFeeWarningContainer>
++      <NonceEditor.Trigger nonce={nonce} onEditNonce={onUserActivatesNonceEditor} />
++    </RpcTransactionRequestLayout>
+   );
+ }
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.utils.ts b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.utils.ts
+new file mode 100644
+index 000000000..c9b6920ac
+--- /dev/null
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.utils.ts
+@@ -0,0 +1,121 @@
++import type { StacksNetwork } from '@stacks/network';
++import {
++  type ClarityValue,
++  createAddress,
++  deserializeCV,
++  postConditionToWire,
++  serializeCV,
++  serializePostConditionWire,
++  standardPrincipalCVFromAddress,
++} from '@stacks/transactions';
++
++import type { Money } from '@leather.io/models';
++import { createRequestEncoder, stxTransferSip9Nft } from '@leather.io/rpc';
++import {
++  type StacksUnsignedContractCallOptions,
++  TransactionTypes,
++  getStacksAssetStringParts,
++} from '@leather.io/stacks';
++import { createMoney } from '@leather.io/utils';
++
++import { getAddressFromAssetString } from '@shared/utils';
++import { makeNftPostCondition } from '@shared/utils/post-conditions';
++
++import { initialSearchParams } from '@app/common/initial-search-params';
++import type { Nonce } from '@app/features/nonce-editor/nonce-editor.context';
++
++export function getDecodedRpcStxTransferSip9NftRequest() {
++  const { decode } = createRequestEncoder(stxTransferSip9Nft.request);
++  const rpcRequest = initialSearchParams.get('rpcRequest');
++  if (!rpcRequest) throw new Error('Missing rpcRequest');
++  return decode(rpcRequest);
++}
++
++export type RpcStxTransferSip9NftRequest = ReturnType<
++  typeof getDecodedRpcStxTransferSip9NftRequest
++>;
++
++function getTransactionOptionsFromRpcRequest(address: string) {
++  const decodedRpcRequest = getDecodedRpcStxTransferSip9NftRequest();
++
++  const { contractAddress, contractAssetName, contractName } = getStacksAssetStringParts(
++    decodedRpcRequest.params.asset
++  );
++
++  const fnArgs: ClarityValue[] = [
++    deserializeCV(decodedRpcRequest.params.assetId),
++    standardPrincipalCVFromAddress(createAddress(decodedRpcRequest.params.address ?? address)),
++    standardPrincipalCVFromAddress(createAddress(decodedRpcRequest.params.recipient)),
++  ];
++  const postConditionOptions = {
++    assetId: decodedRpcRequest.params.assetId,
++    contractAddress,
++    contractAssetName,
++    contractName,
++    stxAddress: decodedRpcRequest.params.address ?? address,
++  };
++
++  return {
++    contractAddress: getAddressFromAssetString(decodedRpcRequest.params.asset),
++    contractName,
++    functionArgs: fnArgs.map(arg => serializeCV(arg)),
++    fee: decodedRpcRequest.params.fee
++      ? createMoney(decodedRpcRequest.params.fee, 'STX')
++      : undefined,
++    nonce: decodedRpcRequest.params.nonce,
++    sponsored: decodedRpcRequest.params.sponsored,
++    postConditions: [
++      serializePostConditionWire(postConditionToWire(makeNftPostCondition(postConditionOptions))),
++    ],
++  };
++}
++
++interface GetUnsignedStacksContractCallOptionsForFeeEstimationArgs {
++  address: string;
++  publicKey: string;
++  network: StacksNetwork;
++}
++export function getUnsignedStacksContractCallOptionsForFeeEstimation({
++  address,
++  publicKey,
++  network,
++}: GetUnsignedStacksContractCallOptionsForFeeEstimationArgs): StacksUnsignedContractCallOptions {
++  const requestOptions = getTransactionOptionsFromRpcRequest(address);
++
++  return {
++    txType: TransactionTypes.ContractCall,
++    ...requestOptions,
++    functionName: 'transfer',
++    fee: requestOptions.fee ?? createMoney(0, 'STX'),
++    nonce: requestOptions.nonce ?? 0,
++    publicKey,
++    network,
++  };
++}
++
++interface GetUnsignedStacksContractCallOptionsArgs {
++  address: string;
++  fee: Money;
++  network: StacksNetwork;
++  nonce: Nonce;
++  publicKey: string;
++}
++export function getUnsignedStacksContractCallOptions({
++  address,
++  fee,
++  network,
++  nonce,
++  publicKey,
++}: GetUnsignedStacksContractCallOptionsArgs): StacksUnsignedContractCallOptions {
++  const requestOptions = getTransactionOptionsFromRpcRequest(address);
++
++  return {
++    txType: TransactionTypes.ContractCall,
++    ...requestOptions,
++    functionName: 'transfer',
++    publicKey,
++    network,
++    fee,
++    nonce,
++  };
++}
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx
+index d70f93623..71232b181 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx
+@@ -18,7 +18,7 @@ import { useCurrentStacksNetworkState } from '@app/store/networks/networks.hooks
+ import { RpcStxTransferStxProvider } from './rpc-stx-transfer-stx.context';
+ import {
+   getDecodedRpcStxTransferStxRequest,
+-  getStacksUnsignedTokenTransferOptionsForFeeEstimation,
++  getUnsignedStacksTokenTransferOptionsForFeeEstimation,
+ } from './rpc-stx-transfer-stx.utils';
+ 
+ interface RpcStxTransferStxContainerProps {
+@@ -31,7 +31,7 @@ export function RpcStxTransferStxContainer({ account }: RpcStxTransferStxContain
+   const { toggleSwitchAccount } = useSwitchAccountSheet();
+   const navigate = useNavigate();
+   const rpcRequest = getDecodedRpcStxTransferStxRequest();
+-  const txOptionsForFeeEstimation = getStacksUnsignedTokenTransferOptionsForFeeEstimation({
++  const txOptionsForFeeEstimation = getUnsignedStacksTokenTransferOptionsForFeeEstimation({
+     publicKey: account.stxPublicKey,
+     network,
+   });
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx
+index dbbacfb62..9c604feb1 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx
+@@ -1,35 +1,17 @@
+-import { Route } from 'react-router-dom';
+-
+ import { RouteUrls } from '@shared/route-urls';
+ 
+-import { BroadcastErrorSheet } from '@app/components/broadcast-error-dialog/broadcast-error-dialog';
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { ledgerStacksTxSigningRoutes } from '@app/features/ledger/flows/stacks-tx-signing/ledger-sign-stacks-tx-container';
+-import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+-import { AccountGate } from '@app/routes/account-gate';
+-import { LedgerStacksGate } from '@app/routes/ledger-stacks-gate';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+-import { FeeEditor } from '../../features/fee-editor/fee-editor';
+ import { RpcStxTransferStx } from './rpc-stx-transfer-stx';
+ import { RpcStxTransferStxContainer } from './rpc-stx-transfer-stx-container';
+ 
+-export const rpcStxTransferStxRoutes = (
+-  <Route
+-    path={RouteUrls.RpcStxTransferStx}
+-    element={
+-      <AccountGate>
+-        <LedgerStacksGate>
+-          <CurrentStacksAccountLoader>
+-            {account => <RpcStxTransferStxContainer account={account} />}
+-          </CurrentStacksAccountLoader>
+-        </LedgerStacksGate>
+-      </AccountGate>
+-    }
+-  >
+-    <Route index element={<RpcStxTransferStx />} />
+-    <Route path={RouteUrls.FeeEditor} element={<FeeEditor />} />
+-    <Route path={RouteUrls.NonceEditor} element={<NonceEditor />} />
+-    <Route path={RouteUrls.BroadcastError} element={<BroadcastErrorSheet />} />
+-    {ledgerStacksTxSigningRoutes}
+-  </Route>
+-);
++export const rpcStxTransferStxRoutes = generateStacksRpcTransactionRequestRoutes({
++  path: RouteUrls.RpcStxTransferStx,
++  container: (
++    <CurrentStacksAccountLoader>
++      {account => <RpcStxTransferStxContainer account={account} />}
++    </CurrentStacksAccountLoader>
++  ),
++  element: <RpcStxTransferStx />,
++});
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
+index 2b26ceb18..819e63617 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
+@@ -18,7 +18,7 @@ import { SwitchAccountTrigger } from '@app/features/rpc-transaction-request/swit
+ import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions-with-spend';
+ 
+ import { useRpcStxTransferStxContext } from './rpc-stx-transfer-stx.context';
+-import { getStacksUnsignedTokenTransferOptions } from './rpc-stx-transfer-stx.utils';
++import { getUnsignedStacksTokenTransferOptions } from './rpc-stx-transfer-stx.utils';
+ 
+ export function RpcStxTransferStx() {
+   const { isLoadingBalance, network, publicKey, onUserActivatesSwitchAccount } =
+@@ -31,7 +31,7 @@ export function RpcStxTransferStx() {
+ 
+   const txOptionsForBroadcast = useMemo(
+     () =>
+-      getStacksUnsignedTokenTransferOptions({
++      getUnsignedStacksTokenTransferOptions({
+         fee: selectedFee.txFee,
+         network,
+         nonce,
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.utils.ts b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.utils.ts
+index 1865ab591..e67c32a4b 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.utils.ts
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.utils.ts
+@@ -31,14 +31,14 @@ function getTransactionOptionsFromRpcRequest() {
+   };
+ }
+ 
+-interface GetStacksUnsignedTokenTransferOptionsForFeeEstimationArgs {
++interface GetUnsignedStacksTokenTransferOptionsForFeeEstimationArgs {
+   publicKey: string;
+   network: StacksNetwork;
+ }
+-export function getStacksUnsignedTokenTransferOptionsForFeeEstimation({
++export function getUnsignedStacksTokenTransferOptionsForFeeEstimation({
+   publicKey,
+   network,
+-}: GetStacksUnsignedTokenTransferOptionsForFeeEstimationArgs): StacksUnsignedTokenTransferOptions {
++}: GetUnsignedStacksTokenTransferOptionsForFeeEstimationArgs): StacksUnsignedTokenTransferOptions {
+   const requestOptions = getTransactionOptionsFromRpcRequest();
+ 
+   return {
+@@ -51,18 +51,18 @@ export function getStacksUnsignedTokenTransferOptionsForFeeEstimation({
+   };
+ }
+ 
+-interface GetStacksUnsignedTokenTransferOptionsArgs {
++interface GetUnsignedStacksTokenTransferOptionsArgs {
+   fee: Money;
+   network: StacksNetwork;
+   nonce: Nonce;
+   publicKey: string;
+ }
+-export function getStacksUnsignedTokenTransferOptions({
++export function getUnsignedStacksTokenTransferOptions({
+   fee,
+   network,
+   nonce,
+   publicKey,
+-}: GetStacksUnsignedTokenTransferOptionsArgs): StacksUnsignedTokenTransferOptions {
++}: GetUnsignedStacksTokenTransferOptionsArgs): StacksUnsignedTokenTransferOptions {
+   const requestOptions = getTransactionOptionsFromRpcRequest();
+ 
+   return {
+diff --git a/src/app/routes/rpc-routes.tsx b/src/app/routes/rpc-routes.tsx
+index 4b32f4b52..f812d6338 100644
+--- a/src/app/routes/rpc-routes.tsx
++++ b/src/app/routes/rpc-routes.tsx
+@@ -15,10 +15,8 @@ import { RpcStacksMessageSigning } from '@app/pages/rpc-sign-stacks-message/rpc-
+ import { rpcStxCallContractRoutes } from '@app/pages/rpc-stx-call-contract/rpc-stx-call-contract.routes';
+ import { RpcStxDeployContract } from '@app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract';
+ import { RpcStxSignTransaction } from '@app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction';
+-import { RpcStxTransferSip9Nft } from '@app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft';
+-import { RpcStxTransferSip10Ft } from '@app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft';
++import { rpcStxTransferSip9NftRoutes } from '@app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes';
+ import { rpcStxTransferSip10FtRoutes } from '@app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes';
+-import { RpcStxTransferStx } from '@app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx';
+ import { rpcStxTransferStxRoutes } from '@app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes';
+ import { AccountGate } from '@app/routes/account-gate';
+ 
+@@ -39,6 +37,7 @@ export const rpcRequestRoutes = (
+ 
+     {rpcSendTransferRoutes}
+     {rpcStxCallContractRoutes}
++    {rpcStxTransferSip9NftRoutes}
+     {rpcStxTransferSip10FtRoutes}
+     {rpcStxTransferStxRoutes}
+ 
+@@ -107,41 +106,5 @@ export const rpcRequestRoutes = (
+       {editNonceSheetRoute}
+       {ledgerStacksTxSigningRoutes}
+     </Route>
+-
+-    <Route
+-      path={RouteUrls.RpcStxTransferStx}
+-      element={
+-        <AccountGate>
+-          <RpcStxTransferStx />
+-        </AccountGate>
+-      }
+-    >
+-      {editNonceSheetRoute}
+-      {ledgerStacksTxSigningRoutes}
+-    </Route>
+-
+-    <Route
+-      path={RouteUrls.RpcStxTransferSip9Nft}
+-      element={
+-        <AccountGate>
+-          <RpcStxTransferSip9Nft />
+-        </AccountGate>
+-      }
+-    >
+-      {editNonceSheetRoute}
+-      {ledgerStacksTxSigningRoutes}
+-    </Route>
+-
+-    <Route
+-      path={RouteUrls.RpcStxTransferSip10Ft}
+-      element={
+-        <AccountGate>
+-          <RpcStxTransferSip10Ft />
+-        </AccountGate>
+-      }
+-    >
+-      {editNonceSheetRoute}
+-      {ledgerStacksTxSigningRoutes}
+-    </Route>
+   </>
+ );
+diff --git a/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts b/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts
+index 47a3e8820..2dd1d2df8 100644
+--- a/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts
++++ b/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts
+@@ -1,85 +1,26 @@
+ import {
+-  type ClarityValue,
+-  createAddress,
+-  createStacksPublicKey,
+-  deserializeCV,
+-  postConditionToWire,
+-  publicKeyToAddressSingleSig,
+-  serializeCV,
+-  serializePostConditionWire,
+-  standardPrincipalCVFromAddress,
+-} from '@stacks/transactions';
+-import { createUnsecuredToken } from 'jsontokens';
+-
+-import { extractKeyFromDescriptor } from '@leather.io/crypto';
+-import type { NetworkModes } from '@leather.io/models';
+-import { type RpcParams, stxTransferSip9Nft } from '@leather.io/rpc';
+-import { TransactionTypes, getStacksAssetStringParts } from '@leather.io/stacks';
++  RpcErrorCode,
++  createRpcErrorResponse,
++  encodeBase64Json,
++  stxTransferSip9Nft,
++} from '@leather.io/rpc';
+ 
+ import { RouteUrls } from '@shared/route-urls';
+-import { getRootState, sendMissingStateErrorToTab } from '@shared/storage/get-root-state';
+-import { getAddressFromAssetString } from '@shared/utils';
+-import { makeNftPostCondition } from '@shared/utils/post-conditions';
+-
+-import type { RootState } from '@app/store';
++import { RpcErrorMessage } from '@shared/rpc/methods/validation.utils';
+ 
+-import { handleRpcMessage } from '../rpc-helpers';
++import { trackRpcRequestSuccess } from '../rpc-helpers';
+ import { defineRpcRequestHandler } from '../rpc-message-handler';
+ import {
+-  type RequestParams,
+-  getStxDefaultMessageParamsToTransactionRequest,
+-  getTabIdFromPort,
++  createConnectingAppSearchParamsWithLastKnownAccount,
++  listenForPopupClose,
++  triggerRequestPopupWindowOpen,
+   validateRequestParams,
+ } from '../rpc-request-utils';
+ 
+-async function getMessageParamsToTransactionRequest(
+-  state: RootState,
+-  params: RpcParams<typeof stxTransferSip9Nft>
+-) {
+-  const { contractAddress, contractAssetName, contractName } = getStacksAssetStringParts(
+-    params.asset
+-  );
+-
+-  const descriptor = state.chains.stx.default.currentAccountStacksDescriptor;
+-  const publicKey = createStacksPublicKey(extractKeyFromDescriptor(descriptor)).data;
+-  const currentStacksAddress = publicKeyToAddressSingleSig(
+-    publicKey,
+-    state.networks.currentNetworkId as NetworkModes
+-  );
+-
+-  const fnArgs: ClarityValue[] = [
+-    deserializeCV(params.assetId),
+-    standardPrincipalCVFromAddress(createAddress(params.address ?? currentStacksAddress)),
+-    standardPrincipalCVFromAddress(createAddress(params.recipient)),
+-  ];
+-
+-  const postConditionOptions = {
+-    assetId: params.assetId,
+-    contractAddress,
+-    contractAssetName,
+-    contractName,
+-    stxAddress: params.address ?? currentStacksAddress,
+-  };
+-
+-  const defaultParams = getStxDefaultMessageParamsToTransactionRequest(params);
+-
+-  return {
+-    ...defaultParams,
+-    txType: TransactionTypes.ContractCall,
+-    contractAddress: getAddressFromAssetString(params.asset),
+-    contractName,
+-    functionArgs: fnArgs.map(arg => serializeCV(arg)),
+-    functionName: 'transfer',
+-    postConditions: [
+-      serializePostConditionWire(postConditionToWire(makeNftPostCondition(postConditionOptions))),
+-    ],
+-  };
+-}
+ export const stxTransferSip9NftHandler = defineRpcRequestHandler(
+   stxTransferSip9Nft.method,
+   async (request, port) => {
+     const { id: requestId, method, params } = request;
+-    const tabId = getTabIdFromPort(port);
+     const { status } = validateRequestParams({
+       id: requestId,
+       method,
+@@ -87,27 +28,28 @@ export const stxTransferSip9NftHandler = defineRpcRequestHandler(
+       port,
+       schema: stxTransferSip9Nft.params,
+     });
+-
+     if (status === 'failure') return;
++    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++      ['requestId', request.id],
++      ['rpcRequest', encodeBase64Json(request)],
++    ]);
+ 
+-    const state = await getRootState();
+-
+-    if (!state) {
+-      sendMissingStateErrorToTab({ tabId, method: request.method, id: request.id });
+-      return;
++    if (request.params && request.params.network) {
++      urlParams.append('network', request.params.network);
+     }
+-
+-    const txRequest = await getMessageParamsToTransactionRequest(state, params);
+-    const requestParams: RequestParams = [
+-      ['requestId', requestId],
+-      ['request', createUnsecuredToken(txRequest)],
+-    ];
+-    if (params.network) requestParams.push(['network', params.network]);
+-    return handleRpcMessage({
+-      request,
+-      path: RouteUrls.RpcStxTransferSip9Nft,
+-      port,
+-      requestParams,
++    const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcStxTransferSip9Nft, urlParams);
++    void trackRpcRequestSuccess({ endpoint: request.method });
++
++    listenForPopupClose({
++      tabId,
++      id,
++      response: createRpcErrorResponse(method, {
++        id: requestId,
++        error: {
++          code: RpcErrorCode.USER_REJECTION,
++          message: RpcErrorMessage.UserRejectedOperation,
++        },
++      }),
+     });
+   }
+ );
+diff --git a/tests/specs/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.spec.ts b/tests/specs/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.spec.ts
+index 4dbd909e5..b79d24237 100644
+--- a/tests/specs/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.spec.ts
++++ b/tests/specs/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.spec.ts
+@@ -1,5 +1,6 @@
+ import { BrowserContext, Page } from '@playwright/test';
+ import { TEST_ACCOUNT_2_STX_ADDRESS } from '@tests/mocks/constants';
++import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+ 
+ import type { RpcParams, stxTransferSip9Nft } from '@leather.io/rpc';
+ 
+@@ -18,10 +19,17 @@ test.describe('RPC: stx_transferSip9Nft', () => {
+     return async (buttonToPress: 'Cancel' | 'Confirm') => {
+       const popup = await context.waitForEvent('page');
+       await popup.waitForSelector('text="LIV"');
+-      await popup.waitForSelector('text="transfer"');
+-      await popup.waitForSelector('text="SP2X…G3PJ.living-leather"');
+-      await popup.waitForSelector('text="u647"');
+-      await popup.waitForSelector('text="SPXH3HNBPM5YP15VH16ZXZ9AX6CK289K3MCXRKCB"');
++      await popup.waitForSelector('text="You will transfer"');
++      await popup.waitForSelector('text="living-leather"');
++      await popup.waitForSelector('text="SPS8…WSFE"');
++      await popup.waitForSelector('text="You will transfer LIV or the transaction will abort."');
++
++      const displayerAddress = await popup
++        .getByTestId(SharedComponentsSelectors.AddressDisplayer)
++        .innerText()
++        .then((value: string) => value.replaceAll('\n', ''));
++      test.expect(displayerAddress).toEqual('SP2XMGYYTA1KRBKBYJHTW8CFWB2QYZKZE4BMHG3PJ');
++
+       await popup.waitForTimeout(500);
+       const btn = popup.locator('text="Confirm"');
+```

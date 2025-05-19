@@ -1,0 +1,349 @@
+# Test info
+
+- Name: Transaction signing >> Contract calls >> that it validates against insufficient funds when performing a contract call
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:27:5
+
+# Error details
+
+```
+Error: page.click: Target page, context or browser has been closed
+Call log:
+  - waiting for locator('text=Debugger')
+
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:39:30
+```
+
+# Test source
+
+```ts
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { stxToMicroStx } from '@leather.io/utils';
+   7 |
+   8 | import { createDelay } from '@shared/utils';
+   9 |
+   10 | import { test } from '../../fixtures/fixtures';
+   11 |
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+   34 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   35 |       await delayAnimationDuration();
+   36 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   37 |       await delayAnimationDuration();
+   38 |       await testAppPage.page.bringToFront();
+>  39 |       await testAppPage.page.click('text=Debugger', {
+      |                              ^ Error: page.click: Target page, context or browser has been closed
+   40 |         timeout: 30000,
+   41 |       });
+   42 |       await accountsPage.close();
+   43 |
+   44 |       await testAppPage.clickContractCallButton();
+   45 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   46 |       await transactionRequestPage.waitForTransactionRequestPage();
+   47 |       const error =
+   48 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   49 |
+   50 |       test.expect(error).toBeTruthy();
+   51 |     });
+   52 |   });
+   53 |
+   54 |   test.describe('App initiated STX transfer', () => {
+   55 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   56 |       const newPagePromise = context.waitForEvent('page');
+   57 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   58 |       const accountsPage = await newPagePromise;
+   59 |       await delayAnimationDuration();
+   60 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   61 |       await delayAnimationDuration();
+   62 |       await testAppPage.page.bringToFront();
+   63 |       await testAppPage.page.click('text=Debugger', {
+   64 |         timeout: 30000,
+   65 |       });
+   66 |       await accountsPage.close();
+   67 |
+   68 |       await testAppPage.clickStxTransferButton();
+   69 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   70 |
+   71 |       await transactionRequestPage.waitForTransactionRequestPage();
+   72 |       await transactionRequestPage.waitForFee();
+   73 |
+   74 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   75 |
+   76 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
+   77 |
+   78 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+   79 |
+   80 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   81 |         await route.abort();
+   82 |       });
+   83 |
+   84 |       await transactionRequestPage.clickConfirmTransactionButton();
+   85 |
+   86 |       const request = await requestPromise;
+   87 |       const requestBody = request.postData();
+   88 |       if (!requestBody) return;
+   89 |
+   90 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   91 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   92 |       const amount = Number(payload.amount);
+   93 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   94 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   95 |
+   96 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   97 |       test.expect(amount).toEqual(102);
+   98 |     });
+   99 |   });
+  100 | });
+  101 |
+```
+
+# Local changes
+
+```diff
+diff --git a/config/wallet-config.json b/config/wallet-config.json
+index a45e1ca0f..bb524a11a 100644
+--- a/config/wallet-config.json
++++ b/config/wallet-config.json
+@@ -96,7 +96,6 @@
+   "sbtc": {
+     "enabled": true,
+     "emilyApiUrl": "https://sbtc-emily.com",
+-    "showPromoLinkOnNetworks": ["mainnet", "testnet", "sbtcTestnet"],
+     "sponsorshipsEnabled": true,
+     "sponsorshipApiUrl": {
+       "mainnet": "https://sponsor.leather.io",
+@@ -181,5 +180,6 @@
+       "min": 1000001,
+       "max": 2000000
+     }
+-  }
++  },
++  "promoCardEnabled": true
+ }
+diff --git a/config/wallet-config.schema.json b/config/wallet-config.schema.json
+index 175687556..0357fc77d 100644
+--- a/config/wallet-config.schema.json
++++ b/config/wallet-config.schema.json
+@@ -179,13 +179,6 @@
+             }
+           }
+         },
+-        "showPromoLinkOnNetworks": {
+-          "type": "array",
+-          "description": "Networks on which the promo link should be shown",
+-          "items": {
+-            "type": "string"
+-          }
+-        },
+         "contracts": {
+           "type": "object",
+           "properties": {
+@@ -210,6 +203,10 @@
+           }
+         }
+       }
++    },
++    "promoCardEnabled": {
++      "type": "boolean",
++      "description": "Determines whether or not the promo card feature is enabled"
+     }
+   },
+   "$defs": {
+diff --git a/public/assets/illustrations/web-app-promo.png b/public/assets/illustrations/web-app-promo.png
+new file mode 100644
+index 000000000..7f301fc89
+Binary files /dev/null and b/public/assets/illustrations/web-app-promo.png differ
+diff --git a/src/app/features/promo-card/promo-card.tsx b/src/app/features/promo-card/promo-card.tsx
+new file mode 100644
+index 000000000..a1cf5fc0e
+--- /dev/null
++++ b/src/app/features/promo-card/promo-card.tsx
+@@ -0,0 +1,49 @@
++import { Box, styled } from 'leather-styles/jsx';
++
++import { Flag, type FlagProps } from '@leather.io/ui';
++
++import { useConfigPromoCardEnabled } from '@app/query/common/remote-config/remote-config.query';
++
++interface PromoCardContentProps extends FlagProps {}
++
++function PromoCardLayout(props: PromoCardContentProps) {
++  return (
++    <Flag
++      cursor="pointer"
++      reverse
++      img={
++        <styled.img
++          alt="Grow your bitcoin in our new web app"
++          src="assets/illustrations/web-app-promo.png"
++          width={70}
++          mr="space.02"
++        />
++      }
++      background="ink.action-primary-default"
++      borderRadius={8}
++      mt="space.05"
++      p="space.02"
++      {...props}
++    >
++      <Box pl="space.03" py="space.02">
++        <styled.h3
++          textStyle="heading.05"
++          fontSize="17px"
++          lineHeight={1.4}
++          color="ink.background-primary"
++        >
++          Grow your Bitcoin
++        </styled.h3>
++        <styled.p textStyle="label.03" mt="space.01" color="ink.background-primary">
++          Our new web app is live and built to help you earn with Bitcoin.
++        </styled.p>
++      </Box>
++    </Flag>
++  );
++}
++
++export function PromoCard(props: FlagProps) {
++  const shouldDisplayPromoCard = useConfigPromoCardEnabled();
++  if (!shouldDisplayPromoCard) return null;
++  return <PromoCardLayout {...props} />;
++}
+diff --git a/src/app/features/sbtc-promo-card/sbtc-promo-card.tsx b/src/app/features/sbtc-promo-card/sbtc-promo-card.tsx
+deleted file mode 100644
+index ccc398e9e..000000000
+--- a/src/app/features/sbtc-promo-card/sbtc-promo-card.tsx
++++ /dev/null
+@@ -1,46 +0,0 @@
+-import { Box, styled } from 'leather-styles/jsx';
+-
+-import { Flag, type FlagProps } from '@leather.io/ui';
+-
+-import { useThemeSwitcher } from '@app/common/theme-provider';
+-import { useConfigSbtc } from '@app/query/common/remote-config/remote-config.query';
+-
+-interface SbtcPromoCardContentProps extends FlagProps {}
+-
+-function SbtcPromoCardLayout(props: SbtcPromoCardContentProps) {
+-  const { theme } = useThemeSwitcher();
+-  const invertStyle = theme === 'light' ? '' : 'invert()';
+-
+-  return (
+-    <Flag
+-      cursor="pointer"
+-      reverse
+-      img={
+-        <styled.img
+-          src="assets/illustrations/sbtc-earn-promo.svg"
+-          width={100}
+-          filter={invertStyle}
+-          mr="space.03"
+-        />
+-      }
+-      background="ink.background-secondary"
+-      borderRadius={8}
+-      {...props}
+-    >
+-      <Box pl="space.04" py="space.04">
+-        <styled.h3 textStyle="heading.05" fontSize="17px" lineHeight={1.4}>
+-          Earn rewards in BTC
+-        </styled.h3>
+-        <styled.p textStyle="label.03" mt="space.01">
+-          Enroll your sBTC to unlock yields through the protocol.
+-        </styled.p>
+-      </Box>
+-    </Flag>
+-  );
+-}
+-
+-export function SbtcPromoCard(props: FlagProps) {
+-  const { shouldDisplayPromoCard } = useConfigSbtc();
+-  if (!shouldDisplayPromoCard) return null;
+-  return <SbtcPromoCardLayout {...props} />;
+-}
+diff --git a/src/app/pages/home/home.tsx b/src/app/pages/home/home.tsx
+index 878f7b35f..761d91e2c 100644
+--- a/src/app/pages/home/home.tsx
++++ b/src/app/pages/home/home.tsx
+@@ -14,7 +14,7 @@ import { whenPageMode } from '@app/common/utils';
+ import { openInNewTab } from '@app/common/utils/open-in-new-tab';
+ import { ActivityList } from '@app/features/activity-list/activity-list';
+ import { FeedbackButton } from '@app/features/feedback-button/feedback-button';
+-import { SbtcPromoCard } from '@app/features/sbtc-promo-card/sbtc-promo-card';
++import { PromoCard } from '@app/features/promo-card/promo-card';
+ import { Assets } from '@app/pages/home/components/assets';
+ import { homePageModalRoutes } from '@app/routes/app-routes';
+ import { ModalBackgroundWrapper } from '@app/routes/components/modal-background-wrapper';
+@@ -28,7 +28,7 @@ import { AccountCard } from '@app/ui/components/account/account.card';
+ import { AccountActions } from './components/account-actions';
+ import { HomeTabs } from './components/home-tabs';
+ 
+-const leatherEarnUrl = 'https://earn.leather.io';
++const leatherWebAppUrl = 'https://leather.io';
+ 
+ export function Home() {
+   const { decodedAuthRequest } = useOnboardingState();
+@@ -80,7 +80,7 @@ export function Home() {
+         >
+           <AccountActions />
+         </AccountCard>
+-        <SbtcPromoCard mt="space.05" onClick={() => openInNewTab(leatherEarnUrl)} />
++        <PromoCard onClick={() => openInNewTab(leatherWebAppUrl)} />
+       </Box>
+       {whenPageMode({ full: <FeedbackButton />, popup: null })}
+       <HomeTabs>
+diff --git a/src/app/query/common/remote-config/remote-config.query.ts b/src/app/query/common/remote-config/remote-config.query.ts
+index 7522b0431..4d3b6149f 100644
+--- a/src/app/query/common/remote-config/remote-config.query.ts
++++ b/src/app/query/common/remote-config/remote-config.query.ts
+@@ -82,7 +82,6 @@ export function useConfigSbtc() {
+   const sbtc = config?.sbtc as SbtcConfig;
+ 
+   return useMemo(() => {
+-    const displayPromoCardOnNetworks = (sbtc as any)?.showPromoLinkOnNetworks ?? [];
+     const contractIdMainnet = sbtc?.contracts.mainnet.address ?? '';
+     const contractIdTestnet = sbtc?.contracts.testnet.address ?? '';
+     const apiUrlMainnet = sbtc?.sponsorshipApiUrl.mainnet ?? '';
+@@ -101,9 +100,8 @@ export function useConfigSbtc() {
+           contract === getPrincipalFromAssetString(contractIdTestnet)
+         );
+       },
+-      shouldDisplayPromoCard: displayPromoCardOnNetworks.includes(network.id),
+     };
+-  }, [network.chain.bitcoin.mode, network.id, sbtc]);
++  }, [network.chain.bitcoin.mode, sbtc]);
+ }
+ 
+ function useRemoteConfig() {
+@@ -231,3 +229,8 @@ export function useConfigStacksContractDeploymentFeeEstimations():
+   const config = useRemoteConfig();
+   return get(config, 'stacksContractDeploymentFeeEstimations', undefined);
+ }
++
++export function useConfigPromoCardEnabled() {
++  const config = useRemoteConfig();
++  return get(config, 'promoCardEnabled', false);
++}
+```

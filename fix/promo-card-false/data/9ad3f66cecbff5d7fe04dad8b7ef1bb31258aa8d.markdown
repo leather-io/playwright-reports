@@ -134,4 +134,45 @@ index bb524a11a..cc89af564 100644
 -  "promoCardEnabled": true
 +  "promoCardEnabled": false
  }
+diff --git a/src/app/features/promo-card/promo-card.tsx b/src/app/features/promo-card/promo-card.tsx
+index a200589e1..0dd35e0c0 100644
+--- a/src/app/features/promo-card/promo-card.tsx
++++ b/src/app/features/promo-card/promo-card.tsx
+@@ -7,6 +7,9 @@ import { useConfigPromoCardEnabled } from '@app/query/common/remote-config/remot
+ interface PromoCardContentProps extends FlagProps {}
+ 
+ function PromoCardLayout(props: PromoCardContentProps) {
++  // Hardcoded colors needed to bypass theme
++  const inkBgSecondary = '#F5F1ED';
++  const inkTextPrimary = '#12100F';
+   return (
+     <Flag
+       cursor="pointer"
+@@ -19,7 +22,7 @@ function PromoCardLayout(props: PromoCardContentProps) {
+           mr="space.02"
+         />
+       }
+-      background="ink.action-primary-default"
++      background={inkTextPrimary}
+       borderRadius={8}
+       mt="space.05"
+       pt="space.02"
+@@ -27,15 +30,10 @@ function PromoCardLayout(props: PromoCardContentProps) {
+       {...props}
+     >
+       <Box pl="space.03" pt="space.02" pb="space.04">
+-        <styled.h3
+-          textStyle="heading.05"
+-          fontSize="17px"
+-          lineHeight={1.4}
+-          color="ink.background-primary"
+-        >
++        <styled.h3 textStyle="heading.05" fontSize="17px" lineHeight={1.4} color={inkBgSecondary}>
+           Grow your Bitcoin
+         </styled.h3>
+-        <styled.p textStyle="label.03" mt="space.01" color="ink.background-primary">
++        <styled.p textStyle="label.03" mt="space.01" color={inkBgSecondary}>
+           Our new web app is live and built to help you earn with Bitcoin.
+         </styled.p>
+       </Box>
 ```

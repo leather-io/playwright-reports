@@ -1,0 +1,181 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:55:5
+
+# Error details
+
+```
+Error: page.waitForRequest: Page crashed
+=========================== logs ===========================
+waiting for request "*/**/v2/transactions"
+============================================================
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:78:58
+```
+
+# Test source
+
+```ts
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { stxToMicroStx } from '@leather.io/utils';
+   7 |
+   8 | import { createDelay } from '@shared/utils';
+   9 |
+   10 | import { test } from '../../fixtures/fixtures';
+   11 |
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+   34 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   35 |       await delayAnimationDuration();
+   36 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   37 |       await delayAnimationDuration();
+   38 |       await testAppPage.page.bringToFront();
+   39 |       await testAppPage.page.click('text=Debugger', {
+   40 |         timeout: 30000,
+   41 |       });
+   42 |       await accountsPage.close();
+   43 |
+   44 |       await testAppPage.clickContractCallButton();
+   45 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   46 |       await transactionRequestPage.waitForTransactionRequestPage();
+   47 |       const error =
+   48 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   49 |
+   50 |       test.expect(error).toBeTruthy();
+   51 |     });
+   52 |   });
+   53 |
+   54 |   test.describe('App initiated STX transfer', () => {
+   55 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   56 |       const newPagePromise = context.waitForEvent('page');
+   57 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   58 |       const accountsPage = await newPagePromise;
+   59 |       await delayAnimationDuration();
+   60 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   61 |       await delayAnimationDuration();
+   62 |       await testAppPage.page.bringToFront();
+   63 |       await testAppPage.page.click('text=Debugger', {
+   64 |         timeout: 30000,
+   65 |       });
+   66 |       await accountsPage.close();
+   67 |
+   68 |       await testAppPage.clickStxTransferButton();
+   69 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   70 |
+   71 |       await transactionRequestPage.waitForTransactionRequestPage();
+   72 |       await transactionRequestPage.waitForFee();
+   73 |
+   74 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   75 |
+   76 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
+   77 |
+>  78 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+      |                                                          ^ Error: page.waitForRequest: Page crashed
+   79 |
+   80 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   81 |         await route.abort();
+   82 |       });
+   83 |
+   84 |       await transactionRequestPage.clickConfirmTransactionButton();
+   85 |
+   86 |       const request = await requestPromise;
+   87 |       const requestBody = request.postData();
+   88 |       if (!requestBody) return;
+   89 |
+   90 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   91 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   92 |       const amount = Number(payload.amount);
+   93 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   94 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   95 |
+   96 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   97 |       test.expect(amount).toEqual(102);
+   98 |     });
+   99 |   });
+  100 | });
+  101 |
+```
+
+# Local changes
+
+```diff
+diff --git a/config/wallet-config.json b/config/wallet-config.json
+index bb524a11a..cc89af564 100644
+--- a/config/wallet-config.json
++++ b/config/wallet-config.json
+@@ -181,5 +181,5 @@
+       "max": 2000000
+     }
+   },
+-  "promoCardEnabled": true
++  "promoCardEnabled": false
+ }
+diff --git a/src/app/features/promo-card/promo-card.tsx b/src/app/features/promo-card/promo-card.tsx
+index a200589e1..bdb204fc0 100644
+--- a/src/app/features/promo-card/promo-card.tsx
++++ b/src/app/features/promo-card/promo-card.tsx
+@@ -7,6 +7,10 @@ import { useConfigPromoCardEnabled } from '@app/query/common/remote-config/remot
+ interface PromoCardContentProps extends FlagProps {}
+ 
+ function PromoCardLayout(props: PromoCardContentProps) {
++  // Hardcoded colors needed to bypass theme
++  const backgroundColor = '#1B1A17';
++  const borderColor = '#554D44';
++  const textColor = '#F5F1ED';
+   return (
+     <Flag
+       cursor="pointer"
+@@ -19,23 +23,20 @@ function PromoCardLayout(props: PromoCardContentProps) {
+           mr="space.02"
+         />
+       }
+-      background="ink.action-primary-default"
++      background={backgroundColor}
+       borderRadius={8}
++      border="2px solid"
++      borderColor={borderColor}
+       mt="space.05"
+       pt="space.02"
+       px="space.02"
+       {...props}
+     >
+       <Box pl="space.03" pt="space.02" pb="space.04">
+-        <styled.h3
+-          textStyle="heading.05"
+-          fontSize="17px"
+-          lineHeight={1.4}
+-          color="ink.background-primary"
+-        >
++        <styled.h3 textStyle="heading.05" fontSize="17px" lineHeight={1.4} color={textColor}>
+           Grow your Bitcoin
+         </styled.h3>
+-        <styled.p textStyle="label.03" mt="space.01" color="ink.background-primary">
++        <styled.p textStyle="label.03" mt="space.01" color={textColor}>
+           Our new web app is live and built to help you earn with Bitcoin.
+         </styled.p>
+       </Box>
+```

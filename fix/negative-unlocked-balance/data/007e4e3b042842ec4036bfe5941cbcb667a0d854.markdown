@@ -1,0 +1,141 @@
+# Test info
+
+- Name: Manage tokens >> that token can be removed from asset list and added back
+- Location: /home/runner/work/extension/extension/tests/specs/manage-tokens/manage-tokens.spec.ts:18:3
+
+# Error details
+
+```
+Error: Timed out 5000ms waiting for expect(locator).not.toBeAttached()
+
+Locator: getByTestId('asset-list').getByTestId('doge')
+Expected: not attached
+Received: attached
+Call log:
+  - expect.not.toBeAttached with timeout 5000ms
+  - waiting for getByTestId('asset-list').getByTestId('doge')
+    8 × locator resolved to <div data-testid="doge" class="leather-my_space.02">…</div>
+      - unexpected value "attached"
+
+    at /home/runner/work/extension/extension/tests/specs/manage-tokens/manage-tokens.spec.ts:59:40
+```
+
+# Test source
+
+```ts
+   1 | import { expect } from '@playwright/test';
+   2 |
+   3 | import { test } from '../../fixtures/fixtures';
+   4 | import { MockedTokensSelectors } from '../../selectors/mocked-tokens.selectors';
+   5 |
+   6 | test.describe('Manage tokens', () => {
+   7 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
+   8 |     await globalPage.setupAndUseApiCalls(extensionId);
+   9 |     await onboardingPage.signInWithTestAccount(extensionId);
+  10 |   });
+  11 |
+  12 |   test('that supported sip10 token is shown', async ({ homePage }) => {
+  13 |     await homePage.manageTokensBtn.click();
+  14 |     const sip10Token = homePage.assetList.getByTestId(MockedTokensSelectors.Sip10TokenTestId);
+  15 |     await expect(sip10Token).toBeAttached();
+  16 |   });
+  17 |
+  18 |   test('that token can be removed from asset list and added back', async ({ homePage }) => {
+  19 |     await homePage.manageTokensBtn.click();
+  20 |
+  21 |     // sip10 token
+  22 |     const sip10InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Sip10TokenTestId);
+  23 |     const sip10TokenInManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  24 |       MockedTokensSelectors.Sip10TokenTestId
+  25 |     );
+  26 |
+  27 |     // brc20 token
+  28 |     const brc20InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Brc20TokenTestId);
+  29 |     const brc20InManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  30 |       MockedTokensSelectors.Brc20TokenTestId
+  31 |     );
+  32 |
+  33 |     // src20 token
+  34 |     const src20InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Src20TokenTestId);
+  35 |     const src20InManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  36 |       MockedTokensSelectors.Src20TokenTestId
+  37 |     );
+  38 |
+  39 |     // rune token
+  40 |     const runeInAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.RuneTokenTestId);
+  41 |     const runeInManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  42 |       MockedTokensSelectors.RuneTokenTestId
+  43 |     );
+  44 |
+  45 |     // stx20 token (disabled by default)
+  46 |     const stx20InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Stx20TokenTestId);
+  47 |     const stx20InManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  48 |       MockedTokensSelectors.Stx20TokenTestId
+  49 |     );
+  50 |
+  51 |     // disable tokens that are enabled by default
+  52 |     await sip10TokenInManageTokensList.click();
+  53 |     await brc20InManageTokensList.click();
+  54 |     await src20InManageTokensList.click();
+  55 |     await runeInManageTokensList.click();
+  56 |
+  57 |     // test that tokens are disabled
+  58 |     await expect(sip10InAssetList).not.toBeAttached();
+> 59 |     await expect(brc20InAssetList).not.toBeAttached();
+     |                                        ^ Error: Timed out 5000ms waiting for expect(locator).not.toBeAttached()
+  60 |     await expect(src20InAssetList).not.toBeAttached();
+  61 |     await expect(stx20InAssetList).not.toBeAttached();
+  62 |     await expect(runeInAssetList).not.toBeAttached();
+  63 |
+  64 |     // enable tokens
+  65 |     await sip10TokenInManageTokensList.click();
+  66 |     await brc20InManageTokensList.click();
+  67 |     await src20InManageTokensList.click();
+  68 |     await stx20InManageTokensList.click();
+  69 |     await runeInManageTokensList.click();
+  70 |
+  71 |     // test that tokens are enabled
+  72 |     await expect(sip10InAssetList).toBeAttached();
+  73 |     await expect(brc20InAssetList).toBeAttached();
+  74 |     await expect(src20InAssetList).toBeAttached();
+  75 |     await expect(stx20InAssetList).toBeAttached();
+  76 |     await expect(runeInAssetList).toBeAttached();
+  77 |   });
+  78 | });
+  79 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/query/stacks/balance/account-balance.hooks.ts b/src/app/query/stacks/balance/account-balance.hooks.ts
+index 6c1583f3f..6a18db5db 100644
+--- a/src/app/query/stacks/balance/account-balance.hooks.ts
++++ b/src/app/query/stacks/balance/account-balance.hooks.ts
+@@ -63,8 +63,7 @@ export function useStxCryptoAssetBalance(address: string) {
+ 
+ export function useStxAvailableUnlockedBalance(address: string) {
+   const stxBalance = useStxCryptoAssetBalance(address);
+-
+-  return stxBalance.filteredBalanceQuery.data?.unlockedBalance ?? createMoney(0, 'STX');
++  return stxBalance.filteredBalanceQuery.data?.availableUnlockedBalance ?? createMoney(0, 'STX');
+ }
+ 
+ export function useStacksAccountBalanceFungibleTokens(address: string) {
+diff --git a/src/app/query/stacks/balance/account-balance.utils.ts b/src/app/query/stacks/balance/account-balance.utils.ts
+index 6f1ae06a1..e1644803c 100644
+--- a/src/app/query/stacks/balance/account-balance.utils.ts
++++ b/src/app/query/stacks/balance/account-balance.utils.ts
+@@ -23,7 +23,10 @@ export function createStxCryptoAssetBalance(
+ 
+   return {
+     availableBalance: subtractMoney(totalBalance, outboundBalance),
+-    availableUnlockedBalance: subtractMoney(unlockedBalance, outboundBalance),
++    // Temporary fix for negative balances returning from the API
++    availableUnlockedBalance: unlockedBalance.amount.isPositive()
++      ? subtractMoney(unlockedBalance, outboundBalance)
++      : createMoney(0, 'STX'),
+     inboundBalance,
+     lockedBalance: createMoney(stxMoney.locked.amount, 'STX'),
+     outboundBalance,
+```

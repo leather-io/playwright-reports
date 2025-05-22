@@ -1,0 +1,153 @@
+# Test info
+
+- Name: Settings menu >> that menu item takes user to support page
+- Location: /home/runner/work/extension/extension/tests/specs/settings/settings.spec.ts:16:3
+
+# Error details
+
+```
+Error: Timed out 5000ms waiting for expect(locator).toHaveURL(expected)
+
+Locator: locator(':root')
+Expected string: "https://leather.io/contact"
+Received string: "https://leather.io/current-old-page/contact"
+Call log:
+  - expect.toHaveURL with timeout 5000ms
+  - waiting for locator(':root')
+    8 × locator resolved to <html lang="en-US">…</html>
+      - unexpected value "https://leather.io/current-old-page/contact"
+
+    at /home/runner/work/extension/extension/tests/specs/settings/settings.spec.ts:24:36
+```
+
+# Test source
+
+```ts
+   1 | import { TEST_PASSWORD } from '@tests/mocks/constants';
+   2 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   3 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 |
+   6 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   7 |
+   8 | import { test } from '../../fixtures/fixtures';
+   9 |
+  10 | test.describe('Settings menu', () => {
+  11 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
+  12 |     await globalPage.setupAndUseApiCalls(extensionId);
+  13 |     await onboardingPage.signInWithTestAccount(extensionId);
+  14 |   });
+  15 |
+  16 |   test('that menu item takes user to support page', async ({ page }) => {
+  17 |     await page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  18 |
+  19 |     const [supportPage] = await Promise.all([
+  20 |       page.waitForEvent('popup'),
+  21 |       page.getByTestId(SettingsSelectors.GetSupportMenuItem).click(),
+  22 |     ]);
+  23 |
+> 24 |     await test.expect(supportPage).toHaveURL('https://leather.io/contact');
+     |                                    ^ Error: Timed out 5000ms waiting for expect(locator).toHaveURL(expected)
+  25 |   });
+  26 |
+  27 |   test('that menu item can perform sign out', async ({ homePage, onboardingPage }) => {
+  28 |     await homePage.signOut();
+  29 |     const button = onboardingPage.page.getByTestId(OnboardingSelectors.SignUpBtn);
+  30 |     test.expect(button).toBeTruthy();
+  31 |   });
+  32 |
+  33 |   test('that menu item can lock and unlock the extension', async ({ homePage, page }) => {
+  34 |     await homePage.lock();
+  35 |
+  36 |     await page.getByTestId(SettingsSelectors.EnterPasswordInput).fill(TEST_PASSWORD);
+  37 |     await page.getByTestId(SettingsSelectors.UnlockWalletBtn).click();
+  38 |
+  39 |     const displayName = await page
+  40 |       .getByTestId(SettingsSelectors.CurrentAccountDisplayName)
+  41 |       .innerText();
+  42 |
+  43 |     test.expect(displayName).toEqual('Account 1');
+  44 |   });
+  45 |
+  46 |   // TODO 3919 improve tests = This doesn't actually test copy of the value
+  47 |   test('that menu item allows viewing and saving secret key to clipboard', async ({
+  48 |     page,
+  49 |     homePage,
+  50 |   }) => {
+  51 |     await homePage.goToSecretKey();
+  52 |     await page.getByTestId(SettingsSelectors.EnterPasswordInput).fill(TEST_PASSWORD);
+  53 |     await page.getByTestId(SettingsSelectors.UnlockWalletBtn).click();
+  54 |     await page.getByTestId(SettingsSelectors.CopyKeyToClipboardBtn).click();
+  55 |
+  56 |     const copySuccessMessage = await page
+  57 |       .getByTestId(SettingsSelectors.CopyKeyToClipboardBtn)
+  58 |       .innerText();
+  59 |
+  60 |     test.expect(copySuccessMessage).toContain('Copied!');
+  61 |   });
+  62 |
+  63 |   // TODO 3919 improve tests - this doesn't actually change networks
+  64 |   test('that menu item allows changing networks', async ({ homePage, page }) => {
+  65 |     await homePage.clickSettingsButton();
+  66 |     const currentNetwork = await page.getByTestId(SettingsSelectors.CurrentNetwork).innerText();
+  67 |     test.expect(currentNetwork).toContain('mainnet');
+  68 |
+  69 |     await page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  70 |     await page.waitForTimeout(1000);
+  71 |     const networkListItems = await page.getByTestId(SettingsSelectors.NetworkListItem).all();
+  72 |     test
+  73 |       .expect(networkListItems)
+  74 |       .toHaveLength(Object.keys(WalletDefaultNetworkConfigurationIds).length);
+  75 |   });
+  76 |
+  77 |   test('that menu item can toggle privacy', async ({ page, homePage }) => {
+  78 |     const visibleBalanceText = await homePage.page
+  79 |       .getByTestId(SharedComponentsSelectors.AccountCardBalanceText)
+  80 |       .innerText();
+  81 |     test.expect(visibleBalanceText).toBeTruthy();
+  82 |
+  83 |     await homePage.clickSettingsButton();
+  84 |     await page.getByTestId(SettingsSelectors.TogglePrivacy).click();
+  85 |
+  86 |     await test
+  87 |       .expect(homePage.page.getByTestId(SharedComponentsSelectors.AccountCardBalanceText))
+  88 |       .toContainText('***');
+  89 |   });
+  90 | });
+  91 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/query/stacks/balance/account-balance.hooks.ts b/src/app/query/stacks/balance/account-balance.hooks.ts
+index 6c1583f3f..6a18db5db 100644
+--- a/src/app/query/stacks/balance/account-balance.hooks.ts
++++ b/src/app/query/stacks/balance/account-balance.hooks.ts
+@@ -63,8 +63,7 @@ export function useStxCryptoAssetBalance(address: string) {
+ 
+ export function useStxAvailableUnlockedBalance(address: string) {
+   const stxBalance = useStxCryptoAssetBalance(address);
+-
+-  return stxBalance.filteredBalanceQuery.data?.unlockedBalance ?? createMoney(0, 'STX');
++  return stxBalance.filteredBalanceQuery.data?.availableUnlockedBalance ?? createMoney(0, 'STX');
+ }
+ 
+ export function useStacksAccountBalanceFungibleTokens(address: string) {
+diff --git a/src/app/query/stacks/balance/account-balance.utils.ts b/src/app/query/stacks/balance/account-balance.utils.ts
+index 6f1ae06a1..e1644803c 100644
+--- a/src/app/query/stacks/balance/account-balance.utils.ts
++++ b/src/app/query/stacks/balance/account-balance.utils.ts
+@@ -23,7 +23,10 @@ export function createStxCryptoAssetBalance(
+ 
+   return {
+     availableBalance: subtractMoney(totalBalance, outboundBalance),
+-    availableUnlockedBalance: subtractMoney(unlockedBalance, outboundBalance),
++    // Temporary fix for negative balances returning from the API
++    availableUnlockedBalance: unlockedBalance.amount.isPositive()
++      ? subtractMoney(unlockedBalance, outboundBalance)
++      : createMoney(0, 'STX'),
+     inboundBalance,
+     lockedBalance: createMoney(stxMoney.locked.amount, 'STX'),
+     outboundBalance,
+```

@@ -1,0 +1,296 @@
+# Test info
+
+- Name: Settings menu >> that menu item takes user to support page
+- Location: /home/runner/work/extension/extension/tests/specs/settings/settings.spec.ts:16:3
+
+# Error details
+
+```
+Error: Timed out 5000ms waiting for expect(locator).toHaveURL(expected)
+
+Locator: locator(':root')
+Expected string: "https://leather.io/contact"
+Received string: "https://leather.io/current-old-page/contact"
+Call log:
+  - expect.toHaveURL with timeout 5000ms
+  - waiting for locator(':root')
+    8 × locator resolved to <html lang="en-US">…</html>
+      - unexpected value "https://leather.io/current-old-page/contact"
+
+    at /home/runner/work/extension/extension/tests/specs/settings/settings.spec.ts:24:36
+```
+
+# Test source
+
+```ts
+   1 | import { TEST_PASSWORD } from '@tests/mocks/constants';
+   2 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   3 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 |
+   6 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   7 |
+   8 | import { test } from '../../fixtures/fixtures';
+   9 |
+  10 | test.describe('Settings menu', () => {
+  11 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
+  12 |     await globalPage.setupAndUseApiCalls(extensionId);
+  13 |     await onboardingPage.signInWithTestAccount(extensionId);
+  14 |   });
+  15 |
+  16 |   test('that menu item takes user to support page', async ({ page }) => {
+  17 |     await page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  18 |
+  19 |     const [supportPage] = await Promise.all([
+  20 |       page.waitForEvent('popup'),
+  21 |       page.getByTestId(SettingsSelectors.GetSupportMenuItem).click(),
+  22 |     ]);
+  23 |
+> 24 |     await test.expect(supportPage).toHaveURL('https://leather.io/contact');
+     |                                    ^ Error: Timed out 5000ms waiting for expect(locator).toHaveURL(expected)
+  25 |   });
+  26 |
+  27 |   test('that menu item can perform sign out', async ({ homePage, onboardingPage }) => {
+  28 |     await homePage.signOut();
+  29 |     const button = onboardingPage.page.getByTestId(OnboardingSelectors.SignUpBtn);
+  30 |     test.expect(button).toBeTruthy();
+  31 |   });
+  32 |
+  33 |   test('that menu item can lock and unlock the extension', async ({ homePage, page }) => {
+  34 |     await homePage.lock();
+  35 |
+  36 |     await page.getByTestId(SettingsSelectors.EnterPasswordInput).fill(TEST_PASSWORD);
+  37 |     await page.getByTestId(SettingsSelectors.UnlockWalletBtn).click();
+  38 |
+  39 |     const displayName = await page
+  40 |       .getByTestId(SettingsSelectors.CurrentAccountDisplayName)
+  41 |       .innerText();
+  42 |
+  43 |     test.expect(displayName).toEqual('Account 1');
+  44 |   });
+  45 |
+  46 |   // TODO 3919 improve tests = This doesn't actually test copy of the value
+  47 |   test('that menu item allows viewing and saving secret key to clipboard', async ({
+  48 |     page,
+  49 |     homePage,
+  50 |   }) => {
+  51 |     await homePage.goToSecretKey();
+  52 |     await page.getByTestId(SettingsSelectors.EnterPasswordInput).fill(TEST_PASSWORD);
+  53 |     await page.getByTestId(SettingsSelectors.UnlockWalletBtn).click();
+  54 |     await page.getByTestId(SettingsSelectors.CopyKeyToClipboardBtn).click();
+  55 |
+  56 |     const copySuccessMessage = await page
+  57 |       .getByTestId(SettingsSelectors.CopyKeyToClipboardBtn)
+  58 |       .innerText();
+  59 |
+  60 |     test.expect(copySuccessMessage).toContain('Copied!');
+  61 |   });
+  62 |
+  63 |   // TODO 3919 improve tests - this doesn't actually change networks
+  64 |   test('that menu item allows changing networks', async ({ homePage, page }) => {
+  65 |     await homePage.clickSettingsButton();
+  66 |     const currentNetwork = await page.getByTestId(SettingsSelectors.CurrentNetwork).innerText();
+  67 |     test.expect(currentNetwork).toContain('mainnet');
+  68 |
+  69 |     await page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  70 |     await page.waitForTimeout(1000);
+  71 |     const networkListItems = await page.getByTestId(SettingsSelectors.NetworkListItem).all();
+  72 |     test
+  73 |       .expect(networkListItems)
+  74 |       .toHaveLength(Object.keys(WalletDefaultNetworkConfigurationIds).length);
+  75 |   });
+  76 |
+  77 |   test('that menu item can toggle privacy', async ({ page, homePage }) => {
+  78 |     const visibleBalanceText = await homePage.page
+  79 |       .getByTestId(SharedComponentsSelectors.AccountCardBalanceText)
+  80 |       .innerText();
+  81 |     test.expect(visibleBalanceText).toBeTruthy();
+  82 |
+  83 |     await homePage.clickSettingsButton();
+  84 |     await page.getByTestId(SettingsSelectors.TogglePrivacy).click();
+  85 |
+  86 |     await test
+  87 |       .expect(homePage.page.getByTestId(SharedComponentsSelectors.AccountCardBalanceText))
+  88 |       .toContainText('***');
+  89 |   });
+  90 | });
+  91 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/collectibles/collectible.layout.tsx b/src/app/components/collectibles/collectible.layout.tsx
+index 1387c08dd..4dccebe5c 100644
+--- a/src/app/components/collectibles/collectible.layout.tsx
++++ b/src/app/components/collectibles/collectible.layout.tsx
+@@ -1,13 +1,22 @@
+-import { Flex, Grid, HStack, styled } from 'leather-styles/jsx';
++import { Box, Flex, Grid, HStack, styled } from 'leather-styles/jsx';
+ import { token } from 'leather-styles/tokens';
+ 
+-import { ArrowRotateRightLeftIcon, Spinner } from '@leather.io/ui';
++import {
++  ArrowOutOfBoxIcon,
++  ArrowRotateRightLeftIcon,
++  DropdownMenu,
++  Flag,
++  Spinner,
++  TrashIcon,
++} from '@leather.io/ui';
+ 
+ interface CollectiblesLayoutProps {
+   title: string;
+   isLoading: boolean;
+   isLoadingMore?: boolean;
+   onRefresh(): void;
++  onDiscardAllInscriptions(): void;
++  onRecoverAllInscriptions(): void;
+   subHeader?: React.ReactNode;
+   children: React.ReactNode;
+ }
+@@ -17,13 +26,35 @@ export function CollectiblesLayout({
+   onRefresh,
+   subHeader,
+   children,
++  onDiscardAllInscriptions,
++  onRecoverAllInscriptions,
+ }: CollectiblesLayoutProps) {
+   return (
+     <>
+       <Flex flexDirection="row" justifyContent="space-between" alignItems="center" flex={1}>
+         <HStack columnGap="space.02">
+           <styled.span textStyle="label.01" paddingY="space.05">
+-            {title}
++            <DropdownMenu.Root>
++              <DropdownMenu.Trigger>{title}</DropdownMenu.Trigger>
++              <DropdownMenu.Content>
++                <Box p="space.02" textStyle="label.03">
++                  <DropdownMenu.Item onClick={() => onRecoverAllInscriptions()}>
++                    <Flag spacing="space.02" img={<ArrowOutOfBoxIcon variant="small" />}>
++                      Recover all inscriptions
++                    </Flag>
++                  </DropdownMenu.Item>
++                  <DropdownMenu.Item onClick={() => onDiscardAllInscriptions()}>
++                    <Flag
++                      spacing="space.02"
++                      color="red.action-primary-default"
++                      img={<TrashIcon color="red.action-primary-default" variant="small" />}
++                    >
++                      Unprotect all inscriptions
++                    </Flag>
++                  </DropdownMenu.Item>
++                </Box>
++              </DropdownMenu.Content>
++            </DropdownMenu.Root>
+           </styled.span>
+           {isLoading ? (
+             <Spinner color={token('colors.ink.text-primary')} opacity={0.5} />
+diff --git a/src/app/features/collectibles/collectibles.tsx b/src/app/features/collectibles/collectibles.tsx
+index f49e7de5c..7ba885abe 100644
+--- a/src/app/features/collectibles/collectibles.tsx
++++ b/src/app/features/collectibles/collectibles.tsx
+@@ -8,6 +8,7 @@ import { useWalletType } from '@app/common/use-wallet-type';
+ import { CurrentBitcoinSignerLoader } from '@app/components/loaders/current-bitcoin-signer-loader';
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+ import { useConfigNftMetadataEnabled } from '@app/query/common/remote-config/remote-config.query';
++import { useDiscardedInscriptions } from '@app/store/settings/settings.selectors';
+ 
+ import { CollectiblesLayout } from '../../components/collectibles/collectible.layout';
+ import { AddCollectible } from './components/add-collectible';
+@@ -23,6 +24,7 @@ export function Collectibles() {
+   const isNftMetadataEnabled = useConfigNftMetadataEnabled();
+   const queryClient = useQueryClient();
+   const isFetching = useIsFetchingCollectiblesRelatedQuery();
++  const discardedInscriptions = useDiscardedInscriptions();
+ 
+   return (
+     <CollectiblesLayout
+@@ -43,15 +45,15 @@ export function Collectibles() {
+       })}
+       isLoading={isFetching}
+       onRefresh={() => void queryClient.refetchQueries({ type: 'active' })}
++      onDiscardAllInscriptions={() => discardedInscriptions.discardAllInscriptions()}
++      onRecoverAllInscriptions={() => discardedInscriptions.recoverAllInscriptions()}
+     >
+       <CurrentBitcoinSignerLoader>{() => <AddCollectible />}</CurrentBitcoinSignerLoader>
+-
+       {isNftMetadataEnabled && (
+         <CurrentStacksAccountLoader>
+           {account => <StacksCryptoAssets address={account?.address ?? ''} />}
+         </CurrentStacksAccountLoader>
+       )}
+-
+       <CurrentBitcoinSignerLoader>
+         {() => (
+           <>
+diff --git a/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts b/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts
+index 345268539..4771b8d1e 100644
+--- a/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts
++++ b/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts
+@@ -33,6 +33,11 @@ export function useInscriptions({ xpubs }: UseInscriptionArgs) {
+   return useQueries({ queries, combine: combineInscriptionResults });
+ }
+ 
++export function useCurrentAccountInscriptions() {
++  const xpubs = useCurrentBitcoinAccountXpubs();
++  return useInscriptions({ xpubs });
++}
++
+ export function useNumberOfInscriptionsOnUtxo() {
+   const xpubs = useCurrentBitcoinAccountXpubs();
+ 
+diff --git a/src/app/store/settings/settings.selectors.ts b/src/app/store/settings/settings.selectors.ts
+index 6400969ec..5b2536f6e 100644
+--- a/src/app/store/settings/settings.selectors.ts
++++ b/src/app/store/settings/settings.selectors.ts
+@@ -5,6 +5,7 @@ import { createSelector } from '@reduxjs/toolkit';
+ 
+ import type { Inscription } from '@leather.io/models';
+ 
++import { useCurrentAccountInscriptions } from '@app/query/bitcoin/ordinals/inscriptions/inscriptions.query';
+ import { RootState } from '@app/store';
+ 
+ import { settingsSlice } from './settings.slice';
+@@ -51,10 +52,21 @@ type InscriptionIdentifier = Pick<Inscription, 'txid' | 'output' | 'offset'>;
+ export function useDiscardedInscriptions() {
+   const discardedInscriptions = useSelector(selectDiscardedInscriptions);
+   const dispatch = useDispatch();
++  const currentAccountInscriptions = useCurrentAccountInscriptions();
+ 
+   return useMemo(
+     () => ({
+       discardedInscriptions,
++      discardAllInscriptions() {
++        currentAccountInscriptions.inscriptions?.forEach(inscription =>
++          this.discardInscription(inscription)
++        );
++      },
++      recoverAllInscriptions() {
++        currentAccountInscriptions.inscriptions?.forEach(inscription =>
++          this.recoverInscription(inscription)
++        );
++      },
+       hasInscriptionBeenDiscarded({ txid, output: vout, offset }: InscriptionIdentifier) {
+         return discardedInscriptions.includes([txid, vout, offset].join(':'));
+       },
+@@ -65,6 +77,6 @@ export function useDiscardedInscriptions() {
+         dispatch(settingsSlice.actions.recoverInscription([txid, vout, offset].join(':')));
+       },
+     }),
+-    [discardedInscriptions, dispatch]
++    [currentAccountInscriptions.inscriptions, discardedInscriptions, dispatch]
+   );
+ }
+diff --git a/webpack/webpack.config.base.js b/webpack/webpack.config.base.js
+index 9f93c2140..229dfd624 100755
+--- a/webpack/webpack.config.base.js
++++ b/webpack/webpack.config.base.js
+@@ -11,7 +11,7 @@ import webpack from 'webpack';
+ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+ import * as url from 'url';
+ 
+-import packageJson from '../package.json' assert { type: 'json' };
++import packageJson from '../package.json' with { type: 'json' };
+ import generateManifest from '../scripts/generate-manifest.js';
+```

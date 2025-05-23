@@ -1,0 +1,299 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:55:5
+
+# Error details
+
+```
+Error: page.waitForRequest: Page crashed
+=========================== logs ===========================
+waiting for request "*/**/v2/transactions"
+============================================================
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:78:58
+```
+
+# Test source
+
+```ts
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { stxToMicroStx } from '@leather.io/utils';
+   7 |
+   8 | import { createDelay } from '@shared/utils';
+   9 |
+   10 | import { test } from '../../fixtures/fixtures';
+   11 |
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+   34 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   35 |       await delayAnimationDuration();
+   36 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   37 |       await delayAnimationDuration();
+   38 |       await testAppPage.page.bringToFront();
+   39 |       await testAppPage.page.click('text=Debugger', {
+   40 |         timeout: 30000,
+   41 |       });
+   42 |       await accountsPage.close();
+   43 |
+   44 |       await testAppPage.clickContractCallButton();
+   45 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   46 |       await transactionRequestPage.waitForTransactionRequestPage();
+   47 |       const error =
+   48 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   49 |
+   50 |       test.expect(error).toBeTruthy();
+   51 |     });
+   52 |   });
+   53 |
+   54 |   test.describe('App initiated STX transfer', () => {
+   55 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   56 |       const newPagePromise = context.waitForEvent('page');
+   57 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   58 |       const accountsPage = await newPagePromise;
+   59 |       await delayAnimationDuration();
+   60 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   61 |       await delayAnimationDuration();
+   62 |       await testAppPage.page.bringToFront();
+   63 |       await testAppPage.page.click('text=Debugger', {
+   64 |         timeout: 30000,
+   65 |       });
+   66 |       await accountsPage.close();
+   67 |
+   68 |       await testAppPage.clickStxTransferButton();
+   69 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   70 |
+   71 |       await transactionRequestPage.waitForTransactionRequestPage();
+   72 |       await transactionRequestPage.waitForFee();
+   73 |
+   74 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   75 |
+   76 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
+   77 |
+>  78 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+      |                                                          ^ Error: page.waitForRequest: Page crashed
+   79 |
+   80 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   81 |         await route.abort();
+   82 |       });
+   83 |
+   84 |       await transactionRequestPage.clickConfirmTransactionButton();
+   85 |
+   86 |       const request = await requestPromise;
+   87 |       const requestBody = request.postData();
+   88 |       if (!requestBody) return;
+   89 |
+   90 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   91 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   92 |       const amount = Number(payload.amount);
+   93 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   94 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   95 |
+   96 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   97 |       test.expect(amount).toEqual(102);
+   98 |     });
+   99 |   });
+  100 | });
+  101 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/collectibles/collectible.layout.tsx b/src/app/components/collectibles/collectible.layout.tsx
+index 1387c08dd..4dccebe5c 100644
+--- a/src/app/components/collectibles/collectible.layout.tsx
++++ b/src/app/components/collectibles/collectible.layout.tsx
+@@ -1,13 +1,22 @@
+-import { Flex, Grid, HStack, styled } from 'leather-styles/jsx';
++import { Box, Flex, Grid, HStack, styled } from 'leather-styles/jsx';
+ import { token } from 'leather-styles/tokens';
+ 
+-import { ArrowRotateRightLeftIcon, Spinner } from '@leather.io/ui';
++import {
++  ArrowOutOfBoxIcon,
++  ArrowRotateRightLeftIcon,
++  DropdownMenu,
++  Flag,
++  Spinner,
++  TrashIcon,
++} from '@leather.io/ui';
+ 
+ interface CollectiblesLayoutProps {
+   title: string;
+   isLoading: boolean;
+   isLoadingMore?: boolean;
+   onRefresh(): void;
++  onDiscardAllInscriptions(): void;
++  onRecoverAllInscriptions(): void;
+   subHeader?: React.ReactNode;
+   children: React.ReactNode;
+ }
+@@ -17,13 +26,35 @@ export function CollectiblesLayout({
+   onRefresh,
+   subHeader,
+   children,
++  onDiscardAllInscriptions,
++  onRecoverAllInscriptions,
+ }: CollectiblesLayoutProps) {
+   return (
+     <>
+       <Flex flexDirection="row" justifyContent="space-between" alignItems="center" flex={1}>
+         <HStack columnGap="space.02">
+           <styled.span textStyle="label.01" paddingY="space.05">
+-            {title}
++            <DropdownMenu.Root>
++              <DropdownMenu.Trigger>{title}</DropdownMenu.Trigger>
++              <DropdownMenu.Content>
++                <Box p="space.02" textStyle="label.03">
++                  <DropdownMenu.Item onClick={() => onRecoverAllInscriptions()}>
++                    <Flag spacing="space.02" img={<ArrowOutOfBoxIcon variant="small" />}>
++                      Recover all inscriptions
++                    </Flag>
++                  </DropdownMenu.Item>
++                  <DropdownMenu.Item onClick={() => onDiscardAllInscriptions()}>
++                    <Flag
++                      spacing="space.02"
++                      color="red.action-primary-default"
++                      img={<TrashIcon color="red.action-primary-default" variant="small" />}
++                    >
++                      Unprotect all inscriptions
++                    </Flag>
++                  </DropdownMenu.Item>
++                </Box>
++              </DropdownMenu.Content>
++            </DropdownMenu.Root>
+           </styled.span>
+           {isLoading ? (
+             <Spinner color={token('colors.ink.text-primary')} opacity={0.5} />
+diff --git a/src/app/features/collectibles/collectibles.tsx b/src/app/features/collectibles/collectibles.tsx
+index f49e7de5c..7ba885abe 100644
+--- a/src/app/features/collectibles/collectibles.tsx
++++ b/src/app/features/collectibles/collectibles.tsx
+@@ -8,6 +8,7 @@ import { useWalletType } from '@app/common/use-wallet-type';
+ import { CurrentBitcoinSignerLoader } from '@app/components/loaders/current-bitcoin-signer-loader';
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+ import { useConfigNftMetadataEnabled } from '@app/query/common/remote-config/remote-config.query';
++import { useDiscardedInscriptions } from '@app/store/settings/settings.selectors';
+ 
+ import { CollectiblesLayout } from '../../components/collectibles/collectible.layout';
+ import { AddCollectible } from './components/add-collectible';
+@@ -23,6 +24,7 @@ export function Collectibles() {
+   const isNftMetadataEnabled = useConfigNftMetadataEnabled();
+   const queryClient = useQueryClient();
+   const isFetching = useIsFetchingCollectiblesRelatedQuery();
++  const discardedInscriptions = useDiscardedInscriptions();
+ 
+   return (
+     <CollectiblesLayout
+@@ -43,15 +45,15 @@ export function Collectibles() {
+       })}
+       isLoading={isFetching}
+       onRefresh={() => void queryClient.refetchQueries({ type: 'active' })}
++      onDiscardAllInscriptions={() => discardedInscriptions.discardAllInscriptions()}
++      onRecoverAllInscriptions={() => discardedInscriptions.recoverAllInscriptions()}
+     >
+       <CurrentBitcoinSignerLoader>{() => <AddCollectible />}</CurrentBitcoinSignerLoader>
+-
+       {isNftMetadataEnabled && (
+         <CurrentStacksAccountLoader>
+           {account => <StacksCryptoAssets address={account?.address ?? ''} />}
+         </CurrentStacksAccountLoader>
+       )}
+-
+       <CurrentBitcoinSignerLoader>
+         {() => (
+           <>
+diff --git a/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts b/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts
+index 345268539..4771b8d1e 100644
+--- a/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts
++++ b/src/app/query/bitcoin/ordinals/inscriptions/inscriptions.query.ts
+@@ -33,6 +33,11 @@ export function useInscriptions({ xpubs }: UseInscriptionArgs) {
+   return useQueries({ queries, combine: combineInscriptionResults });
+ }
+ 
++export function useCurrentAccountInscriptions() {
++  const xpubs = useCurrentBitcoinAccountXpubs();
++  return useInscriptions({ xpubs });
++}
++
+ export function useNumberOfInscriptionsOnUtxo() {
+   const xpubs = useCurrentBitcoinAccountXpubs();
+ 
+diff --git a/src/app/store/settings/settings.selectors.ts b/src/app/store/settings/settings.selectors.ts
+index 6400969ec..5b2536f6e 100644
+--- a/src/app/store/settings/settings.selectors.ts
++++ b/src/app/store/settings/settings.selectors.ts
+@@ -5,6 +5,7 @@ import { createSelector } from '@reduxjs/toolkit';
+ 
+ import type { Inscription } from '@leather.io/models';
+ 
++import { useCurrentAccountInscriptions } from '@app/query/bitcoin/ordinals/inscriptions/inscriptions.query';
+ import { RootState } from '@app/store';
+ 
+ import { settingsSlice } from './settings.slice';
+@@ -51,10 +52,21 @@ type InscriptionIdentifier = Pick<Inscription, 'txid' | 'output' | 'offset'>;
+ export function useDiscardedInscriptions() {
+   const discardedInscriptions = useSelector(selectDiscardedInscriptions);
+   const dispatch = useDispatch();
++  const currentAccountInscriptions = useCurrentAccountInscriptions();
+ 
+   return useMemo(
+     () => ({
+       discardedInscriptions,
++      discardAllInscriptions() {
++        currentAccountInscriptions.inscriptions?.forEach(inscription =>
++          this.discardInscription(inscription)
++        );
++      },
++      recoverAllInscriptions() {
++        currentAccountInscriptions.inscriptions?.forEach(inscription =>
++          this.recoverInscription(inscription)
++        );
++      },
+       hasInscriptionBeenDiscarded({ txid, output: vout, offset }: InscriptionIdentifier) {
+         return discardedInscriptions.includes([txid, vout, offset].join(':'));
+       },
+@@ -65,6 +77,6 @@ export function useDiscardedInscriptions() {
+         dispatch(settingsSlice.actions.recoverInscription([txid, vout, offset].join(':')));
+       },
+     }),
+-    [discardedInscriptions, dispatch]
++    [currentAccountInscriptions.inscriptions, discardedInscriptions, dispatch]
+   );
+ }
+diff --git a/webpack/webpack.config.base.js b/webpack/webpack.config.base.js
+index 9f93c2140..229dfd624 100755
+--- a/webpack/webpack.config.base.js
++++ b/webpack/webpack.config.base.js
+@@ -11,7 +11,7 @@ import webpack from 'webpack';
+ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+ import * as url from 'url';
+ 
+-import packageJson from '../package.json' assert { type: 'json' };
++import packageJson from '../package.json' with { type: 'json' };
+ import generateManifest from '../scripts/generate-manifest.js';
+```

@@ -224,7 +224,7 @@ Received: "0.000400 STX"
 
 ```diff
 diff --git a/package.json b/package.json
-index 65142b85b..3c12ee140 100644
+index 65142b85b..366ef1560 100644
 --- a/package.json
 +++ b/package.json
 @@ -146,18 +146,18 @@
@@ -253,7 +253,7 @@ index 65142b85b..3c12ee140 100644
 +    "@leather.io/rpc": "2.16.3",
 +    "@leather.io/stacks": "1.10.7",
 +    "@leather.io/tokens": "0.18.0",
-+    "@leather.io/ui": "1.68.3",
++    "@leather.io/ui": "1.68.4",
 +    "@leather.io/utils": "0.35.1",
      "@ledgerhq/hw-transport-webusb": "6.27.19",
      "@noble/hashes": "1.5.0",
@@ -272,7 +272,7 @@ index 65142b85b..3c12ee140 100644
      "@mdx-js/loader": "3.0.0",
      "@pandacss/dev": "0.46.1",
 diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
-index cfd0c7403..9dec521c5 100644
+index cfd0c7403..37215911c 100644
 --- a/pnpm-lock.yaml
 +++ b/pnpm-lock.yaml
 @@ -38,7 +38,7 @@ importers:
@@ -340,8 +340,8 @@ index cfd0c7403..9dec521c5 100644
        '@leather.io/ui':
 -        specifier: 1.52.0
 -        version: 1.52.0(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@emotion/is-prop-valid@1.3.1)(@types/react-dom@18.3.0)(@types/react@18.3.10)(@vue/compiler-sfc@3.4.19)(encoding@0.1.13)(expo-modules-autolinking@1.11.1)
-+        specifier: 1.68.3
-+        version: 1.68.3(@babel/core@7.26.10)(@emotion/is-prop-valid@1.3.1)(@react-native-community/cli@18.0.0(typescript@5.4.5))(@types/react-dom@18.3.0)(@types/react@18.3.10)(@vue/compiler-sfc@3.5.16)(graphql@16.11.0)
++        specifier: 1.68.4
++        version: 1.68.4(@babel/core@7.26.10)(@emotion/is-prop-valid@1.3.1)(@react-native-community/cli@18.0.0(typescript@5.4.5))(@types/react-dom@18.3.0)(@types/react@18.3.10)(@vue/compiler-sfc@3.5.16)(graphql@16.11.0)
        '@leather.io/utils':
 -        specifier: 0.30.0
 -        version: 0.30.0
@@ -1995,8 +1995,8 @@ index cfd0c7403..9dec521c5 100644
  
 -  '@leather.io/utils@0.29.0':
 -    resolution: {integrity: sha512-QP/fPxhb7UVF4BAYW9J+W8ZqBrEnkHxf04qv+pzhDRVKaKIgHkYFHzmnWWLPGD6q0L0V3pNl+6iryta1jcloXw==}
-+  '@leather.io/ui@1.68.3':
-+    resolution: {integrity: sha512-E6/163XlPBthyw7KCsZ8WDlF9pf9PMNgUPOFi0X9wJSQA3pS/u+hVm+hYDORfmMKpa5zFi6YkKbybQkamE6LJg==}
++  '@leather.io/ui@1.68.4':
++    resolution: {integrity: sha512-Ck3ho/xWMbAgcMaTlQm5sXzAvMdzFfeCmybqiQfTwfY67BqaNORzzMw0VQHvoG7RISqlBm0i54qdmHH70mKeew==}
  
 -  '@leather.io/utils@0.30.0':
 -    resolution: {integrity: sha512-mYbUADP4V68nUB2g8yqA9hMszPAmgnrEPTdC272fL/awcunuMa4LDHFW9LDYvpf978h0ILAC5aLw1en7nE4AYA==}

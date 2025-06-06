@@ -1,0 +1,805 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:55:5
+
+# Error details
+
+```
+Error: page.waitForRequest: Page crashed
+=========================== logs ===========================
+waiting for request "*/**/v2/transactions"
+============================================================
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:78:58
+```
+
+# Test source
+
+```ts
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { stxToMicroStx } from '@leather.io/utils';
+   7 |
+   8 | import { createDelay } from '@shared/utils';
+   9 |
+   10 | import { test } from '../../fixtures/fixtures';
+   11 |
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+   34 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   35 |       await delayAnimationDuration();
+   36 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   37 |       await delayAnimationDuration();
+   38 |       await testAppPage.page.bringToFront();
+   39 |       await testAppPage.page.click('text=Debugger', {
+   40 |         timeout: 30000,
+   41 |       });
+   42 |       await accountsPage.close();
+   43 |
+   44 |       await testAppPage.clickContractCallButton();
+   45 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   46 |       await transactionRequestPage.waitForTransactionRequestPage();
+   47 |       const error =
+   48 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   49 |
+   50 |       test.expect(error).toBeTruthy();
+   51 |     });
+   52 |   });
+   53 |
+   54 |   test.describe('App initiated STX transfer', () => {
+   55 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   56 |       const newPagePromise = context.waitForEvent('page');
+   57 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   58 |       const accountsPage = await newPagePromise;
+   59 |       await delayAnimationDuration();
+   60 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   61 |       await delayAnimationDuration();
+   62 |       await testAppPage.page.bringToFront();
+   63 |       await testAppPage.page.click('text=Debugger', {
+   64 |         timeout: 30000,
+   65 |       });
+   66 |       await accountsPage.close();
+   67 |
+   68 |       await testAppPage.clickStxTransferButton();
+   69 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   70 |
+   71 |       await transactionRequestPage.waitForTransactionRequestPage();
+   72 |       await transactionRequestPage.waitForFee();
+   73 |
+   74 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   75 |
+   76 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
+   77 |
+>  78 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+      |                                                          ^ Error: page.waitForRequest: Page crashed
+   79 |
+   80 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   81 |         await route.abort();
+   82 |       });
+   83 |
+   84 |       await transactionRequestPage.clickConfirmTransactionButton();
+   85 |
+   86 |       const request = await requestPromise;
+   87 |       const requestBody = request.postData();
+   88 |       if (!requestBody) return;
+   89 |
+   90 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   91 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   92 |       const amount = Number(payload.amount);
+   93 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   94 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   95 |
+   96 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   97 |       test.expect(amount).toEqual(102);
+   98 |     });
+   99 |   });
+  100 | });
+  101 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/features/fee-editor/bitcoin/bitcoin-fee-editor.provider.tsx b/src/app/features/fee-editor/bitcoin/bitcoin-fee-editor.provider.tsx
+index e4ab9abcf..e5f6e4627 100644
+--- a/src/app/features/fee-editor/bitcoin/bitcoin-fee-editor.provider.tsx
++++ b/src/app/features/fee-editor/bitcoin/bitcoin-fee-editor.provider.tsx
+@@ -42,6 +42,7 @@ export function BitcoinFeeEditorProvider({
+             feeType="fee-rate"
+             getCustomFee={getCustomFee}
+             isLoadingFees={isLoading}
++            isSponsored={false}
+             marketData={marketData}
+             onGoBack={onGoBack}
+           >
+diff --git a/src/app/features/fee-editor/components/selected-fee-item.tsx b/src/app/features/fee-editor/components/selected-fee-item.tsx
+index 9528dd31d..b17aa4c06 100644
+--- a/src/app/features/fee-editor/components/selected-fee-item.tsx
++++ b/src/app/features/fee-editor/components/selected-fee-item.tsx
+@@ -1,5 +1,7 @@
++import { Flex, HStack, styled } from 'leather-styles/jsx';
++
+ import type { MarketData } from '@leather.io/models';
+-import { Approver, Pressable } from '@leather.io/ui';
++import { Approver, Avatar, Badge, Flag, PlaceholderIcon, Pressable } from '@leather.io/ui';
+ 
+ import { CryptoAssetItemPlaceholder } from '@app/components/crypto-asset-item/crypto-asset-item-placeholder';
+ import type { Fee, FeeType } from '@app/features/fee-editor/fee-editor.context';
+@@ -10,6 +12,7 @@ import { FeeValueItemLayout } from './fee-value-item.layout';
+ interface SelectedFeeItemProps {
+   feeType: FeeType;
+   isLoading: boolean;
++  isSponsored: boolean;
+   marketData: MarketData;
+   onEditFee(): void;
+   selectedFee: Fee | null;
+@@ -17,15 +20,29 @@ interface SelectedFeeItemProps {
+ export function SelectedFeeItem({
+   feeType,
+   isLoading,
++  isSponsored,
+   marketData,
+   onEditFee,
+   selectedFee,
+ }: SelectedFeeItemProps) {
++  if (isSponsored)
++    return (
++      <Approver.Section>
++        <Flag img={<Avatar icon={<PlaceholderIcon />} />} my="space.02">
++          <HStack alignItems="center" justifyContent="space-between">
++            <styled.span textStyle="label.02">Sponsored fee</styled.span>
++            <Flex alignItems="center" gap="space.03">
++              <Badge label="FREE" variant="success" />
++            </Flex>
++          </HStack>
++        </Flag>
++      </Approver.Section>
++    );
++
+   if (isLoading || !selectedFee)
+     return (
+       <Approver.Section>
+-        <Approver.Subheader>Fee</Approver.Subheader>
+-        <CryptoAssetItemPlaceholder my="0" />
++        <CryptoAssetItemPlaceholder />
+       </Approver.Section>
+     );
+ 
+diff --git a/src/app/features/fee-editor/fee-editor.context.ts b/src/app/features/fee-editor/fee-editor.context.ts
+index 8c0b71717..cce280600 100644
+--- a/src/app/features/fee-editor/fee-editor.context.ts
++++ b/src/app/features/fee-editor/fee-editor.context.ts
+@@ -21,6 +21,7 @@ interface FeeEditorContext {
+   feeType: FeeType;
+   loadedFee: Fee;
+   isLoadingFees: boolean;
++  isSponsored: boolean;
+   marketData: MarketData;
+   fees: Fees;
+   selectedFee: Fee;
+diff --git a/src/app/features/fee-editor/fee-editor.provider.tsx b/src/app/features/fee-editor/fee-editor.provider.tsx
+index e998150e5..4fb6baa8a 100644
+--- a/src/app/features/fee-editor/fee-editor.provider.tsx
++++ b/src/app/features/fee-editor/fee-editor.provider.tsx
+@@ -20,6 +20,7 @@ interface FeeEditorProviderProps extends HasChildren {
+   feeType: FeeType;
+   getCustomFee(rate: number): Fee;
+   isLoadingFees: boolean;
++  isSponsored: boolean;
+   marketData: MarketData;
+   onGoBack(): void;
+ }
+@@ -30,6 +31,7 @@ export function FeeEditorProvider({
+   feeType,
+   getCustomFee,
+   isLoadingFees,
++  isSponsored,
+   marketData,
+   onGoBack,
+ }: FeeEditorProviderProps) {
+@@ -45,6 +47,7 @@ export function FeeEditorProvider({
+     <FeeEditorContext.Provider
+       value={{
+         isLoadingFees,
++        isSponsored,
+         availableBalance,
+         marketData,
+         fees,
+diff --git a/src/app/features/fee-editor/stacks/stacks-fee-editor.provider.tsx b/src/app/features/fee-editor/stacks/stacks-fee-editor.provider.tsx
+index b743a3b64..00b9b9512 100644
+--- a/src/app/features/fee-editor/stacks/stacks-fee-editor.provider.tsx
++++ b/src/app/features/fee-editor/stacks/stacks-fee-editor.provider.tsx
+@@ -1,4 +1,4 @@
+-import type { StacksTransactionWire } from '@stacks/transactions';
++import { type StacksTransactionWire } from '@stacks/transactions';
+ 
+ import type { MarketData, Money } from '@leather.io/models';
+ 
+@@ -22,7 +22,7 @@ export function StacksFeeEditorProvider({
+ }: StacksFeeEditorProviderProps) {
+   return (
+     <StacksFeesLoader unsignedTx={unsignedTx}>
+-      {({ fees, isLoading, getCustomFee }) => {
++      {({ fees, isLoading, isSponsored, getCustomFee }) => {
+         return (
+           <FeeEditorProvider
+             availableBalance={availableBalance}
+@@ -30,6 +30,7 @@ export function StacksFeeEditorProvider({
+             feeType="fee-value"
+             getCustomFee={getCustomFee}
+             isLoadingFees={isLoading}
++            isSponsored={isSponsored}
+             marketData={marketData}
+             onGoBack={onGoBack}
+           >
+diff --git a/src/app/features/fee-editor/stacks/stacks-fees-loader.tsx b/src/app/features/fee-editor/stacks/stacks-fees-loader.tsx
+index ef563d212..b4624557d 100644
+--- a/src/app/features/fee-editor/stacks/stacks-fees-loader.tsx
++++ b/src/app/features/fee-editor/stacks/stacks-fees-loader.tsx
+@@ -1,7 +1,8 @@
+-import type { StacksTransactionWire } from '@stacks/transactions';
++import { AuthType, type StacksTransactionWire } from '@stacks/transactions';
+ 
+ import { createMoneyFromDecimal } from '@leather.io/utils';
+ 
++import { useCheckSbtcSponsorshipEligible } from '@app/query/sbtc/sponsored-transactions.hooks';
+ import { useCalculateStacksTxFees } from '@app/query/stacks/fees/fees.hooks';
+ 
+ import { type Fee, type Fees } from '../fee-editor.context';
+@@ -10,16 +11,19 @@ import { useStacksFees } from './use-stacks-fees';
+ interface StacksFees {
+   fees: Fees;
+   isLoading: boolean;
++  isSponsored: boolean;
+   getCustomFee(value: number): Fee;
+ }
+ 
+ interface StacksFeesLoaderProps {
+-  children({ fees, isLoading, getCustomFee }: StacksFees): React.JSX.Element;
++  children({ fees, isLoading, isSponsored, getCustomFee }: StacksFees): React.JSX.Element;
+   unsignedTx: StacksTransactionWire;
+ }
+ export function StacksFeesLoader({ children, unsignedTx }: StacksFeesLoaderProps) {
+-  const { data: stxFees, isLoading } = useCalculateStacksTxFees(unsignedTx);
++  const { data: stxFees, isLoading: isLoadingFees } = useCalculateStacksTxFees(unsignedTx);
+   const fees = useStacksFees({ fees: stxFees });
++  const { isVerifying: isVerifyingSbtcSponsorship, result: sbtcSponsorshipEligibility } =
++    useCheckSbtcSponsorshipEligible({ baseTx: { transaction: unsignedTx }, stxFees });
+ 
+   function getCustomFee(feeValue: number): Fee {
+     return {
+@@ -31,5 +35,11 @@ export function StacksFeesLoader({ children, unsignedTx }: StacksFeesLoaderProps
+   }
+ 
+   if (!fees) return null;
+-  return children({ fees, isLoading, getCustomFee });
++  return children({
++    fees,
++    isLoading: isLoadingFees || isVerifyingSbtcSponsorship,
++    isSponsored:
++      sbtcSponsorshipEligibility?.isEligible || unsignedTx.auth.authType === AuthType.Sponsored,
++    getCustomFee,
++  });
+ }
+diff --git a/src/app/features/nonce-editor/nonce-item.tsx b/src/app/features/nonce-editor/nonce-item.tsx
+index c2985635f..754baa10c 100644
+--- a/src/app/features/nonce-editor/nonce-item.tsx
++++ b/src/app/features/nonce-editor/nonce-item.tsx
+@@ -11,11 +11,11 @@ import {
+ 
+ import type { Nonce } from './nonce-editor.context';
+ 
+-interface SelectedFeeItemProps {
++interface NonceItemProps {
+   nonce: Nonce;
+   onEditNonce(): void;
+ }
+-export function NonceItem({ nonce, onEditNonce }: SelectedFeeItemProps) {
++export function NonceItem({ nonce, onEditNonce }: NonceItemProps) {
+   return (
+     <Approver.Section>
+       <Pressable onClick={onEditNonce} my="space.02">
+diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+index d05d5f1b0..2b0fa91e0 100644
+--- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
++++ b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+@@ -1,7 +1,11 @@
+ import { useCallback } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ 
+-import type { StacksTransactionWire, TxBroadcastResultRejected } from '@stacks/transactions';
++import {
++  AuthType,
++  type StacksTransactionWire,
++  type TxBroadcastResultRejected,
++} from '@stacks/transactions';
+ 
+ import {
+   RpcErrorCode,
+@@ -50,6 +54,23 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+         throw new Error('Error signing stacks transaction');
+       }
+ 
++      // If the transaction is sponsored, we do not broadcast it
++      const isSponsored = signedTx.auth?.authType === AuthType.Sponsored;
++      if (isSponsored) {
++        chrome.tabs.sendMessage(
++          tabId,
++          createRpcSuccessResponse(method, {
++            id: requestId,
++            result: {
++              txid: '',
++              transaction: signedTx.serialize(),
++            },
++          })
++        );
++        await delay(500);
++        closeWindow();
++      }
++
+       function onError(error: Error | string, reason?: TxBroadcastResultRejected['reason']) {
+         const message = isString(error) ? error : error.message;
+         if (reason) toast.error(getErrorMessage(reason));
+diff --git a/src/app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend.tsx b/src/app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend.tsx
+index 01388df3f..250a756f6 100644
+--- a/src/app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend.tsx
++++ b/src/app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend.tsx
+@@ -15,11 +15,13 @@ import { useRpcTransactionRequest } from '../use-rpc-transaction-request';
+ 
+ interface TransactionActionsWithSpendProps {
+   isLoading: boolean;
++  isSponsored: boolean;
+   txAmount: Money;
+   onApprove(): Promise<void>;
+ }
+ export function TransactionActionsWithSpend({
+   isLoading,
++  isSponsored,
+   txAmount,
+   onApprove,
+ }: TransactionActionsWithSpendProps) {
+@@ -33,7 +35,8 @@ export function TransactionActionsWithSpend({
+   }, [marketData, selectedFee?.txFee, txAmount]);
+ 
+   // TODO LEA-2537: Refactor error state
+-  const isInsufficientBalance = availableBalance.amount.isLessThan(totalSpend.amount);
++  const isInsufficientBalance =
++    !isSponsored && availableBalance.amount.isLessThan(totalSpend.amount);
+ 
+   return (
+     <Approver.Actions
+diff --git a/src/app/features/stacks-transaction-request/hooks/use-transaction-error.ts b/src/app/features/stacks-transaction-request/hooks/use-transaction-error.ts
+index e16243a5b..54d303e57 100644
+--- a/src/app/features/stacks-transaction-request/hooks/use-transaction-error.ts
++++ b/src/app/features/stacks-transaction-request/hooks/use-transaction-error.ts
+@@ -16,11 +16,7 @@ import { useCheckSbtcSponsorshipEligible } from '@app/query/sbtc/sponsored-trans
+ import { useStxCryptoAssetBalance } from '@app/query/stacks/balance/account-balance.hooks';
+ import { useCalculateStacksTxFees } from '@app/query/stacks/fees/fees.hooks';
+ import { useGetContractInterfaceQuery } from '@app/query/stacks/legacy-request-contract.query';
+-import { useNextNonce } from '@app/query/stacks/nonce/account-nonces.hooks';
+-import {
+-  useCurrentStacksAccount,
+-  useCurrentStacksAccountAddress,
+-} from '@app/store/accounts/blockchain/stacks/stacks-account.hooks';
++import { useCurrentStacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.hooks';
+ import { useTransactionRequestState } from '@app/store/transactions/requests.hooks';
+ import { useUnsignedStacksTransactionBaseState } from '@app/store/transactions/transaction.hooks';
+ 
+@@ -39,11 +35,9 @@ export function useTransactionError() {
+   const availableUnlockedBalance = filteredBalanceQuery.data?.unlockedBalance;
+ 
+   const unsignedTx = useUnsignedStacksTransactionBaseState();
+-  const stxAddress = useCurrentStacksAccountAddress();
+   const { data: stxFees } = useCalculateStacksTxFees(unsignedTx.transaction);
+-  const { data: nextNonce } = useNextNonce(stxAddress);
+   const { isVerifying: isVerifyingSbtcEligibilty, result: sbtcSponsorshipEligibility } =
+-    useCheckSbtcSponsorshipEligible(unsignedTx, nextNonce, stxFees);
++    useCheckSbtcSponsorshipEligible({ baseTx: unsignedTx, stxFees });
+ 
+   return useMemo<TransactionErrorReason | void>(() => {
+     if (!origin) return TransactionErrorReason.ExpiredRequest;
+diff --git a/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx b/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx
+index 8289bedf7..3837d5668 100644
+--- a/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx
++++ b/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx
+@@ -78,6 +78,7 @@ export function RpcSendTransfer() {
+           <FeeEditor.Trigger
+             feeType="fee-rate"
+             isLoading={isLoadingFees}
++            isSponsored={false}
+             marketData={marketData}
+             onEditFee={onUserActivatesFeeEditor}
+             selectedFee={selectedFee}
+diff --git a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
+index 63c83a63b..dc2770dad 100644
+--- a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
++++ b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
+@@ -28,8 +28,14 @@ import {
+ 
+ export function RpcStxCallContract() {
+   const { isLoadingBalance, network, publicKey } = useStacksRpcTransactionRequestContext();
+-  const { availableBalance, isLoadingFees, marketData, onUserActivatesFeeEditor, selectedFee } =
+-    useFeeEditorContext();
++  const {
++    availableBalance,
++    isLoadingFees,
++    isSponsored,
++    marketData,
++    onUserActivatesFeeEditor,
++    selectedFee,
++  } = useFeeEditorContext();
+   const { nonce, onUserActivatesNonceEditor } = useNonceEditorContext();
+   const signAndBroadcastTransaction = useSignAndBroadcastStacksTransaction(stxCallContract.method);
+   const convertToFiatAmount = useConvertCryptoCurrencyToFiatAmount('STX');
+@@ -38,12 +44,12 @@ export function RpcStxCallContract() {
+   const txOptionsForBroadcast = useMemo(
+     () =>
+       getUnsignedStacksContractCallOptions({
+-        fee: selectedFee.txFee,
++        fee: isSponsored ? createMoney(0, 'STX') : selectedFee.txFee,
+         network,
+         nonce,
+         publicKey,
+       }),
+-    [network, nonce, publicKey, selectedFee.txFee]
++    [isSponsored, network, nonce, publicKey, selectedFee.txFee]
+   );
+ 
+   async function onApproveTransaction() {
+@@ -58,6 +64,7 @@ export function RpcStxCallContract() {
+       actions={
+         <TransactionActionsWithSpend
+           isLoading={isLoadingBalance || isLoadingFees}
++          isSponsored={isSponsored}
+           // TODO: Calculate total request
+           txAmount={createMoney(0, 'STX')}
+           onApprove={onApproveTransaction}
+@@ -85,6 +92,7 @@ export function RpcStxCallContract() {
+       <FeeEditor.Trigger
+         feeType="fee-value"
+         isLoading={isLoadingFees}
++        isSponsored={isSponsored}
+         marketData={marketData}
+         onEditFee={onUserActivatesFeeEditor}
+         selectedFee={selectedFee}
+diff --git a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx
+index c2a702df6..6823b23f8 100644
+--- a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx
++++ b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx
+@@ -25,8 +25,14 @@ import { getUnsignedStacksDeployContractOptions } from './rpc-stx-deploy-contrac
+ 
+ export function RpcStxDeployContract() {
+   const { address, isLoadingBalance, network, publicKey } = useStacksRpcTransactionRequestContext();
+-  const { availableBalance, isLoadingFees, marketData, onUserActivatesFeeEditor, selectedFee } =
+-    useFeeEditorContext();
++  const {
++    availableBalance,
++    isLoadingFees,
++    isSponsored,
++    marketData,
++    onUserActivatesFeeEditor,
++    selectedFee,
++  } = useFeeEditorContext();
+   const { nonce, onUserActivatesNonceEditor } = useNonceEditorContext();
+   const convertToFiatAmount = useConvertCryptoCurrencyToFiatAmount('STX');
+   const signAndBroadcastTransaction = useSignAndBroadcastStacksTransaction(
+@@ -46,6 +52,7 @@ export function RpcStxDeployContract() {
+ 
+   async function onApproveTransaction() {
+     const unsignedTx = await generateStacksUnsignedTransaction(txOptionsForBroadcast);
++    if (isSponsored) unsignedTx.setFee(0);
+     await signAndBroadcastTransaction(unsignedTx);
+   }
+ 
+@@ -57,6 +64,7 @@ export function RpcStxDeployContract() {
+       actions={
+         <TransactionActionsWithSpend
+           isLoading={isLoadingBalance || isLoadingFees}
++          isSponsored={isSponsored}
+           txAmount={createMoneyFromDecimal(0, 'STX')}
+           onApprove={onApproveTransaction}
+         />
+@@ -82,6 +90,7 @@ export function RpcStxDeployContract() {
+       <FeeEditor.Trigger
+         feeType="fee-value"
+         isLoading={isLoadingFees}
++        isSponsored={isSponsored}
+         marketData={marketData}
+         onEditFee={onUserActivatesFeeEditor}
+         selectedFee={selectedFee}
+diff --git a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+index 9586ddf61..c226d7eb8 100644
+--- a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
++++ b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+@@ -1,6 +1,7 @@
+ import { useMemo } from 'react';
+ 
+ import {
++  AuthType,
+   addressToString,
+   isContractCallPayload,
+   isSmartContractPayload,
+@@ -45,8 +46,14 @@ import {
+ 
+ export function RpcStxSignTransaction() {
+   const { address, isLoadingBalance, requestId, tabId } = useStacksRpcTransactionRequestContext();
+-  const { availableBalance, isLoadingFees, marketData, onUserActivatesFeeEditor, selectedFee } =
+-    useFeeEditorContext();
++  const {
++    availableBalance,
++    isLoadingFees,
++    isSponsored,
++    marketData,
++    onUserActivatesFeeEditor,
++    selectedFee,
++  } = useFeeEditorContext();
+   const { nonce, onUserActivatesNonceEditor } = useNonceEditorContext();
+   const convertToFiatAmount = useConvertCryptoCurrencyToFiatAmount('STX');
+   const signStacksTx = useSignStacksTransaction();
+@@ -69,6 +76,8 @@ export function RpcStxSignTransaction() {
+       unsignedTxForBroadcast.setFee(selectedFee.txFee.amount.toString());
+     if (!txRequestHasAlreadySetNonce) unsignedTxForBroadcast.setNonce(nonce);
+ 
++    if (isSponsored) unsignedTxForBroadcast.setFee(0);
++
+     const signedTransaction = await signStacksTx(unsignedTxForBroadcast);
+ 
+     if (!signedTransaction) {
+@@ -115,6 +124,7 @@ export function RpcStxSignTransaction() {
+       actions={
+         <TransactionActionsWithSpend
+           isLoading={isLoadingBalance || isLoadingFees}
++          isSponsored={unsignedTxForBroadcast.auth.authType === AuthType.Sponsored}
+           // TODO: Calculate amount if more than fees
+           txAmount={createMoney(0, 'STX')}
+           onApprove={onApproveTransaction}
+@@ -167,6 +177,7 @@ export function RpcStxSignTransaction() {
+         <FeeEditor.Trigger
+           feeType="fee-value"
+           isLoading={isLoadingFees}
++          isSponsored={isSponsored}
+           marketData={marketData}
+           onEditFee={onUserActivatesFeeEditor}
+           selectedFee={selectedFee}
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
+index af710cd9b..ec3c1b1b8 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
+@@ -28,8 +28,14 @@ import {
+ 
+ export function RpcStxTransferSip10Ft() {
+   const { address, isLoadingBalance, network, publicKey } = useStacksRpcTransactionRequestContext();
+-  const { availableBalance, isLoadingFees, marketData, onUserActivatesFeeEditor, selectedFee } =
+-    useFeeEditorContext();
++  const {
++    availableBalance,
++    isLoadingFees,
++    isSponsored,
++    marketData,
++    onUserActivatesFeeEditor,
++    selectedFee,
++  } = useFeeEditorContext();
+   const { nonce, onUserActivatesNonceEditor } = useNonceEditorContext();
+   const convertToFiatAmount = useConvertCryptoCurrencyToFiatAmount('STX');
+   const signAndBroadcastTransaction = useSignAndBroadcastStacksTransaction(
+@@ -51,6 +57,7 @@ export function RpcStxTransferSip10Ft() {
+ 
+   async function onApproveTransaction() {
+     const unsignedTx = await generateStacksUnsignedTransaction(txOptionsForBroadcast);
++    if (isSponsored) unsignedTx.setFee(0);
+     await signAndBroadcastTransaction(unsignedTx);
+   }
+ 
+@@ -62,6 +69,7 @@ export function RpcStxTransferSip10Ft() {
+       actions={
+         <TransactionActionsWithSpend
+           isLoading={isLoadingBalance || isLoadingFees}
++          isSponsored={isSponsored}
+           txAmount={createMoneyFromDecimal(rpcRequest.params.amount, 'STX')}
+           onApprove={onApproveTransaction}
+         />
+@@ -88,6 +96,7 @@ export function RpcStxTransferSip10Ft() {
+       <FeeEditor.Trigger
+         feeType="fee-value"
+         isLoading={isLoadingFees}
++        isSponsored={isSponsored}
+         marketData={marketData}
+         onEditFee={onUserActivatesFeeEditor}
+         selectedFee={selectedFee}
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
+index 1aaeb3539..ee01b558f 100644
+--- a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
+@@ -25,8 +25,14 @@ import { getUnsignedStacksContractCallOptions } from './rpc-stx-transfer-sip9-nf
+ 
+ export function RpcStxTransferSip9Nft() {
+   const { address, isLoadingBalance, network, publicKey } = useStacksRpcTransactionRequestContext();
+-  const { availableBalance, isLoadingFees, marketData, onUserActivatesFeeEditor, selectedFee } =
+-    useFeeEditorContext();
++  const {
++    availableBalance,
++    isLoadingFees,
++    isSponsored,
++    marketData,
++    onUserActivatesFeeEditor,
++    selectedFee,
++  } = useFeeEditorContext();
+   const { nonce, onUserActivatesNonceEditor } = useNonceEditorContext();
+   const convertToFiatAmount = useConvertCryptoCurrencyToFiatAmount('STX');
+   const signAndBroadcastTransaction = useSignAndBroadcastStacksTransaction(
+@@ -47,6 +53,7 @@ export function RpcStxTransferSip9Nft() {
+ 
+   async function onApproveTransaction() {
+     const unsignedTx = await generateStacksUnsignedTransaction(txOptionsForBroadcast);
++    if (isSponsored) unsignedTx.setFee(0);
+     await signAndBroadcastTransaction(unsignedTx);
+   }
+ 
+@@ -58,6 +65,7 @@ export function RpcStxTransferSip9Nft() {
+       actions={
+         <TransactionActionsWithSpend
+           isLoading={isLoadingBalance || isLoadingFees}
++          isSponsored={isSponsored}
+           txAmount={createMoney(0, 'STX')}
+           onApprove={onApproveTransaction}
+         />
+@@ -84,6 +92,7 @@ export function RpcStxTransferSip9Nft() {
+       <FeeEditor.Trigger
+         feeType="fee-value"
+         isLoading={isLoadingFees}
++        isSponsored={isSponsored}
+         marketData={marketData}
+         onEditFee={onUserActivatesFeeEditor}
+         selectedFee={selectedFee}
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
+index d93b7d586..e1862e83c 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
+@@ -22,8 +22,14 @@ import { getUnsignedStacksTokenTransferOptions } from './rpc-stx-transfer-stx.ut
+ 
+ export function RpcStxTransferStx() {
+   const { isLoadingBalance, network, publicKey } = useStacksRpcTransactionRequestContext();
+-  const { availableBalance, isLoadingFees, marketData, onUserActivatesFeeEditor, selectedFee } =
+-    useFeeEditorContext();
++  const {
++    availableBalance,
++    isLoadingFees,
++    isSponsored,
++    marketData,
++    onUserActivatesFeeEditor,
++    selectedFee,
++  } = useFeeEditorContext();
+   const { nonce, onUserActivatesNonceEditor } = useNonceEditorContext();
+   const signAndBroadcastTransaction = useSignAndBroadcastStacksTransaction(stxTransferStx.method);
+   const convertToFiatAmount = useConvertCryptoCurrencyToFiatAmount('STX');
+@@ -41,6 +47,7 @@ export function RpcStxTransferStx() {
+ 
+   async function onApproveTransaction() {
+     const unsignedTx = await generateStacksUnsignedTransaction(txOptionsForBroadcast);
++    if (isSponsored) unsignedTx.setFee(0);
+     await signAndBroadcastTransaction(unsignedTx);
+   }
+ 
+@@ -52,6 +59,7 @@ export function RpcStxTransferStx() {
+       actions={
+         <TransactionActionsWithSpend
+           isLoading={isLoadingBalance || isLoadingFees}
++          isSponsored={isSponsored}
+           txAmount={txOptionsForBroadcast.amount}
+           onApprove={onApproveTransaction}
+         />
+@@ -80,6 +88,7 @@ export function RpcStxTransferStx() {
+       <FeeEditor.Trigger
+         feeType="fee-value"
+         isLoading={isLoadingFees}
++        isSponsored={isSponsored}
+         marketData={marketData}
+         onEditFee={onUserActivatesFeeEditor}
+         selectedFee={selectedFee}
+diff --git a/src/app/pages/transaction-request/transaction-request.tsx b/src/app/pages/transaction-request/transaction-request.tsx
+index 749efa3d8..7931420a4 100644
+--- a/src/app/pages/transaction-request/transaction-request.tsx
++++ b/src/app/pages/transaction-request/transaction-request.tsx
+@@ -70,7 +70,7 @@ function TransactionRequestBase() {
+   const { data: nextNonce, status: nonceQueryStatus } = useNextNonce(stxAddress);
+ 
+   const { isVerifying: isVerifyingSbtcSponsorship, result: sbtcSponsorshipEligibility } =
+-    useCheckSbtcSponsorshipEligible(unsignedTx, nextNonce, stxFees);
++    useCheckSbtcSponsorshipEligible({ baseTx: unsignedTx, stxFees });
+ 
+   const canSubmit =
+     filteredBalanceQuery.status === 'success' &&
+diff --git a/src/app/query/sbtc/sponsored-transactions.hooks.ts b/src/app/query/sbtc/sponsored-transactions.hooks.ts
+index d89823af4..17866b6f8 100644
+--- a/src/app/query/sbtc/sponsored-transactions.hooks.ts
++++ b/src/app/query/sbtc/sponsored-transactions.hooks.ts
+@@ -1,13 +1,13 @@
+ import { useEffect, useState } from 'react';
+ 
+ import { FeeTypes, type Fees } from '@leather.io/models';
+-import type { NextNonce } from '@leather.io/query';
+ 
+ import { logger } from '@shared/logger';
+ 
+ import { useCurrentStacksAccountAddress } from '@app/store/accounts/blockchain/stacks/stacks-account.hooks';
+ 
+ import { useConfigSbtc } from '../common/remote-config/remote-config.query';
++import { useNextNonce } from '../stacks/nonce/account-nonces.hooks';
+ import {
+   type SbtcSponsorshipEligibility,
+   type SbtcSponsorshipVerificationResult,
+@@ -15,13 +15,17 @@ import {
+   verifySponsoredSbtcTransaction,
+ } from './sponsored-transactions.query';
+ 
+-export function useCheckSbtcSponsorshipEligible(
+-  baseTx?: TransactionBase,
+-  nextNonce?: NextNonce,
+-  stxFees?: Fees
+-): SbtcSponsorshipVerificationResult {
++interface UseCheckSbtcSponsorshipEligibleProps {
++  baseTx?: TransactionBase;
++  stxFees?: Fees;
++}
++export function useCheckSbtcSponsorshipEligible({
++  baseTx,
++  stxFees,
++}: UseCheckSbtcSponsorshipEligibleProps): SbtcSponsorshipVerificationResult {
+   const sbtcConfig = useConfigSbtc();
+   const stxAddress = useCurrentStacksAccountAddress();
++  const { data: nextNonce } = useNextNonce(stxAddress);
+   const [isLoading, setIsLoading] = useState(true);
+   const [result, setResult] = useState<SbtcSponsorshipEligibility | undefined>();
+   const [lastAddressChecked, setLastAddressChecked] = useState<string | undefined>();
+diff --git a/tests/specs/rpc-stx-call-contract/rpc-stx-call-contract.spec.ts b/tests/specs/rpc-sip30-requests/rpc-stx-call-contract.spec.ts
+similarity index 100%
+rename from tests/specs/rpc-stx-call-contract/rpc-stx-call-contract.spec.ts
+rename to tests/specs/rpc-sip30-requests/rpc-stx-call-contract.spec.ts
+diff --git a/tests/specs/rpc-stx-deploy-contract/rpc-stx-deploy-contract.spec.ts b/tests/specs/rpc-sip30-requests/rpc-stx-deploy-contract.spec.ts
+similarity index 100%
+rename from tests/specs/rpc-stx-deploy-contract/rpc-stx-deploy-contract.spec.ts
+rename to tests/specs/rpc-sip30-requests/rpc-stx-deploy-contract.spec.ts
+diff --git a/tests/specs/rpc-stx-message-signing/rpc-stx-message-signing.spec.ts b/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts
+similarity index 100%
+rename from tests/specs/rpc-stx-message-signing/rpc-stx-message-signing.spec.ts
+rename to tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts
+diff --git a/tests/specs/rpc-stx-sign-transaction/rpc-stx-sign-transaction.spec.ts b/tests/specs/rpc-sip30-requests/rpc-stx-sign-transaction.spec.ts
+similarity index 100%
+rename from tests/specs/rpc-stx-sign-transaction/rpc-stx-sign-transaction.spec.ts
+rename to tests/specs/rpc-sip30-requests/rpc-stx-sign-transaction.spec.ts
+diff --git a/tests/specs/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.spec.ts b/tests/specs/rpc-sip30-requests/rpc-stx-transfer-sip10-ft.spec.ts
+similarity index 100%
+rename from tests/specs/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.spec.ts
+rename to tests/specs/rpc-sip30-requests/rpc-stx-transfer-sip10-ft.spec.ts
+diff --git a/tests/specs/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.spec.ts b/tests/specs/rpc-sip30-requests/rpc-stx-transfer-sip9-nft.spec.ts
+similarity index 100%
+rename from tests/specs/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.spec.ts
+rename to tests/specs/rpc-sip30-requests/rpc-stx-transfer-sip9-nft.spec.ts
+diff --git a/tests/specs/rpc-stx-transfer-stx/rpc-stx-transfer-stx.spec.tsx b/tests/specs/rpc-sip30-requests/rpc-stx-transfer-stx.spec.tsx
+similarity index 100%
+rename from tests/specs/rpc-stx-transfer-stx/rpc-stx-transfer-stx.spec.tsx
+rename to tests/specs/rpc-sip30-requests/rpc-stx-transfer-stx.spec.tsx
+```

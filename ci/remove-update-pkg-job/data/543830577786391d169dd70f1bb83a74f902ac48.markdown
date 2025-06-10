@@ -1,0 +1,205 @@
+# Test info
+
+- Name: send stx: tests on mainnet >> send form input fields >> that recipient address matches bns name
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:210:5
+
+# Error details
+
+```
+Error: locator.innerText: Target page, context or browser has been closed
+Call log:
+  - waiting for getByText('SP12YQ0M2KFT7YMJKVGP71B874YF055F77PFPH9KM')
+
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:225:10
+```
+
+# Test source
+
+```ts
+  125 |     test('that the amount must be positive', async ({ sendPage }) => {
+  126 |       await sendPage.amountInput.fill('-9999');
+  127 |       await sendPage.amountInput.blur();
+  128 |       const errorMsg = await sendPage.amountInputErrorLabel.innerText();
+  129 |       test.expect(errorMsg).toEqual(FormErrorMessages.MustBePositive);
+  130 |     });
+  131 |
+  132 |     test('that the amount field enforces max length based on decimals', async ({ sendPage }) => {
+  133 |       await sendPage.amountInput.fill('0.0000001');
+  134 |       await sendPage.amountInput.blur();
+  135 |       const errorMsg = await sendPage.amountInputErrorLabel.innerText();
+  136 |       const error = FormErrorMessages.TooMuchPrecision;
+  137 |       test.expect(errorMsg).toEqual(error.replace('{decimals}', String(STX_DECIMALS)));
+  138 |     });
+  139 |
+  140 |     test('that the amount is greater than the available balance', async ({ sendPage }) => {
+  141 |       await sendPage.amountInput.fill('999999999');
+  142 |       await sendPage.amountInput.blur();
+  143 |       const errorMsg = await sendPage.amountInputErrorLabel.innerText();
+  144 |       test.expect(errorMsg).toContain('Insufficient balance');
+  145 |     });
+  146 |
+  147 |     test('that the address must be valid', async ({ sendPage }) => {
+  148 |       await sendPage.recipientInput.fill('ST3TZVWsss4VTZA1WZN2TB6RQ5J8RACHZYMWMM2N1HT2');
+  149 |       await sendPage.recipientInput.blur();
+  150 |       const errorMsg = await sendPage.formInputErrorLabel.innerText();
+  151 |       test.expect(errorMsg).toContain(FormErrorMessages.InvalidAddress);
+  152 |     });
+  153 |
+  154 |     test('that the address cannot be same as sender', async ({ sendPage }) => {
+  155 |       await sendPage.recipientChooseAccountButton.click();
+  156 |       await sendPage.page.getByTestId('switch-account-item-0').click();
+  157 |       await sendPage.previewSendTxButton.click();
+  158 |       const errorMsg = await sendPage.formInputErrorLabel.innerText();
+  159 |       test.expect(errorMsg).toContain(FormErrorMessages.SameAddress);
+  160 |     });
+  161 |
+  162 |     test('that valid addresses are accepted', async ({ sendPage }) => {
+  163 |       await sendPage.amountInput.fill('0.000001');
+  164 |       await sendPage.recipientInput.fill(TEST_ACCOUNT_2_STX_ADDRESS);
+  165 |       await sendPage.previewSendTxButton.click();
+  166 |       const details = await sendPage.confirmationDetails.allInnerTexts();
+  167 |       test.expect(details).toBeTruthy();
+  168 |     });
+  169 |   });
+  170 |
+  171 |   test.describe('send form preview', () => {
+  172 |     test('send form preview: that it shows preview of tx details to be confirmed', async ({
+  173 |       sendPage,
+  174 |     }) => {
+  175 |       await sendPage.amountInput.fill('0.000001');
+  176 |       await sendPage.recipientInput.fill(TEST_TESTNET_ACCOUNT_2_STX_ADDRESS);
+  177 |       await sendPage.previewSendTxButton.click();
+  178 |       const details = await sendPage.confirmationDetails.allInnerTexts();
+  179 |       test.expect(details).toBeTruthy();
+  180 |     });
+  181 |
+  182 |     test('send form preview: that it shows preview of tx details after validation error is resolved', async ({
+  183 |       sendPage,
+  184 |     }) => {
+  185 |       await sendPage.amountInput.fill('0.0000001');
+  186 |       await sendPage.recipientInput.fill(TEST_TESTNET_ACCOUNT_2_STX_ADDRESS);
+  187 |
+  188 |       await sendPage.previewSendTxButton.click();
+  189 |       const errorMsg = await sendPage.amountInputErrorLabel.innerText();
+  190 |       const error = FormErrorMessages.TooMuchPrecision;
+  191 |       test.expect(errorMsg).toEqual(error.replace('{decimals}', String(STX_DECIMALS)));
+  192 |       await sendPage.amountInput.fill('0.000001');
+  193 |       await sendPage.previewSendTxButton.click();
+  194 |       const details = await sendPage.confirmationDetails.allInnerTexts();
+  195 |       test.expect(details).toBeTruthy();
+  196 |     });
+  197 |   });
+  198 | });
+  199 |
+  200 | // Those that can should be migrated to testnet tests
+  201 | test.describe('send stx: tests on mainnet', () => {
+  202 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, homePage, sendPage }) => {
+  203 |     await globalPage.setupAndUseApiCalls(extensionId);
+  204 |     await onboardingPage.signInWithTestAccount(extensionId);
+  205 |     await homePage.sendButton.click();
+  206 |     await sendPage.selectStxAndGoToSendForm();
+  207 |   });
+  208 |
+  209 |   test.describe('send form input fields', () => {
+  210 |     test('that recipient address matches bns name', async ({ sendPage }) => {
+  211 |       await mockBnsV2ZoneFileLookup(sendPage.page)({
+  212 |         name: TEST_BNS_NAME,
+  213 |         owner: TEST_BNS_RESOLVED_ADDRESS,
+  214 |         btcAddress: 'unused-btc-address',
+  215 |       });
+  216 |       await sendPage.amountInput.fill('.0001');
+  217 |       await sendPage.amountInput.blur();
+  218 |       await sendPage.recipientSelectRecipientTypeDropdown.click();
+  219 |       await sendPage.recipientSelectFieldBnsName.click();
+  220 |       await sendPage.recipientInput.fill(TEST_BNS_NAME);
+  221 |       await sendPage.recipientInput.blur();
+  222 |       await sendPage.recipientBnsAddressLabel.waitFor();
+  223 |       const bnsResolvedAddress = await sendPage.page
+  224 |         .getByText(TEST_BNS_RESOLVED_ADDRESS)
+> 225 |         .innerText();
+      |          ^ Error: locator.innerText: Target page, context or browser has been closed
+  226 |
+  227 |       test.expect(bnsResolvedAddress).toBeTruthy();
+  228 |     });
+  229 |
+  230 |     test('that fee row defaults to middle fee estimation', async ({ sendPage }) => {
+  231 |       const feeToBePaid = await sendPage.page
+  232 |         .getByTestId(SharedComponentsSelectors.FeeToBePaidLabel)
+  233 |         .innerText();
+  234 |       const fee = Number(feeToBePaid.split(' ')[0]);
+  235 |       // Using min/max fee caps
+  236 |       const isMiddleFee = fee === 0.0004;
+  237 |       test.expect(isMiddleFee).toEqual(true);
+  238 |     });
+  239 |
+  240 |     test('that low fee estimate can be selected', async ({ sendPage }) => {
+  241 |       await sendPage.page.getByTestId(SharedComponentsSelectors.MiddleFeeEstimateItem).click();
+  242 |       await sendPage.page.getByTestId(SharedComponentsSelectors.LowFeeEstimateItem).click();
+  243 |       const feeToBePaid = await sendPage.page
+  244 |         .getByTestId(SharedComponentsSelectors.FeeToBePaidLabel)
+  245 |         .innerText();
+  246 |       const fee = Number(feeToBePaid.split(' ')[0]);
+  247 |       // Using min/max fee caps
+  248 |       const isLowFee = fee === 0.0002;
+  249 |       test.expect(isLowFee).toEqual(true);
+  250 |     });
+  251 |   });
+  252 | });
+  253 |
+```
+
+# Local changes
+
+```diff
+diff --git a/.github/workflows/update-leather-packages.yml b/.github/workflows/update-leather-packages.yml
+deleted file mode 100644
+index 5f549126f..000000000
+--- a/.github/workflows/update-leather-packages.yml
++++ /dev/null
+@@ -1,45 +0,0 @@
+-name: Update Leather.io packages
+-
+-on:
+-  workflow_dispatch:
+-  repository_dispatch:
+-    types: [leather-deps-updated]
+-
+-jobs:
+-  update-leather-deps:
+-    runs-on: ubuntu-24.04
+-
+-    steps:
+-      - uses: actions/checkout@v4
+-        with:
+-          ref: dev
+-          token: ${{ secrets.LEATHER_BOT }}
+-
+-      - uses: ./.github/actions/provision
+-
+-      - name: Update @leather.io/* packages
+-        id: update-packages
+-        run: echo output=$(pnpm update "@leather.io/*" --latest | grep -v '^Progress') >> $GITHUB_OUTPUT
+-
+-      - name: Create Pull Request
+-        uses: peter-evans/create-pull-request@v6
+-        with:
+-          token: ${{ secrets.LEATHER_BOT }}
+-          branch: 'chore-update-leather-packages'
+-          commit-message: 'ci: update leather.io packages'
+-          title: '[bot] ci: update npm packages'
+-          committer: 'leather-bot <leather-bot@users.noreply.github.com>'
+-          author: 'leather-bot <leather-bot@users.noreply.github.com>'
+-          body: |
+-            Updating packages
+-
+-            If the CI build fails it's likely that there have been breaking changes upstream in the monorepo.
+-            A Leather dev should checkout the repo and fix these before merging the pull request.
+-
+-            <details>
+-
+-              <summary>Output</summary>
+-
+-              ${{ steps.update-packages.outputs.output }}
+-
+-            </details>
+```

@@ -1,0 +1,99 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
+
+# Error details
+
+```
+Error: page.click: Target crashed 
+Call log:
+  - waiting for locator('[data-testid="btn-confirm-transaction"]')
+    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-mt_space.04 leather-button leather-button--size_md leather-button--variant_solid leather-button--fullWidth_true leather-h_48px leather-py_unset">…</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
+
+    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
+```
+
+# Test source
+
+```ts
+   1 | import { Page } from '@playwright/test';
+   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
+   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   4 | import { createTestSelector } from '@tests/utils';
+   5 |
+   6 | export class TransactionRequestPage {
+   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
+   8 |     TransactionRequestSelectors.BtnConfirmTransaction
+   9 |   );
+  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
+  11 |   readonly transactionRequestPage = createTestSelector(
+  12 |     TransactionRequestSelectors.TransactionRequestPage
+  13 |   );
+  14 |
+  15 |   constructor(readonly page: Page) {}
+  16 |
+  17 |   async clickConfirmTransactionButton() {
+> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
+     |                      ^ Error: page.click: Target crashed 
+  19 |   }
+  20 |
+  21 |   async getDisplayedFeeValue() {
+  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
+  23 |   }
+  24 |
+  25 |   async waitForTransactionRequestError(msg: string) {
+  26 |     return this.page.waitForSelector(`text=${msg}`);
+  27 |   }
+  28 |
+  29 |   async waitForFee() {
+  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
+  31 |   }
+  32 |
+  33 |   async waitForTransactionRequestPage() {
+  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
+  35 |   }
+  36 | }
+  37 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/background/messaging/rpc-methods/open-swap.ts b/src/background/messaging/rpc-methods/open-swap.ts
+index 59126d4f0..5f51422df 100644
+--- a/src/background/messaging/rpc-methods/open-swap.ts
++++ b/src/background/messaging/rpc-methods/open-swap.ts
+@@ -24,16 +24,16 @@ export const openSwapHandler = defineRpcRequestHandler(openSwap.method, async (r
+       }).replace('{chain}', 'bitcoin'),
+       urlParams
+     );
++  } else {
++    await triggerSwapWindowOpen(
++      replaceRouteParams(RouteUrls.Swap, {
++        base: base,
++        quote: quote ?? '',
++      }).replace('{chain}', 'stacks'),
++      urlParams
++    );
+   }
+ 
+-  await triggerSwapWindowOpen(
+-    replaceRouteParams(RouteUrls.Swap, {
+-      base: base,
+-      quote: quote ?? '',
+-    }).replace('{chain}', 'stacks'),
+-    urlParams
+-  );
+-
+   void trackRpcRequestSuccess({ endpoint: request.method });
+ 
+   chrome.tabs.sendMessage(
+```

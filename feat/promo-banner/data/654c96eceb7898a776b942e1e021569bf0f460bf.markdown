@@ -1,182 +1,157 @@
 # Test info
 
-- Name: Onboarding an existing user >> going through the onboarding flow to sign in
-- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:50:3
+- Name: send stx: tests on mainnet >> send form input fields >> that low fee estimate can be selected
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:245:5
 
 # Error details
 
 ```
-Error: expect(received).toEqual(expected) // deep equality
-
-- Expected  - 0
-+ Received  + 6
-
-@@ -37,11 +37,17 @@
-    },
-    "ordinals": Object {},
-    "settings": Object {
-      "discardedInscriptions": Array [],
-      "dismissedMessages": Array [],
-+     "dismissedPromoIndexes": Array [],
-      "isNotificationsEnabled": true,
-+     "promoIndexes": Array [
-+       0,
-+       1,
-+       2,
-+     ],
-      "userSelectedTheme": "system",
-    },
-    "softwareKeys": Object {
-      "entities": Object {
-        "default": Object {
-    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:71:30
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
 ```
 
 # Test source
 
 ```ts
-   1 | import {
-   2 |   TEST_ACCOUNT_1_NATIVE_SEGWIT_ADDRESS,
-   3 |   TEST_ACCOUNT_1_STX_ADDRESS,
-   4 |   TEST_ACCOUNT_1_TAPROOT_ADDRESS,
-   5 |   TEST_PASSWORD,
-   6 | } from '@tests/mocks/constants';
-   7 | import { testSoftwareAccountDefaultWalletState } from '@tests/page-object-models/onboarding.page';
-   8 | import { HomePageSelectors } from '@tests/selectors/home.selectors';
-   9 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
-   10 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
-   11 |
-   12 | import { BITCOIN_API_BASE_URL_MAINNET } from '@leather.io/models';
-   13 |
-   14 | import { test } from '../../fixtures/fixtures';
-   15 |
-   16 | test.describe('Onboarding an existing user', () => {
-   17 |   // Functionality is important for backwards compatibility with older wallet versions
-   18 |   test.describe('Encryption key values', () => {
-   19 |     test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
-   20 |       // clear local storage of web page with evaluate
-   21 |       await globalPage.setupAndUseApiCalls(extensionId);
-   22 |       await globalPage.page.evaluate(async () => {
-   23 |         await chrome.storage.local.clear();
-   24 |       });
-   25 |       await onboardingPage.signInWithTestAccount(extensionId);
-   26 |     });
-   27 |
-   28 |     test('that the encryption key is generated correctly against a known working value', async ({
-   29 |       globalPage,
-   30 |       homePage,
-   31 |       page,
-   32 |     }) => {
-   33 |       await homePage.lock();
-   34 |       await page.getByTestId(SettingsSelectors.EnterPasswordInput).fill(TEST_PASSWORD);
-   35 |       await page.getByTestId(SettingsSelectors.UnlockWalletBtn).click();
-   36 |       await homePage.page.getByTestId(HomePageSelectors.HomePageContainer).waitFor();
-   37 |
-   38 |       const encryptionKey = await globalPage.page.evaluate(async () => {
-   39 |         const { encryptionKey } = await chrome.storage.session.get('encryptionKey');
-   40 |         return encryptionKey;
-   41 |       });
-   42 |
-   43 |       test
-   44 |         .expect(encryptionKey)
-   45 |         .toEqual(
-   46 |           'd904f412b8d116540017c302f3f7033813c95902af5a067c7befcc34fa5e5290709f157f80548603a1e4f8edc2c0d5d7'
-   47 |         );
-   48 |     });
-   49 |   });
-   50 |   test('going through the onboarding flow to sign in', async ({
-   51 |     extensionId,
-   52 |     globalPage,
-   53 |     onboardingPage,
-   54 |     homePage,
-   55 |   }) => {
-   56 |     await globalPage.setupAndUseApiCalls(extensionId);
-   57 |     await onboardingPage.signInExistingUser();
-   58 |     await homePage.page.waitForTimeout(1000);
-   59 |
-   60 |     const walletState = await onboardingPage.page.evaluate(async () =>
-   61 |       window.debug.logPersistedStore()
-   62 |     );
-   63 |
-   64 |     // Deleting values that are known to differ at random
-   65 |     delete (walletState as any).softwareKeys.entities.default.encryptedSecretKey;
-   66 |     delete (walletState as any).softwareKeys.entities.default.salt;
-   67 |     delete (testSoftwareAccountDefaultWalletState as any).softwareKeys.entities.default
-   68 |       .encryptedSecretKey;
-   69 |     delete (testSoftwareAccountDefaultWalletState as any).softwareKeys.entities.default.salt;
-   70 |
->  71 |     test.expect(walletState).toEqual(testSoftwareAccountDefaultWalletState);
-      |                              ^ Error: expect(received).toEqual(expected) // deep equality
-   72 |   });
-   73 |
-   74 |   test('mnemonic key validation: should show error for invalid mnemonic key words', async ({
-   75 |     extensionId,
-   76 |     globalPage,
-   77 |     onboardingPage,
-   78 |   }) => {
-   79 |     await globalPage.setupAndUseApiCalls(extensionId);
-   80 |     // enter some invalid key
-   81 |     const invalidKey = 'some incorrect data';
-   82 |     await onboardingPage.signInMnemonicKey(invalidKey);
-   83 |     const signInButton = onboardingPage.page.getByTestId(OnboardingSelectors.SignInBtn);
-   84 |     const error = onboardingPage.page.getByText('Words 1 and 2 are incorrect or misspelled');
-   85 |     await test.expect(error).toBeVisible();
-   86 |     await test.expect(signInButton).toBeDisabled();
-   87 |   });
-   88 |
-   89 |   test('mnemonic key validation: should not show error  for valid mnemonic key words', async ({
-   90 |     extensionId,
-   91 |     globalPage,
-   92 |     onboardingPage,
-   93 |   }) => {
-   94 |     await globalPage.setupAndUseApiCalls(extensionId);
-   95 |     // enter some key partial
-   96 |     const validPartialKey = 'shoulder any pencil';
-   97 |     await onboardingPage.signInMnemonicKey(validPartialKey);
-   98 |     const signInSeedError = onboardingPage.page.getByTestId(OnboardingSelectors.SignInSeedError);
-   99 |     await test.expect(signInSeedError).not.toBeVisible();
-  100 |   });
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
   101 |
-  102 |   test('Activity tab', async ({ extensionId, globalPage, onboardingPage, homePage, page }) => {
-  103 |     await globalPage.setupAndUseApiCalls(extensionId);
-  104 |     await onboardingPage.signUpNewUser();
-  105 |     await page.route(`${BITCOIN_API_BASE_URL_MAINNET}/address/**/txs`, route =>
-  106 |       route.fulfill({
-  107 |         json: [],
-  108 |       })
-  109 |     );
-  110 |     await homePage.clickActivityTab();
-  111 |     const noActivityText = homePage.page.getByText('No activity yet');
-  112 |     await test.expect(noActivityText).toBeVisible();
-  113 |   });
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
   114 |
-  115 |   test.describe('Address generation', () => {
-  116 |     test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
-  117 |       await globalPage.setupAndUseApiCalls(extensionId);
-  118 |       await onboardingPage.signInExistingUser();
-  119 |     });
-  120 |
-  121 |     test.describe('Bitcoin', () => {
-  122 |       test('that the wallet generates the correct Native Segwit address', async ({ homePage }) => {
-  123 |         const nativeSegwitAddress = await homePage.getReceiveNativeSegwitAddress();
-  124 |         test.expect(nativeSegwitAddress).toEqual(TEST_ACCOUNT_1_NATIVE_SEGWIT_ADDRESS);
-  125 |       });
-  126 |
-  127 |       test('that the wallet generates the correct Taproot address', async ({ homePage }) => {
-  128 |         const taprootAddress = await homePage.getReceiveTaprootAddress();
-  129 |         test.expect(taprootAddress).toEqual(TEST_ACCOUNT_1_TAPROOT_ADDRESS);
-  130 |       });
-  131 |     });
-  132 |
-  133 |     test.describe('Stacks', () => {
-  134 |       test('that restoring a wallet generates the correct stacks address', async ({ homePage }) => {
-  135 |         const stacksAddress = await homePage.getReceiveStxAddress();
-  136 |         test.expect(stacksAddress).toEqual(TEST_ACCOUNT_1_STX_ADDRESS);
-  137 |       });
-  138 |     });
-  139 |   });
-  140 | });
-  141 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
 ```
 
 # Local changes

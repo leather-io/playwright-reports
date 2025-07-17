@@ -1,0 +1,709 @@
+# Test info
+
+- Name: Send sip10 >> can send sip10 token
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:20:3
+
+# Error details
+
+```
+Error: locator.waitFor: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('send-form') to be visible
+
+    at SendPage.selectSIP10AndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:89:68)
+    at /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:17:5
+```
+
+# Test source
+
+```ts
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+   82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+>  89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+      |                                                                    ^ Error: locator.waitFor: Target page, context or browser has been closed
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
+  101 |
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
+  114 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
+```
+
+# Local changes
+
+```diff
+diff --git a/public/assets/images/promo-banner/promo-banner-1.png b/public/assets/images/promo-banner/promo-banner-1.png
+new file mode 100644
+index 000000000..a85870068
+Binary files /dev/null and b/public/assets/images/promo-banner/promo-banner-1.png differ
+diff --git a/public/assets/images/promo-banner/promo-banner-2.png b/public/assets/images/promo-banner/promo-banner-2.png
+new file mode 100644
+index 000000000..b52e2d1a8
+Binary files /dev/null and b/public/assets/images/promo-banner/promo-banner-2.png differ
+diff --git a/public/assets/images/promo-banner/promo-banner-3.png b/public/assets/images/promo-banner/promo-banner-3.png
+new file mode 100644
+index 000000000..cbc9fce60
+Binary files /dev/null and b/public/assets/images/promo-banner/promo-banner-3.png differ
+diff --git a/src/app/debug.ts b/src/app/debug.ts
+index 71e205003..5cbf2444a 100644
+--- a/src/app/debug.ts
++++ b/src/app/debug.ts
+@@ -47,6 +47,9 @@ const debug = {
+   resetMessages() {
+     store.dispatch(settingsSlice.actions.resetMessages());
+   },
++  resetPromoBanner() {
++    store.dispatch(settingsSlice.actions.resetPromoBanner());
++  },
+   clearSubmittedTransactions() {
+     store.dispatch(submittedTransactionsActions.clearSubmittedTransactions());
+   },
+diff --git a/src/app/features/container/container.tsx b/src/app/features/container/container.tsx
+index 0a1a05e94..6b7503bb9 100644
+--- a/src/app/features/container/container.tsx
++++ b/src/app/features/container/container.tsx
+@@ -12,7 +12,7 @@ import {
+ import { ContainerLayout } from '@app/components/layout';
+ import { LoadingSpinner } from '@app/components/loading-spinner';
+ import { SwitchAccountSheet } from '@app/features/dialogs/switch-account-sheet/switch-account-sheet';
+-import { InAppMessages } from '@app/features/hiro-messages/in-app-messages';
++import { InAppMessages } from '@app/features/in-app-messages/in-app-messages';
+ import { useOnChangeAccount } from '@app/routes/hooks/use-on-change-account';
+ import { useOnSignOut } from '@app/routes/hooks/use-on-sign-out';
+ import { useOnWalletLock } from '@app/routes/hooks/use-on-wallet-lock';
+diff --git a/src/app/features/hiro-messages/components/in-app-message-item.tsx b/src/app/features/in-app-messages/components/in-app-message-item.tsx
+similarity index 94%
+rename from src/app/features/hiro-messages/components/in-app-message-item.tsx
+rename to src/app/features/in-app-messages/components/in-app-message-item.tsx
+index a6c0cb885..d5d4755f9 100644
+--- a/src/app/features/hiro-messages/components/in-app-message-item.tsx
++++ b/src/app/features/in-app-messages/components/in-app-message-item.tsx
+@@ -4,10 +4,10 @@ import { CloseIcon } from '@leather.io/ui';
+ 
+ import { HiroMessage } from '@app/query/common/remote-config/remote-config.query';
+ 
+-interface HiroMessageItemProps extends HiroMessage {
++interface InAppMessageItemProps extends HiroMessage {
+   onDismiss(id: string): void;
+ }
+-export function HiroMessageItem(props: HiroMessageItemProps) {
++export function InAppMessageItem(props: InAppMessageItemProps) {
+   const { id, title, text, learnMoreUrl, learnMoreText, img, imgWidth, dismissible, onDismiss } =
+     props;
+ 
+diff --git a/src/app/features/hiro-messages/in-app-messages.tsx b/src/app/features/in-app-messages/in-app-messages.tsx
+similarity index 87%
+rename from src/app/features/hiro-messages/in-app-messages.tsx
+rename to src/app/features/in-app-messages/in-app-messages.tsx
+index 644c1dd33..70bd2e2fc 100644
+--- a/src/app/features/hiro-messages/in-app-messages.tsx
++++ b/src/app/features/in-app-messages/in-app-messages.tsx
+@@ -9,7 +9,7 @@ import { useCurrentNetworkState } from '@app/store/networks/networks.hooks';
+ import { useDismissMessage } from '@app/store/settings/settings.actions';
+ import { useDismissedMessageIds } from '@app/store/settings/settings.selectors';
+ 
+-import { HiroMessageItem } from './components/in-app-message-item';
++import { InAppMessageItem } from './components/in-app-message-item';
+ 
+ export function InAppMessages(props: FlexProps) {
+   const location = useLocation();
+@@ -31,7 +31,7 @@ export function InAppMessages(props: FlexProps) {
+ 
+   return (
+     <Flex bg="ink.text-non-interactive" {...props}>
+-      <HiroMessageItem onDismiss={messageId => dismissMessage(messageId)} {...firstMessage} />
++      <InAppMessageItem onDismiss={messageId => dismissMessage(messageId)} {...firstMessage} />
+     </Flex>
+   );
+ }
+diff --git a/src/app/features/promo-banner/promo-banner-navbar.tsx b/src/app/features/promo-banner/promo-banner-navbar.tsx
+new file mode 100644
+index 000000000..c3f3a0cd1
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-banner-navbar.tsx
+@@ -0,0 +1,57 @@
++import { Circle, HStack } from 'leather-styles/jsx';
++
++import { ArrowLeftIcon, IconButton } from '@leather.io/ui';
++
++const activeWidth = '16px';
++const inactiveWidth = '4px';
++const activeColor = 'currentColor';
++const inactiveColor = 'ink.text-non-interactive';
++
++interface PromoBannerNavbarProps {
++  currentIndex: number;
++  promoIndexes: number[];
++  visibleIndexes: number[];
++  onSetCurrentIndex(index: number): void;
++  onGoBackward(): void;
++  onGoForward(): void;
++}
++export function PromoBannerNavbar({
++  currentIndex,
++  promoIndexes,
++  visibleIndexes,
++  onSetCurrentIndex,
++  onGoBackward,
++  onGoForward,
++}: PromoBannerNavbarProps) {
++  return (
++    <HStack justify="space-between">
++      <IconButton
++        _disabled={{ visibility: 'hidden' }}
++        _hover={{ bg: 'transparent' }}
++        disabled={currentIndex === 0 || visibleIndexes.length === 1}
++        icon={<ArrowLeftIcon variant="small" />}
++        onClick={onGoBackward}
++      />
++      <HStack>
++        {visibleIndexes.map(index => (
++          <Circle
++            key={index}
++            cursor="pointer"
++            bg={index === currentIndex ? activeColor : inactiveColor}
++            width={index === currentIndex ? activeWidth : inactiveWidth}
++            height="4px"
++            onClick={() => onSetCurrentIndex(index)}
++          />
++        ))}
++      </HStack>
++      <IconButton
++        _disabled={{ visibility: 'hidden' }}
++        _hover={{ bg: 'transparent' }}
++        disabled={currentIndex === promoIndexes.length - 1 || visibleIndexes.length === 1}
++        icon={<ArrowLeftIcon variant="small" />}
++        transform="rotate(180deg)"
++        onClick={onGoForward}
++      />
++    </HStack>
++  );
++}
+diff --git a/src/app/features/promo-banner/promo-banner.tsx b/src/app/features/promo-banner/promo-banner.tsx
+new file mode 100644
+index 000000000..ece414954
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-banner.tsx
+@@ -0,0 +1,91 @@
++import { useMemo, useState } from 'react';
++
++import { useOnMount } from '@leather.io/ui';
++
++import { useConfigPromoCardEnabled } from '@app/query/common/remote-config/remote-config.query';
++
++import { PromoBannerNavbar } from './promo-banner-navbar';
++import { PromoCard } from './promo-card';
++import { usePromos } from './use-promos';
++
++const promoCards = [
++  {
++    eventName: 'mobile',
++    message: 'Mobile app is here for iOS and Android',
++    imgSrc: 'assets/images/promo-banner/promo-banner-1.png',
++    linkUrl: 'https://leather.io/wallet/mobile',
++  },
++  {
++    eventName: 'stacking',
++    message: 'Lock STX, earn BTC. 6–10% historical yields',
++    imgSrc: 'assets/images/promo-banner/promo-banner-2.png',
++    linkUrl: 'https://app.leather.io/stacking',
++  },
++  {
++    eventName: 'sbtc',
++    message: 'Grow your BTC up to 8% with direct wallet payouts',
++    imgSrc: 'assets/images/promo-banner/promo-banner-3.png',
++    linkUrl: 'https://app.leather.io/sbtc',
++  },
++];
++
++export function PromoBanner() {
++  const [currentIndex, setCurrentIndex] = useState(0);
++  const [promoIndexes, setPromoIndexes] = useState<number[]>([]);
++  const { dismissPromo, dismissedPromoIndexes } = usePromos();
++  const shouldDisplayPromoCard = useConfigPromoCardEnabled();
++
++  useOnMount(() => {
++    if (promoCards.length > 0 && promoIndexes.length === 0) {
++      setPromoIndexes(Array.from({ length: promoCards.length }, (_, i) => i));
++    }
++  });
++
++  const visibleIndexes = useMemo(
++    () => promoIndexes.filter(i => !dismissedPromoIndexes.includes(i)),
++    [promoIndexes, dismissedPromoIndexes]
++  );
++
++  function handleDismissCurrentPromo() {
++    const current = visibleIndexes[currentIndex];
++    dismissPromo(current);
++
++    const newVisibleIndexes = promoIndexes.filter(
++      i => ![...dismissedPromoIndexes, current].includes(i)
++    );
++
++    const newIndex =
++      currentIndex >= newVisibleIndexes.length
++        ? Math.max(newVisibleIndexes.length - 1, 0)
++        : currentIndex;
++
++    setCurrentIndex(newIndex);
++  }
++
++  function onGoBackward() {
++    setCurrentIndex(prev => Math.max(prev - 1, 0));
++  }
++
++  function onGoForward() {
++    setCurrentIndex(prev => Math.min(prev + 1, visibleIndexes.length - 1));
++  }
++
++  if (!shouldDisplayPromoCard || visibleIndexes.length === 0) return null;
++
++  const currentPromoIndex = visibleIndexes[currentIndex];
++  const currentPromo = promoCards[currentPromoIndex];
++
++  return (
++    <>
++      <PromoCard {...currentPromo} onDismissCard={handleDismissCurrentPromo} />
++      <PromoBannerNavbar
++        currentIndex={currentPromoIndex}
++        promoIndexes={promoIndexes}
++        visibleIndexes={visibleIndexes}
++        onSetCurrentIndex={index => setCurrentIndex(index)}
++        onGoBackward={onGoBackward}
++        onGoForward={onGoForward}
++      />
++    </>
++  );
++}
+diff --git a/src/app/features/promo-banner/promo-card.layout.tsx b/src/app/features/promo-banner/promo-card.layout.tsx
+new file mode 100644
+index 000000000..4f572dd47
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-card.layout.tsx
+@@ -0,0 +1,47 @@
++import { HStack, styled } from 'leather-styles/jsx';
++
++import { CloseIcon, Flag, IconButton } from '@leather.io/ui';
++
++interface PromoCardLayoutProps {
++  img: React.ReactNode;
++  message: string;
++  onClickCard(): void;
++  onDismissCard(): void;
++}
++export function PromoCardLayout({
++  img,
++  message,
++  onClickCard,
++  onDismissCard,
++}: PromoCardLayoutProps) {
++  return (
++    <HStack
++      cursor="pointer"
++      background="ink.background-secondary"
++      borderRadius={8}
++      border="2px solid"
++      borderColor="ink.border-default"
++      gap="space.01"
++      mt="space.01"
++      width="100%"
++    >
++      <Flag
++        cursor="pointer"
++        img={img}
++        pl="space.01"
++        pr="space.00"
++        spacing="space.00"
++        width="100%"
++        onClick={onClickCard}
++      >
++        <styled.p textStyle="label.02">{message}</styled.p>
++      </Flag>
++      <IconButton
++        _hover={{ bg: 'transparent' }}
++        alignSelf="flex-start"
++        icon={<CloseIcon variant="small" />}
++        onClick={onDismissCard}
++      />
++    </HStack>
++  );
++}
+diff --git a/src/app/features/promo-banner/promo-card.tsx b/src/app/features/promo-banner/promo-card.tsx
+new file mode 100644
+index 000000000..ff87e74c8
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-card.tsx
+@@ -0,0 +1,34 @@
++import { styled } from 'leather-styles/jsx';
++
++import { analytics } from '@shared/utils/analytics';
++
++import { useThemeSwitcher } from '@app/common/theme-provider';
++import { openInNewTab } from '@app/common/utils/open-in-new-tab';
++
++import { PromoCardLayout } from './promo-card.layout';
++
++interface PromoCardProps {
++  eventName: string;
++  message: string;
++  imgSrc: string;
++  linkUrl: string;
++  onDismissCard(): void;
++}
++export function PromoCard({ eventName, message, imgSrc, linkUrl, onDismissCard }: PromoCardProps) {
++  const { theme } = useThemeSwitcher();
++  const invertStyle = theme === 'light' ? {} : { filter: 'invert()' };
++
++  function onClickCard() {
++    void analytics.untypedTrack('promo_banner_clicked', { banner_name: eventName });
++    openInNewTab(linkUrl);
++  }
++
++  return (
++    <PromoCardLayout
++      img={<styled.img alt={message} src={imgSrc} height={70} width={100} style={invertStyle} />}
++      message={message}
++      onClickCard={onClickCard}
++      onDismissCard={onDismissCard}
++    />
++  );
++}
+diff --git a/src/app/features/promo-banner/use-promos.ts b/src/app/features/promo-banner/use-promos.ts
+new file mode 100644
+index 000000000..9c357ddfd
+--- /dev/null
++++ b/src/app/features/promo-banner/use-promos.ts
+@@ -0,0 +1,19 @@
++import { useMemo } from 'react';
++
++import { useAppDispatch } from '@app/store';
++import { settingsActions } from '@app/store/settings/settings.actions';
++import { useDismissedPromoIndexes } from '@app/store/settings/settings.selectors';
++
++export function usePromos() {
++  const dispatch = useAppDispatch();
++  const dismissedPromoIndexes = useDismissedPromoIndexes();
++  return useMemo(
++    () => ({
++      dismissedPromoIndexes,
++      dismissPromo(promoIndex: number) {
++        dispatch(settingsActions.promoDismissed(promoIndex));
++      },
++    }),
++    [dismissedPromoIndexes, dispatch]
++  );
++}
+diff --git a/src/app/features/promo-card/promo-card.tsx b/src/app/features/promo-card/promo-card.tsx
+deleted file mode 100644
+index 2b528e752..000000000
+--- a/src/app/features/promo-card/promo-card.tsx
++++ /dev/null
+@@ -1,52 +0,0 @@
+-import { Box, styled } from 'leather-styles/jsx';
+-
+-import { Flag, type FlagProps } from '@leather.io/ui';
+-
+-import { useConfigPromoCardEnabled } from '@app/query/common/remote-config/remote-config.query';
+-
+-interface PromoCardContentProps extends FlagProps {}
+-
+-function PromoCardLayout(props: PromoCardContentProps) {
+-  // Hardcoded colors needed to bypass theme
+-  const backgroundColor = '#1B1A17';
+-  const borderColor = '#554D44';
+-  const textColor = '#F5F1ED';
+-  return (
+-    <Flag
+-      cursor="pointer"
+-      reverse
+-      img={
+-        <styled.img
+-          alt="Grow your bitcoin in our new web app"
+-          src="assets/illustrations/grow-your-bitcoin.png"
+-          width={70}
+-          mr="space.02"
+-        />
+-      }
+-      background={backgroundColor}
+-      borderRadius={8}
+-      border="2px solid"
+-      borderColor={borderColor}
+-      mt="space.05"
+-      pt="space.02"
+-      px="space.02"
+-      width="100%"
+-      {...props}
+-    >
+-      <Box pl="space.03" pt="space.02" pb="space.04">
+-        <styled.h3 textStyle="heading.05" fontSize="17px" lineHeight={1.4} color={textColor}>
+-          Grow your Bitcoin
+-        </styled.h3>
+-        <styled.p textStyle="label.03" mt="space.01" color={textColor}>
+-          Our new web app is live and built to help you earn with Bitcoin.
+-        </styled.p>
+-      </Box>
+-    </Flag>
+-  );
+-}
+-
+-export function PromoCard(props: FlagProps) {
+-  const shouldDisplayPromoCard = useConfigPromoCardEnabled();
+-  if (!shouldDisplayPromoCard) return null;
+-  return <PromoCardLayout {...props} />;
+-}
+diff --git a/src/app/pages/home/home.tsx b/src/app/pages/home/home.tsx
+index 201c9b2e5..b2af97e0f 100644
+--- a/src/app/pages/home/home.tsx
++++ b/src/app/pages/home/home.tsx
+@@ -11,10 +11,9 @@ import { useBalances } from '@app/common/hooks/balance/use-balances';
+ import { useOnMount } from '@app/common/hooks/use-on-mount';
+ import { useSwitchAccountSheet } from '@app/common/switch-account/use-switch-account-sheet-context';
+ import { whenPageMode } from '@app/common/utils';
+-import { openInNewTab } from '@app/common/utils/open-in-new-tab';
+ import { ActivityList } from '@app/features/activity-list/activity-list';
+ import { FeedbackButton } from '@app/features/feedback-button/feedback-button';
+-import { PromoCard } from '@app/features/promo-card/promo-card';
++import { PromoBanner } from '@app/features/promo-banner/promo-banner';
+ import { Assets } from '@app/pages/home/components/assets';
+ import { homePageModalRoutes } from '@app/routes/app-routes';
+ import { ModalBackgroundWrapper } from '@app/routes/components/modal-background-wrapper';
+@@ -32,8 +31,6 @@ import { AccountCard } from '@app/ui/components/account/account.card';
+ import { AccountActions } from './components/account-actions';
+ import { HomeTabs } from './components/home-tabs';
+ 
+-const leatherWebAppUrl = 'https://leather.io';
+-
+ export function Home() {
+   const { decodedAuthRequest } = useOnboardingState();
+   const { toggleSwitchAccount } = useSwitchAccountSheet();
+@@ -57,7 +54,7 @@ export function Home() {
+   });
+ 
+   useOnMount(() => {
+-    if (decodedAuthRequest) navigate(RouteUrls.ChooseAccount);
++    if (decodedAuthRequest) return navigate(RouteUrls.ChooseAccount);
+   });
+ 
+   return (
+@@ -86,7 +83,7 @@ export function Home() {
+         >
+           <AccountActions />
+         </AccountCard>
+-        <PromoCard onClick={() => openInNewTab(leatherWebAppUrl)} />
++        <PromoBanner />
+       </Box>
+       {whenPageMode({ full: <FeedbackButton />, popup: null })}
+       <HomeTabs>
+diff --git a/src/app/pages/onboarding/set-password/set-password.tsx b/src/app/pages/onboarding/set-password/set-password.tsx
+index c88e358a5..4ee31aa29 100644
+--- a/src/app/pages/onboarding/set-password/set-password.tsx
++++ b/src/app/pages/onboarding/set-password/set-password.tsx
+@@ -63,12 +63,12 @@ function SetPasswordPage() {
+         if (!stacksAccounts) return;
+ 
+         if (stacksAccounts && stacksAccounts.length > 1) {
+-          navigate(RouteUrls.ChooseAccount);
++          void navigate(RouteUrls.ChooseAccount);
+         } else {
+           await finishSignIn(0);
+         }
+       } else {
+-        navigate(RouteUrls.Home, { replace: true, state: { fromOnboarding: true } });
++        void navigate(RouteUrls.Home, { replace: true, state: { fromOnboarding: true } });
+       }
+     },
+     [setPassword, decodedAuthRequest, stacksAccounts, navigate, finishSignIn]
+diff --git a/src/app/store/settings/settings.selectors.ts b/src/app/store/settings/settings.selectors.ts
+index 5b2536f6e..7c3025926 100644
+--- a/src/app/store/settings/settings.selectors.ts
++++ b/src/app/store/settings/settings.selectors.ts
+@@ -27,6 +27,15 @@ export function useDismissedMessageIds() {
+   return useSelector(selectDismissedMessageIds);
+ }
+ 
++const selectDismissedPromoIndexes = createSelector(
++  selectSettings,
++  state => state.dismissedPromoIndexes ?? []
++);
++
++export function useDismissedPromoIndexes() {
++  return useSelector(selectDismissedPromoIndexes);
++}
++
+ const selectIsPrivateMode = createSelector(selectSettings, state => state.isPrivateMode ?? false);
+ 
+ export function useIsPrivateMode() {
+diff --git a/src/app/store/settings/settings.slice.ts b/src/app/store/settings/settings.slice.ts
+index 7742620b2..b989d3b5c 100644
+--- a/src/app/store/settings/settings.slice.ts
++++ b/src/app/store/settings/settings.slice.ts
+@@ -5,6 +5,7 @@ import { UserSelectedTheme } from '@app/common/theme-provider';
+ interface InitialState {
+   userSelectedTheme: UserSelectedTheme;
+   dismissedMessages: string[];
++  dismissedPromoIndexes: number[];
+   isPrivateMode?: boolean;
+   isNotificationsEnabled?: boolean;
+   bypassInscriptionChecks?: boolean;
+@@ -14,6 +15,7 @@ interface InitialState {
+ const initialState: InitialState = {
+   userSelectedTheme: 'system',
+   dismissedMessages: [],
++  dismissedPromoIndexes: [],
+   discardedInscriptions: [],
+   isNotificationsEnabled: true,
+ };
+@@ -32,6 +34,13 @@ export const settingsSlice = createSlice({
+     resetMessages(state) {
+       state.dismissedMessages = [];
+     },
++    promoDismissed(state, action: PayloadAction<number>) {
++      if (!Array.isArray(state.dismissedPromoIndexes)) state.dismissedPromoIndexes = [];
++      state.dismissedPromoIndexes = [...state.dismissedPromoIndexes, action.payload];
++    },
++    resetPromoBanner(state) {
++      state.dismissedPromoIndexes = [];
++    },
+     togglePrivateMode(state) {
+       state.isPrivateMode = !state.isPrivateMode;
+     },
+diff --git a/tests/page-object-models/onboarding.page.ts b/tests/page-object-models/onboarding.page.ts
+index acb5e1a37..0b96937ce 100644
+--- a/tests/page-object-models/onboarding.page.ts
++++ b/tests/page-object-models/onboarding.page.ts
+@@ -54,6 +54,8 @@ export const testSoftwareAccountDefaultWalletState = {
+     discardedInscriptions: [],
+     userSelectedTheme: 'system',
+     dismissedMessages: [],
++    promoIndexes: [],
++    dismissedPromoIndexes: [],
+     isNotificationsEnabled: true,
+   },
+   manageTokens: { entities: {}, ids: [] },
+```

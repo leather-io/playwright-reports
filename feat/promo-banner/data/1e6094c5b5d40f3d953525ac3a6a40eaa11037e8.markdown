@@ -1,17 +1,17 @@
 # Test info
 
-- Name: send stx: tests on mainnet >> send form input fields >> that fee row defaults to middle fee estimation
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:235:5
+- Name: Send sip10 >> can send sip10 token
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:20:3
 
 # Error details
 
 ```
-Error: page.waitForURL: Target page, context or browser has been closed
-=========================== logs ===========================
-waiting for navigation to "**/send/stx" until "load"
-============================================================
-    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
-    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
+Error: locator.waitFor: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('send-form') to be visible
+
+    at SendPage.selectSIP10AndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:89:68)
+    at /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:17:5
 ```
 
 # Test source
@@ -98,15 +98,15 @@ waiting for navigation to "**/send/stx" until "load"
    79 |   async selectStxAndGoToSendForm() {
    80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    81 |     await this.page.getByTestId('STX').click();
->  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
-      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
    83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    84 |   }
    85 |
    86 |   async selectSIP10AndGoToSendForm() {
    87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
-   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+>  89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+      |                                                                    ^ Error: locator.waitFor: Target page, context or browser has been closed
    90 |   }
    91 |
    92 |   async waitForSendPageReady() {
@@ -306,11 +306,13 @@ index 000000000..c3f3a0cd1
 +}
 diff --git a/src/app/features/promo-banner/promo-banner.tsx b/src/app/features/promo-banner/promo-banner.tsx
 new file mode 100644
-index 000000000..ece414954
+index 000000000..2467dc237
 --- /dev/null
 +++ b/src/app/features/promo-banner/promo-banner.tsx
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,104 @@
 +import { useMemo, useState } from 'react';
++
++import { Box } from 'leather-styles/jsx';
 +
 +import { useOnMount } from '@leather.io/ui';
 +
@@ -344,6 +346,7 @@ index 000000000..ece414954
 +export function PromoBanner() {
 +  const [currentIndex, setCurrentIndex] = useState(0);
 +  const [promoIndexes, setPromoIndexes] = useState<number[]>([]);
++  const [direction, setDirection] = useState<'idle' | 'forward' | 'backward'>('forward');
 +  const { dismissPromo, dismissedPromoIndexes } = usePromos();
 +  const shouldDisplayPromoCard = useConfigPromoCardEnabled();
 +
@@ -372,14 +375,17 @@ index 000000000..ece414954
 +        : currentIndex;
 +
 +    setCurrentIndex(newIndex);
-+  }
-+
-+  function onGoBackward() {
-+    setCurrentIndex(prev => Math.max(prev - 1, 0));
++    setDirection('idle');
 +  }
 +
 +  function onGoForward() {
++    setDirection('forward');
 +    setCurrentIndex(prev => Math.min(prev + 1, visibleIndexes.length - 1));
++  }
++
++  function onGoBackward() {
++    setDirection('backward');
++    setCurrentIndex(prev => Math.max(prev - 1, 0));
 +  }
 +
 +  if (!shouldDisplayPromoCard || visibleIndexes.length === 0) return null;
@@ -388,8 +394,15 @@ index 000000000..ece414954
 +  const currentPromo = promoCards[currentPromoIndex];
 +
 +  return (
-+    <>
-+      <PromoCard {...currentPromo} onDismissCard={handleDismissCurrentPromo} />
++    <Box position="relative" overflow="hidden">
++      <Box position="relative" minHeight="78px">
++        <PromoCard
++          {...currentPromo}
++          currentIndex={currentPromoIndex}
++          direction={direction}
++          onDismissCard={handleDismissCurrentPromo}
++        />
++      </Box>
 +      <PromoBannerNavbar
 +        currentIndex={currentPromoIndex}
 +        promoIndexes={promoIndexes}
@@ -398,15 +411,15 @@ index 000000000..ece414954
 +        onGoBackward={onGoBackward}
 +        onGoForward={onGoForward}
 +      />
-+    </>
++    </Box>
 +  );
 +}
 diff --git a/src/app/features/promo-banner/promo-card.layout.tsx b/src/app/features/promo-banner/promo-card.layout.tsx
 new file mode 100644
-index 000000000..4f572dd47
+index 000000000..cf2c02c8a
 --- /dev/null
 +++ b/src/app/features/promo-banner/promo-card.layout.tsx
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,46 @@
 +import { HStack, styled } from 'leather-styles/jsx';
 +
 +import { CloseIcon, Flag, IconButton } from '@leather.io/ui';
@@ -432,7 +445,6 @@ index 000000000..4f572dd47
 +      borderColor="ink.border-default"
 +      gap="space.01"
 +      mt="space.01"
-+      width="100%"
 +    >
 +      <Flag
 +        cursor="pointer"
@@ -456,11 +468,12 @@ index 000000000..4f572dd47
 +}
 diff --git a/src/app/features/promo-banner/promo-card.tsx b/src/app/features/promo-banner/promo-card.tsx
 new file mode 100644
-index 000000000..ff87e74c8
+index 000000000..69afcfae0
 --- /dev/null
 +++ b/src/app/features/promo-banner/promo-card.tsx
-@@ -0,0 +1,34 @@
-+import { styled } from 'leather-styles/jsx';
+@@ -0,0 +1,79 @@
++import { css } from 'leather-styles/css';
++import { Box, styled } from 'leather-styles/jsx';
 +
 +import { analytics } from '@shared/utils/analytics';
 +
@@ -469,16 +482,35 @@ index 000000000..ff87e74c8
 +
 +import { PromoCardLayout } from './promo-card.layout';
 +
++const slideLeft = css({
++  animation: 'slideInFromRight 0.4s ease-out forwards',
++});
++
++const slideRight = css({
++  animation: 'slideInFromLeft 0.4s ease-out forwards',
++});
++
 +interface PromoCardProps {
++  currentIndex: number;
++  direction: 'idle' | 'forward' | 'backward';
 +  eventName: string;
 +  message: string;
 +  imgSrc: string;
 +  linkUrl: string;
 +  onDismissCard(): void;
 +}
-+export function PromoCard({ eventName, message, imgSrc, linkUrl, onDismissCard }: PromoCardProps) {
++export function PromoCard({
++  currentIndex,
++  direction,
++  eventName,
++  message,
++  imgSrc,
++  linkUrl,
++  onDismissCard,
++}: PromoCardProps) {
 +  const { theme } = useThemeSwitcher();
 +  const invertStyle = theme === 'light' ? {} : { filter: 'invert()' };
++  const isIdle = direction === 'idle';
 +
 +  function onClickCard() {
 +    void analytics.untypedTrack('promo_banner_clicked', { banner_name: eventName });
@@ -486,12 +518,37 @@ index 000000000..ff87e74c8
 +  }
 +
 +  return (
-+    <PromoCardLayout
-+      img={<styled.img alt={message} src={imgSrc} height={70} width={100} style={invertStyle} />}
-+      message={message}
-+      onClickCard={onClickCard}
-+      onDismissCard={onDismissCard}
-+    />
++    <>
++      <Box
++        key={currentIndex}
++        className={isIdle ? '' : direction === 'forward' ? slideLeft : slideRight}
++        position="absolute"
++        transition="transform 0.4s ease"
++        willChange="transform"
++        width="100%"
++      >
++        <PromoCardLayout
++          img={
++            <styled.img alt={message} src={imgSrc} height={70} width={100} style={invertStyle} />
++          }
++          message={message}
++          onClickCard={onClickCard}
++          onDismissCard={onDismissCard}
++        />
++      </Box>
++
++      <style>{`
++        @keyframes slideInFromRight {
++          from { transform: translateX(100%); opacity: 0; }
++          to { transform: translateX(0); opacity: 1; }
++        }
++
++        @keyframes slideInFromLeft {
++          from { transform: translateX(-100%); opacity: 0; }
++          to { transform: translateX(0); opacity: 1; }
++        }
++      `}</style>
++    </>
 +  );
 +}
 diff --git a/src/app/features/promo-banner/use-promos.ts b/src/app/features/promo-banner/use-promos.ts

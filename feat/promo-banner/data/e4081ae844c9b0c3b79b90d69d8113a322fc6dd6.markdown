@@ -1,176 +1,139 @@
 # Test info
 
-- Name: Onboarding an existing user >> going through the onboarding flow to sign in
-- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:50:3
+- Name: Rpc: getAddresses >> softwareWallet  >> it returns the second accounts data after changing account
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:165:11
 
 # Error details
 
 ```
-Error: expect(received).toEqual(expected) // deep equality
+Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+    1) <span aria-busy="false" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka locator('#app').getByTestId('switch-account-item-1')
+    2) <span aria-busy="false" data-testid="switch-account-sheet-account-name-1" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka getByTestId('virtuoso-item-list').getByTestId('switch-account-item-1')
 
-- Expected  - 1
-+ Received  + 0
+Call log:
+  - expect.toBeVisible with timeout 5000ms
+  - waiting for getByText('Account 2')
 
-@@ -39,11 +39,10 @@
-    "settings": Object {
-      "discardedInscriptions": Array [],
-      "dismissedMessages": Array [],
-      "dismissedPromoIndexes": Array [],
-      "isNotificationsEnabled": true,
--     "promoIndexes": Array [],
-      "userSelectedTheme": "system",
-    },
-    "softwareKeys": Object {
-      "entities": Object {
-        "default": Object {
-    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:71:30
+    at /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:176:61
 ```
 
 # Test source
 
 ```ts
-   1 | import {
-   2 |   TEST_ACCOUNT_1_NATIVE_SEGWIT_ADDRESS,
-   3 |   TEST_ACCOUNT_1_STX_ADDRESS,
-   4 |   TEST_ACCOUNT_1_TAPROOT_ADDRESS,
-   5 |   TEST_PASSWORD,
-   6 | } from '@tests/mocks/constants';
-   7 | import { testSoftwareAccountDefaultWalletState } from '@tests/page-object-models/onboarding.page';
-   8 | import { HomePageSelectors } from '@tests/selectors/home.selectors';
-   9 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
-   10 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
-   11 |
-   12 | import { BITCOIN_API_BASE_URL_MAINNET } from '@leather.io/models';
-   13 |
-   14 | import { test } from '../../fixtures/fixtures';
-   15 |
-   16 | test.describe('Onboarding an existing user', () => {
-   17 |   // Functionality is important for backwards compatibility with older wallet versions
-   18 |   test.describe('Encryption key values', () => {
-   19 |     test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
-   20 |       // clear local storage of web page with evaluate
-   21 |       await globalPage.setupAndUseApiCalls(extensionId);
-   22 |       await globalPage.page.evaluate(async () => {
-   23 |         await chrome.storage.local.clear();
-   24 |       });
-   25 |       await onboardingPage.signInWithTestAccount(extensionId);
-   26 |     });
-   27 |
-   28 |     test('that the encryption key is generated correctly against a known working value', async ({
-   29 |       globalPage,
-   30 |       homePage,
-   31 |       page,
-   32 |     }) => {
-   33 |       await homePage.lock();
-   34 |       await page.getByTestId(SettingsSelectors.EnterPasswordInput).fill(TEST_PASSWORD);
-   35 |       await page.getByTestId(SettingsSelectors.UnlockWalletBtn).click();
-   36 |       await homePage.page.getByTestId(HomePageSelectors.HomePageContainer).waitFor();
-   37 |
-   38 |       const encryptionKey = await globalPage.page.evaluate(async () => {
-   39 |         const { encryptionKey } = await chrome.storage.session.get('encryptionKey');
-   40 |         return encryptionKey;
-   41 |       });
-   42 |
-   43 |       test
-   44 |         .expect(encryptionKey)
-   45 |         .toEqual(
-   46 |           'd904f412b8d116540017c302f3f7033813c95902af5a067c7befcc34fa5e5290709f157f80548603a1e4f8edc2c0d5d7'
-   47 |         );
-   48 |     });
-   49 |   });
-   50 |   test('going through the onboarding flow to sign in', async ({
-   51 |     extensionId,
-   52 |     globalPage,
-   53 |     onboardingPage,
-   54 |     homePage,
-   55 |   }) => {
-   56 |     await globalPage.setupAndUseApiCalls(extensionId);
-   57 |     await onboardingPage.signInExistingUser();
-   58 |     await homePage.page.waitForTimeout(1000);
-   59 |
-   60 |     const walletState = await onboardingPage.page.evaluate(async () =>
-   61 |       window.debug.logPersistedStore()
-   62 |     );
-   63 |
-   64 |     // Deleting values that are known to differ at random
-   65 |     delete (walletState as any).softwareKeys.entities.default.encryptedSecretKey;
-   66 |     delete (walletState as any).softwareKeys.entities.default.salt;
-   67 |     delete (testSoftwareAccountDefaultWalletState as any).softwareKeys.entities.default
-   68 |       .encryptedSecretKey;
-   69 |     delete (testSoftwareAccountDefaultWalletState as any).softwareKeys.entities.default.salt;
-   70 |
->  71 |     test.expect(walletState).toEqual(testSoftwareAccountDefaultWalletState);
-      |                              ^ Error: expect(received).toEqual(expected) // deep equality
-   72 |   });
-   73 |
-   74 |   test('mnemonic key validation: should show error for invalid mnemonic key words', async ({
-   75 |     extensionId,
-   76 |     globalPage,
-   77 |     onboardingPage,
-   78 |   }) => {
-   79 |     await globalPage.setupAndUseApiCalls(extensionId);
-   80 |     // enter some invalid key
-   81 |     const invalidKey = 'some incorrect data';
-   82 |     await onboardingPage.signInMnemonicKey(invalidKey);
-   83 |     const signInButton = onboardingPage.page.getByTestId(OnboardingSelectors.SignInBtn);
-   84 |     const error = onboardingPage.page.getByText('Words 1 and 2 are incorrect or misspelled');
-   85 |     await test.expect(error).toBeVisible();
-   86 |     await test.expect(signInButton).toBeDisabled();
-   87 |   });
-   88 |
-   89 |   test('mnemonic key validation: should not show error  for valid mnemonic key words', async ({
-   90 |     extensionId,
-   91 |     globalPage,
-   92 |     onboardingPage,
-   93 |   }) => {
-   94 |     await globalPage.setupAndUseApiCalls(extensionId);
-   95 |     // enter some key partial
-   96 |     const validPartialKey = 'shoulder any pencil';
-   97 |     await onboardingPage.signInMnemonicKey(validPartialKey);
-   98 |     const signInSeedError = onboardingPage.page.getByTestId(OnboardingSelectors.SignInSeedError);
-   99 |     await test.expect(signInSeedError).not.toBeVisible();
-  100 |   });
-  101 |
-  102 |   test('Activity tab', async ({ extensionId, globalPage, onboardingPage, homePage, page }) => {
-  103 |     await globalPage.setupAndUseApiCalls(extensionId);
-  104 |     await onboardingPage.signUpNewUser();
-  105 |     await page.route(`${BITCOIN_API_BASE_URL_MAINNET}/address/**/txs`, route =>
-  106 |       route.fulfill({
-  107 |         json: [],
-  108 |       })
-  109 |     );
-  110 |     await homePage.clickActivityTab();
-  111 |     const noActivityText = homePage.page.getByText('No activity yet');
-  112 |     await test.expect(noActivityText).toBeVisible();
-  113 |   });
-  114 |
-  115 |   test.describe('Address generation', () => {
-  116 |     test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
-  117 |       await globalPage.setupAndUseApiCalls(extensionId);
-  118 |       await onboardingPage.signInExistingUser();
-  119 |     });
+   76 |   const button = popup.getByTestId('get-addresses-approve-button');
+   77 |   await test.expect(button).toBeVisible();
+   78 |   await button.click();
+   79 | }
+   80 |
+   81 | getAddressesMethods.forEach(method => {
+   82 |   test.describe(`Rpc: ${method}`, () => {
+   83 |     test.beforeEach(
+   84 |       async ({ extensionId, globalPage }) => await globalPage.setupAndUseApiCalls(extensionId)
+   85 |     );
+   86 |
+   87 |     const specs = {
+   88 |       softwareWallet: {
+   89 |         beforeEach: softwareBeforeEach(),
+   90 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   91 |       },
+   92 |       ledgerWithBitcoinAndStacksKey: {
+   93 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin', 'stacks'])),
+   94 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   95 |       },
+   96 |       ledgerWithStacksKeysOnly: {
+   97 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['stacks'])),
+   98 |         expectedResult: getExpectedResponseForKeys(['stacks']),
+   99 |       },
+  100 |       ledgerWithBitcoinKeysOnly: {
+  101 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin'])),
+  102 |         expectedResult: getExpectedResponseForKeys(['bitcoin']),
+  103 |       },
+  104 |     } as const;
+  105 |
+  106 |     Object.entries(specs).forEach(([walletPreset, { beforeEach, expectedResult }]) => {
+  107 |       test.describe(`${walletPreset} `, () => {
+  108 |         beforeEach();
+  109 |
+  110 |         test('the promise resolves with addresses successfully', async ({ page, context }) => {
+  111 |           await page.goto('localhost:3000');
+  112 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  113 |
+  114 |           const popup = await interceptRequestPopup(context);
+  115 |           await clickConnectLeatherButton(popup);
+  116 |
+  117 |           const result = await getAddressesPromise;
+  118 |           if (!result) throw new Error('Expected result');
+  119 |           const { id, ...payloadWithoutId } = result;
   120 |
-  121 |     test.describe('Bitcoin', () => {
-  122 |       test('that the wallet generates the correct Native Segwit address', async ({ homePage }) => {
-  123 |         const nativeSegwitAddress = await homePage.getReceiveNativeSegwitAddress();
-  124 |         test.expect(nativeSegwitAddress).toEqual(TEST_ACCOUNT_1_NATIVE_SEGWIT_ADDRESS);
-  125 |       });
-  126 |
-  127 |       test('that the wallet generates the correct Taproot address', async ({ homePage }) => {
-  128 |         const taprootAddress = await homePage.getReceiveTaprootAddress();
-  129 |         test.expect(taprootAddress).toEqual(TEST_ACCOUNT_1_TAPROOT_ADDRESS);
-  130 |       });
-  131 |     });
-  132 |
-  133 |     test.describe('Stacks', () => {
-  134 |       test('that restoring a wallet generates the correct stacks address', async ({ homePage }) => {
-  135 |         const stacksAddress = await homePage.getReceiveStxAddress();
-  136 |         test.expect(stacksAddress).toEqual(TEST_ACCOUNT_1_STX_ADDRESS);
-  137 |       });
-  138 |     });
-  139 |   });
-  140 | });
-  141 |
+  121 |           test.expect(payloadWithoutId).toEqual(expectedResult);
+  122 |         });
+  123 |
+  124 |         test('the promise rejects when user closes popup window', async ({ page, context }) => {
+  125 |           await page.goto('localhost:3000');
+  126 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  127 |           const popup = await interceptRequestPopup(context);
+  128 |           await popup.close();
+  129 |           await test.expect(getAddressesPromise).rejects.toThrow();
+  130 |         });
+  131 |
+  132 |         if (walletPreset === 'softwareWallet') {
+  133 |           test('it redirects back to get addresses flow when wallet is locked', async ({
+  134 |             homePage,
+  135 |             page,
+  136 |             context,
+  137 |           }) => {
+  138 |             await homePage.lock();
+  139 |             await page.goto('localhost:3000');
+  140 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  141 |             const popup = await interceptRequestPopup(context);
+  142 |             await popup.getByRole('textbox').fill(TEST_PASSWORD);
+  143 |             await popup.getByRole('button', { name: 'Continue' }).click();
+  144 |             await popup.getByText('Connect').isVisible();
+  145 |             await test.expect(popup.getByTestId('get-addresses-approve-button')).toBeVisible();
+  146 |             await clickConnectLeatherButton(popup);
+  147 |             await test.expect(getAddressesPromise).resolves.toMatchObject(expectedResult);
+  148 |           });
+  149 |
+  150 |           test('it returns testnet addresses with the network param set', async ({
+  151 |             page,
+  152 |             context,
+  153 |           }) => {
+  154 |             await page.goto('localhost:3000');
+  155 |             const getAddressesPromise = initiateGetAddresses(page, method, { network: 'testnet' });
+  156 |             const popup = await interceptRequestPopup(context);
+  157 |             await clickConnectLeatherButton(popup);
+  158 |
+  159 |             const result = await getAddressesPromise;
+  160 |             test
+  161 |               .expect(result.result.addresses[0].address)
+  162 |               .toEqual('tb1q4qgnjewwun2llgken94zqjrx5kpqqycaz5522d');
+  163 |           });
+  164 |
+  165 |           test('it returns the second accounts data after changing account', async ({
+  166 |             page,
+  167 |             context,
+  168 |           }) => {
+  169 |             await page.goto('localhost:3000');
+  170 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  171 |             const popup = await interceptRequestPopup(context);
+  172 |             const switchAccountButton = popup.getByTestId('switch-account-item-0');
+  173 |             await switchAccountButton.click();
+  174 |             const secondAccountInListButton = popup.getByTestId('switch-account-item-1');
+  175 |             await secondAccountInListButton.click();
+> 176 |             await test.expect(popup.getByText('Account 2')).toBeVisible();
+      |                                                             ^ Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+  177 |             await clickConnectLeatherButton(popup);
+  178 |             const result = await getAddressesPromise;
+  179 |             test
+  180 |               .expect(result.result.addresses[0].address)
+  181 |               .toEqual('bc1qr9wmz342txkcmxxq5ysmfqrd5rvmxtu6nldjgp');
+  182 |           });
+  183 |         }
+  184 |       });
+  185 |     });
+  186 |   });
+  187 | });
+  188 |
 ```
 
 # Local changes
@@ -713,14 +676,13 @@ index 7742620b2..b989d3b5c 100644
        state.isPrivateMode = !state.isPrivateMode;
      },
 diff --git a/tests/page-object-models/onboarding.page.ts b/tests/page-object-models/onboarding.page.ts
-index acb5e1a37..0b96937ce 100644
+index acb5e1a37..cbfc56dd9 100644
 --- a/tests/page-object-models/onboarding.page.ts
 +++ b/tests/page-object-models/onboarding.page.ts
-@@ -54,6 +54,8 @@ export const testSoftwareAccountDefaultWalletState = {
+@@ -54,6 +54,7 @@ export const testSoftwareAccountDefaultWalletState = {
      discardedInscriptions: [],
      userSelectedTheme: 'system',
      dismissedMessages: [],
-+    promoIndexes: [],
 +    dismissedPromoIndexes: [],
      isNotificationsEnabled: true,
    },

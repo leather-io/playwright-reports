@@ -1,0 +1,727 @@
+# Test info
+
+- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
+- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
+
+# Error details
+
+```
+Error: locator.innerText: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('address-displayer')
+
+    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
+    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
+```
+
+# Test source
+
+```ts
+   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
+   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   6 | import { createTestSelector } from '@tests/utils';
+   7 |
+   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   9 | import { delay } from '@leather.io/utils';
+   10 |
+   11 | export class HomePage {
+   12 |   readonly page: Page;
+   13 |   readonly headerActionButton: Locator;
+   14 |   readonly receiveButton: Locator;
+   15 |   readonly sendButton: Locator;
+   16 |   readonly swapButton: Locator;
+   17 |   readonly settingsButton: Locator;
+   18 |   readonly settingsViewSecretKey: Locator;
+   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
+   20 |   readonly signOutConfirmPasswordDisable: Locator;
+   21 |   readonly signOutDeleteWalletBtn: Locator;
+   22 |   readonly signOutSettingsListItem: Locator;
+   23 |   readonly lockSettingsListItem: Locator;
+   24 |   readonly fundAccountBtn: Locator;
+   25 |   readonly manageTokensBtn: Locator;
+   26 |   readonly assetList: Locator;
+   27 |   readonly manageTokensAssetsList: Locator;
+   28 |
+   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
+   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   31 |   );
+   32 |   $signOutConfirmPasswordDisable = createTestSelector(
+   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
+   34 |   );
+   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
+   36 |
+   37 |   constructor(page: Page) {
+   38 |     this.page = page;
+   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
+   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
+   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
+   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
+   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
+   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
+   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
+   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   47 |     );
+   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
+   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
+   50 |     );
+   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
+   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
+   53 |     );
+   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
+   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
+   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
+   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
+   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
+   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
+   60 |   }
+   61 |
+   62 |   async goToReceiveDialog() {
+   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
+   64 |   }
+   65 |
+   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
+   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
+   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
+   69 |   // https://github.com/microsoft/playwright/issues/12168
+   70 |   // Using the `Receive` route to get the account address for now.
+   71 |   async getReceiveNativeSegwitAddress() {
+   72 |     await this.goToReceiveDialog();
+   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
+   74 |     const displayerAddress = await this.page
+   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   76 |       .innerText();
+   77 |     return displayerAddress.replaceAll('\n', '');
+   78 |   }
+   79 |
+   80 |   // Currently under Ordinals receive flow
+   81 |   async getReceiveTaprootAddress() {
+   82 |     await this.goToReceiveDialog();
+   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
+   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
+   85 |     // FIXME - add better test for Copy action
+   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
+   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
+   88 |     // return address;
+   89 |     const displayerAddress = await this.page
+   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   91 |       .innerText();
+   92 |     return displayerAddress.replaceAll('\n', '');
+   93 |   }
+   94 |
+   95 |   async getReceiveStxAddress() {
+   96 |     await this.goToReceiveDialog();
+   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
+   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
+   99 |     await delay(1000);
+  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
+  101 |     const displayerAddress = await this.page
+  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+> 103 |       .innerText();
+      |        ^ Error: locator.innerText: Target page, context or browser has been closed
+  104 |     return displayerAddress.replaceAll('\n', '');
+  105 |   }
+  106 |
+  107 |   async selectTestnet() {
+  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
+  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet).click();
+  112 |   }
+  113 |
+  114 |   async clickActivityTab() {
+  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
+  116 |   }
+  117 |
+  118 |   async clickSettingsButton() {
+  119 |     await this.settingsButton.click({ force: true });
+  120 |   }
+  121 |
+  122 |   async goToSecretKey() {
+  123 |     await this.clickSettingsButton();
+  124 |     await this.settingsViewSecretKey.click();
+  125 |   }
+  126 |
+  127 |   async signOut() {
+  128 |     await this.clickSettingsButton();
+  129 |     await this.signOutSettingsListItem.click();
+  130 |     await this.signOutConfirmHasBackupCheckbox.click();
+  131 |     await this.signOutConfirmPasswordDisable.click();
+  132 |     await this.signOutDeleteWalletBtn.click();
+  133 |   }
+  134 |
+  135 |   async lock() {
+  136 |     await this.clickSettingsButton();
+  137 |     await this.lockSettingsListItem.click();
+  138 |   }
+  139 |
+  140 |   async goToFundChooseCurrencyPage() {
+  141 |     await this.fundAccountBtn.click();
+  142 |   }
+  143 |
+  144 |   async waitForHomePageReady() {
+  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
+  146 |       state: 'attached',
+  147 |     });
+  148 |   }
+  149 |
+  150 |   async switchAccount(accountIndex: number) {
+  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
+  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
+  153 |   }
+  154 | }
+  155 |
+```
+
+# Local changes
+
+```diff
+diff --git a/public/assets/images/promo-banner/promo-banner-1.png b/public/assets/images/promo-banner/promo-banner-1.png
+new file mode 100644
+index 000000000..a85870068
+Binary files /dev/null and b/public/assets/images/promo-banner/promo-banner-1.png differ
+diff --git a/public/assets/images/promo-banner/promo-banner-2.png b/public/assets/images/promo-banner/promo-banner-2.png
+new file mode 100644
+index 000000000..b52e2d1a8
+Binary files /dev/null and b/public/assets/images/promo-banner/promo-banner-2.png differ
+diff --git a/public/assets/images/promo-banner/promo-banner-3.png b/public/assets/images/promo-banner/promo-banner-3.png
+new file mode 100644
+index 000000000..cbc9fce60
+Binary files /dev/null and b/public/assets/images/promo-banner/promo-banner-3.png differ
+diff --git a/src/app/debug.ts b/src/app/debug.ts
+index 71e205003..5cbf2444a 100644
+--- a/src/app/debug.ts
++++ b/src/app/debug.ts
+@@ -47,6 +47,9 @@ const debug = {
+   resetMessages() {
+     store.dispatch(settingsSlice.actions.resetMessages());
+   },
++  resetPromoBanner() {
++    store.dispatch(settingsSlice.actions.resetPromoBanner());
++  },
+   clearSubmittedTransactions() {
+     store.dispatch(submittedTransactionsActions.clearSubmittedTransactions());
+   },
+diff --git a/src/app/features/container/container.tsx b/src/app/features/container/container.tsx
+index 0a1a05e94..6b7503bb9 100644
+--- a/src/app/features/container/container.tsx
++++ b/src/app/features/container/container.tsx
+@@ -12,7 +12,7 @@ import {
+ import { ContainerLayout } from '@app/components/layout';
+ import { LoadingSpinner } from '@app/components/loading-spinner';
+ import { SwitchAccountSheet } from '@app/features/dialogs/switch-account-sheet/switch-account-sheet';
+-import { InAppMessages } from '@app/features/hiro-messages/in-app-messages';
++import { InAppMessages } from '@app/features/in-app-messages/in-app-messages';
+ import { useOnChangeAccount } from '@app/routes/hooks/use-on-change-account';
+ import { useOnSignOut } from '@app/routes/hooks/use-on-sign-out';
+ import { useOnWalletLock } from '@app/routes/hooks/use-on-wallet-lock';
+diff --git a/src/app/features/hiro-messages/components/in-app-message-item.tsx b/src/app/features/in-app-messages/components/in-app-message-item.tsx
+similarity index 94%
+rename from src/app/features/hiro-messages/components/in-app-message-item.tsx
+rename to src/app/features/in-app-messages/components/in-app-message-item.tsx
+index a6c0cb885..d5d4755f9 100644
+--- a/src/app/features/hiro-messages/components/in-app-message-item.tsx
++++ b/src/app/features/in-app-messages/components/in-app-message-item.tsx
+@@ -4,10 +4,10 @@ import { CloseIcon } from '@leather.io/ui';
+ 
+ import { HiroMessage } from '@app/query/common/remote-config/remote-config.query';
+ 
+-interface HiroMessageItemProps extends HiroMessage {
++interface InAppMessageItemProps extends HiroMessage {
+   onDismiss(id: string): void;
+ }
+-export function HiroMessageItem(props: HiroMessageItemProps) {
++export function InAppMessageItem(props: InAppMessageItemProps) {
+   const { id, title, text, learnMoreUrl, learnMoreText, img, imgWidth, dismissible, onDismiss } =
+     props;
+ 
+diff --git a/src/app/features/hiro-messages/in-app-messages.tsx b/src/app/features/in-app-messages/in-app-messages.tsx
+similarity index 87%
+rename from src/app/features/hiro-messages/in-app-messages.tsx
+rename to src/app/features/in-app-messages/in-app-messages.tsx
+index 644c1dd33..70bd2e2fc 100644
+--- a/src/app/features/hiro-messages/in-app-messages.tsx
++++ b/src/app/features/in-app-messages/in-app-messages.tsx
+@@ -9,7 +9,7 @@ import { useCurrentNetworkState } from '@app/store/networks/networks.hooks';
+ import { useDismissMessage } from '@app/store/settings/settings.actions';
+ import { useDismissedMessageIds } from '@app/store/settings/settings.selectors';
+ 
+-import { HiroMessageItem } from './components/in-app-message-item';
++import { InAppMessageItem } from './components/in-app-message-item';
+ 
+ export function InAppMessages(props: FlexProps) {
+   const location = useLocation();
+@@ -31,7 +31,7 @@ export function InAppMessages(props: FlexProps) {
+ 
+   return (
+     <Flex bg="ink.text-non-interactive" {...props}>
+-      <HiroMessageItem onDismiss={messageId => dismissMessage(messageId)} {...firstMessage} />
++      <InAppMessageItem onDismiss={messageId => dismissMessage(messageId)} {...firstMessage} />
+     </Flex>
+   );
+ }
+diff --git a/src/app/features/promo-banner/promo-banner-navbar.tsx b/src/app/features/promo-banner/promo-banner-navbar.tsx
+new file mode 100644
+index 000000000..c3f3a0cd1
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-banner-navbar.tsx
+@@ -0,0 +1,57 @@
++import { Circle, HStack } from 'leather-styles/jsx';
++
++import { ArrowLeftIcon, IconButton } from '@leather.io/ui';
++
++const activeWidth = '16px';
++const inactiveWidth = '4px';
++const activeColor = 'currentColor';
++const inactiveColor = 'ink.text-non-interactive';
++
++interface PromoBannerNavbarProps {
++  currentIndex: number;
++  promoIndexes: number[];
++  visibleIndexes: number[];
++  onSetCurrentIndex(index: number): void;
++  onGoBackward(): void;
++  onGoForward(): void;
++}
++export function PromoBannerNavbar({
++  currentIndex,
++  promoIndexes,
++  visibleIndexes,
++  onSetCurrentIndex,
++  onGoBackward,
++  onGoForward,
++}: PromoBannerNavbarProps) {
++  return (
++    <HStack justify="space-between">
++      <IconButton
++        _disabled={{ visibility: 'hidden' }}
++        _hover={{ bg: 'transparent' }}
++        disabled={currentIndex === 0 || visibleIndexes.length === 1}
++        icon={<ArrowLeftIcon variant="small" />}
++        onClick={onGoBackward}
++      />
++      <HStack>
++        {visibleIndexes.map(index => (
++          <Circle
++            key={index}
++            cursor="pointer"
++            bg={index === currentIndex ? activeColor : inactiveColor}
++            width={index === currentIndex ? activeWidth : inactiveWidth}
++            height="4px"
++            onClick={() => onSetCurrentIndex(index)}
++          />
++        ))}
++      </HStack>
++      <IconButton
++        _disabled={{ visibility: 'hidden' }}
++        _hover={{ bg: 'transparent' }}
++        disabled={currentIndex === promoIndexes.length - 1 || visibleIndexes.length === 1}
++        icon={<ArrowLeftIcon variant="small" />}
++        transform="rotate(180deg)"
++        onClick={onGoForward}
++      />
++    </HStack>
++  );
++}
+diff --git a/src/app/features/promo-banner/promo-banner.tsx b/src/app/features/promo-banner/promo-banner.tsx
+new file mode 100644
+index 000000000..ece414954
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-banner.tsx
+@@ -0,0 +1,91 @@
++import { useMemo, useState } from 'react';
++
++import { useOnMount } from '@leather.io/ui';
++
++import { useConfigPromoCardEnabled } from '@app/query/common/remote-config/remote-config.query';
++
++import { PromoBannerNavbar } from './promo-banner-navbar';
++import { PromoCard } from './promo-card';
++import { usePromos } from './use-promos';
++
++const promoCards = [
++  {
++    eventName: 'mobile',
++    message: 'Mobile app is here for iOS and Android',
++    imgSrc: 'assets/images/promo-banner/promo-banner-1.png',
++    linkUrl: 'https://leather.io/wallet/mobile',
++  },
++  {
++    eventName: 'stacking',
++    message: 'Lock STX, earn BTC. 6–10% historical yields',
++    imgSrc: 'assets/images/promo-banner/promo-banner-2.png',
++    linkUrl: 'https://app.leather.io/stacking',
++  },
++  {
++    eventName: 'sbtc',
++    message: 'Grow your BTC up to 8% with direct wallet payouts',
++    imgSrc: 'assets/images/promo-banner/promo-banner-3.png',
++    linkUrl: 'https://app.leather.io/sbtc',
++  },
++];
++
++export function PromoBanner() {
++  const [currentIndex, setCurrentIndex] = useState(0);
++  const [promoIndexes, setPromoIndexes] = useState<number[]>([]);
++  const { dismissPromo, dismissedPromoIndexes } = usePromos();
++  const shouldDisplayPromoCard = useConfigPromoCardEnabled();
++
++  useOnMount(() => {
++    if (promoCards.length > 0 && promoIndexes.length === 0) {
++      setPromoIndexes(Array.from({ length: promoCards.length }, (_, i) => i));
++    }
++  });
++
++  const visibleIndexes = useMemo(
++    () => promoIndexes.filter(i => !dismissedPromoIndexes.includes(i)),
++    [promoIndexes, dismissedPromoIndexes]
++  );
++
++  function handleDismissCurrentPromo() {
++    const current = visibleIndexes[currentIndex];
++    dismissPromo(current);
++
++    const newVisibleIndexes = promoIndexes.filter(
++      i => ![...dismissedPromoIndexes, current].includes(i)
++    );
++
++    const newIndex =
++      currentIndex >= newVisibleIndexes.length
++        ? Math.max(newVisibleIndexes.length - 1, 0)
++        : currentIndex;
++
++    setCurrentIndex(newIndex);
++  }
++
++  function onGoBackward() {
++    setCurrentIndex(prev => Math.max(prev - 1, 0));
++  }
++
++  function onGoForward() {
++    setCurrentIndex(prev => Math.min(prev + 1, visibleIndexes.length - 1));
++  }
++
++  if (!shouldDisplayPromoCard || visibleIndexes.length === 0) return null;
++
++  const currentPromoIndex = visibleIndexes[currentIndex];
++  const currentPromo = promoCards[currentPromoIndex];
++
++  return (
++    <>
++      <PromoCard {...currentPromo} onDismissCard={handleDismissCurrentPromo} />
++      <PromoBannerNavbar
++        currentIndex={currentPromoIndex}
++        promoIndexes={promoIndexes}
++        visibleIndexes={visibleIndexes}
++        onSetCurrentIndex={index => setCurrentIndex(index)}
++        onGoBackward={onGoBackward}
++        onGoForward={onGoForward}
++      />
++    </>
++  );
++}
+diff --git a/src/app/features/promo-banner/promo-card.layout.tsx b/src/app/features/promo-banner/promo-card.layout.tsx
+new file mode 100644
+index 000000000..4f572dd47
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-card.layout.tsx
+@@ -0,0 +1,47 @@
++import { HStack, styled } from 'leather-styles/jsx';
++
++import { CloseIcon, Flag, IconButton } from '@leather.io/ui';
++
++interface PromoCardLayoutProps {
++  img: React.ReactNode;
++  message: string;
++  onClickCard(): void;
++  onDismissCard(): void;
++}
++export function PromoCardLayout({
++  img,
++  message,
++  onClickCard,
++  onDismissCard,
++}: PromoCardLayoutProps) {
++  return (
++    <HStack
++      cursor="pointer"
++      background="ink.background-secondary"
++      borderRadius={8}
++      border="2px solid"
++      borderColor="ink.border-default"
++      gap="space.01"
++      mt="space.01"
++      width="100%"
++    >
++      <Flag
++        cursor="pointer"
++        img={img}
++        pl="space.01"
++        pr="space.00"
++        spacing="space.00"
++        width="100%"
++        onClick={onClickCard}
++      >
++        <styled.p textStyle="label.02">{message}</styled.p>
++      </Flag>
++      <IconButton
++        _hover={{ bg: 'transparent' }}
++        alignSelf="flex-start"
++        icon={<CloseIcon variant="small" />}
++        onClick={onDismissCard}
++      />
++    </HStack>
++  );
++}
+diff --git a/src/app/features/promo-banner/promo-card.tsx b/src/app/features/promo-banner/promo-card.tsx
+new file mode 100644
+index 000000000..ff87e74c8
+--- /dev/null
++++ b/src/app/features/promo-banner/promo-card.tsx
+@@ -0,0 +1,34 @@
++import { styled } from 'leather-styles/jsx';
++
++import { analytics } from '@shared/utils/analytics';
++
++import { useThemeSwitcher } from '@app/common/theme-provider';
++import { openInNewTab } from '@app/common/utils/open-in-new-tab';
++
++import { PromoCardLayout } from './promo-card.layout';
++
++interface PromoCardProps {
++  eventName: string;
++  message: string;
++  imgSrc: string;
++  linkUrl: string;
++  onDismissCard(): void;
++}
++export function PromoCard({ eventName, message, imgSrc, linkUrl, onDismissCard }: PromoCardProps) {
++  const { theme } = useThemeSwitcher();
++  const invertStyle = theme === 'light' ? {} : { filter: 'invert()' };
++
++  function onClickCard() {
++    void analytics.untypedTrack('promo_banner_clicked', { banner_name: eventName });
++    openInNewTab(linkUrl);
++  }
++
++  return (
++    <PromoCardLayout
++      img={<styled.img alt={message} src={imgSrc} height={70} width={100} style={invertStyle} />}
++      message={message}
++      onClickCard={onClickCard}
++      onDismissCard={onDismissCard}
++    />
++  );
++}
+diff --git a/src/app/features/promo-banner/use-promos.ts b/src/app/features/promo-banner/use-promos.ts
+new file mode 100644
+index 000000000..9c357ddfd
+--- /dev/null
++++ b/src/app/features/promo-banner/use-promos.ts
+@@ -0,0 +1,19 @@
++import { useMemo } from 'react';
++
++import { useAppDispatch } from '@app/store';
++import { settingsActions } from '@app/store/settings/settings.actions';
++import { useDismissedPromoIndexes } from '@app/store/settings/settings.selectors';
++
++export function usePromos() {
++  const dispatch = useAppDispatch();
++  const dismissedPromoIndexes = useDismissedPromoIndexes();
++  return useMemo(
++    () => ({
++      dismissedPromoIndexes,
++      dismissPromo(promoIndex: number) {
++        dispatch(settingsActions.promoDismissed(promoIndex));
++      },
++    }),
++    [dismissedPromoIndexes, dispatch]
++  );
++}
+diff --git a/src/app/features/promo-card/promo-card.tsx b/src/app/features/promo-card/promo-card.tsx
+deleted file mode 100644
+index 2b528e752..000000000
+--- a/src/app/features/promo-card/promo-card.tsx
++++ /dev/null
+@@ -1,52 +0,0 @@
+-import { Box, styled } from 'leather-styles/jsx';
+-
+-import { Flag, type FlagProps } from '@leather.io/ui';
+-
+-import { useConfigPromoCardEnabled } from '@app/query/common/remote-config/remote-config.query';
+-
+-interface PromoCardContentProps extends FlagProps {}
+-
+-function PromoCardLayout(props: PromoCardContentProps) {
+-  // Hardcoded colors needed to bypass theme
+-  const backgroundColor = '#1B1A17';
+-  const borderColor = '#554D44';
+-  const textColor = '#F5F1ED';
+-  return (
+-    <Flag
+-      cursor="pointer"
+-      reverse
+-      img={
+-        <styled.img
+-          alt="Grow your bitcoin in our new web app"
+-          src="assets/illustrations/grow-your-bitcoin.png"
+-          width={70}
+-          mr="space.02"
+-        />
+-      }
+-      background={backgroundColor}
+-      borderRadius={8}
+-      border="2px solid"
+-      borderColor={borderColor}
+-      mt="space.05"
+-      pt="space.02"
+-      px="space.02"
+-      width="100%"
+-      {...props}
+-    >
+-      <Box pl="space.03" pt="space.02" pb="space.04">
+-        <styled.h3 textStyle="heading.05" fontSize="17px" lineHeight={1.4} color={textColor}>
+-          Grow your Bitcoin
+-        </styled.h3>
+-        <styled.p textStyle="label.03" mt="space.01" color={textColor}>
+-          Our new web app is live and built to help you earn with Bitcoin.
+-        </styled.p>
+-      </Box>
+-    </Flag>
+-  );
+-}
+-
+-export function PromoCard(props: FlagProps) {
+-  const shouldDisplayPromoCard = useConfigPromoCardEnabled();
+-  if (!shouldDisplayPromoCard) return null;
+-  return <PromoCardLayout {...props} />;
+-}
+diff --git a/src/app/pages/home/home.tsx b/src/app/pages/home/home.tsx
+index 201c9b2e5..b2af97e0f 100644
+--- a/src/app/pages/home/home.tsx
++++ b/src/app/pages/home/home.tsx
+@@ -11,10 +11,9 @@ import { useBalances } from '@app/common/hooks/balance/use-balances';
+ import { useOnMount } from '@app/common/hooks/use-on-mount';
+ import { useSwitchAccountSheet } from '@app/common/switch-account/use-switch-account-sheet-context';
+ import { whenPageMode } from '@app/common/utils';
+-import { openInNewTab } from '@app/common/utils/open-in-new-tab';
+ import { ActivityList } from '@app/features/activity-list/activity-list';
+ import { FeedbackButton } from '@app/features/feedback-button/feedback-button';
+-import { PromoCard } from '@app/features/promo-card/promo-card';
++import { PromoBanner } from '@app/features/promo-banner/promo-banner';
+ import { Assets } from '@app/pages/home/components/assets';
+ import { homePageModalRoutes } from '@app/routes/app-routes';
+ import { ModalBackgroundWrapper } from '@app/routes/components/modal-background-wrapper';
+@@ -32,8 +31,6 @@ import { AccountCard } from '@app/ui/components/account/account.card';
+ import { AccountActions } from './components/account-actions';
+ import { HomeTabs } from './components/home-tabs';
+ 
+-const leatherWebAppUrl = 'https://leather.io';
+-
+ export function Home() {
+   const { decodedAuthRequest } = useOnboardingState();
+   const { toggleSwitchAccount } = useSwitchAccountSheet();
+@@ -57,7 +54,7 @@ export function Home() {
+   });
+ 
+   useOnMount(() => {
+-    if (decodedAuthRequest) navigate(RouteUrls.ChooseAccount);
++    if (decodedAuthRequest) return navigate(RouteUrls.ChooseAccount);
+   });
+ 
+   return (
+@@ -86,7 +83,7 @@ export function Home() {
+         >
+           <AccountActions />
+         </AccountCard>
+-        <PromoCard onClick={() => openInNewTab(leatherWebAppUrl)} />
++        <PromoBanner />
+       </Box>
+       {whenPageMode({ full: <FeedbackButton />, popup: null })}
+       <HomeTabs>
+diff --git a/src/app/pages/onboarding/set-password/set-password.tsx b/src/app/pages/onboarding/set-password/set-password.tsx
+index c88e358a5..4ee31aa29 100644
+--- a/src/app/pages/onboarding/set-password/set-password.tsx
++++ b/src/app/pages/onboarding/set-password/set-password.tsx
+@@ -63,12 +63,12 @@ function SetPasswordPage() {
+         if (!stacksAccounts) return;
+ 
+         if (stacksAccounts && stacksAccounts.length > 1) {
+-          navigate(RouteUrls.ChooseAccount);
++          void navigate(RouteUrls.ChooseAccount);
+         } else {
+           await finishSignIn(0);
+         }
+       } else {
+-        navigate(RouteUrls.Home, { replace: true, state: { fromOnboarding: true } });
++        void navigate(RouteUrls.Home, { replace: true, state: { fromOnboarding: true } });
+       }
+     },
+     [setPassword, decodedAuthRequest, stacksAccounts, navigate, finishSignIn]
+diff --git a/src/app/store/settings/settings.selectors.ts b/src/app/store/settings/settings.selectors.ts
+index 5b2536f6e..7c3025926 100644
+--- a/src/app/store/settings/settings.selectors.ts
++++ b/src/app/store/settings/settings.selectors.ts
+@@ -27,6 +27,15 @@ export function useDismissedMessageIds() {
+   return useSelector(selectDismissedMessageIds);
+ }
+ 
++const selectDismissedPromoIndexes = createSelector(
++  selectSettings,
++  state => state.dismissedPromoIndexes ?? []
++);
++
++export function useDismissedPromoIndexes() {
++  return useSelector(selectDismissedPromoIndexes);
++}
++
+ const selectIsPrivateMode = createSelector(selectSettings, state => state.isPrivateMode ?? false);
+ 
+ export function useIsPrivateMode() {
+diff --git a/src/app/store/settings/settings.slice.ts b/src/app/store/settings/settings.slice.ts
+index 7742620b2..b989d3b5c 100644
+--- a/src/app/store/settings/settings.slice.ts
++++ b/src/app/store/settings/settings.slice.ts
+@@ -5,6 +5,7 @@ import { UserSelectedTheme } from '@app/common/theme-provider';
+ interface InitialState {
+   userSelectedTheme: UserSelectedTheme;
+   dismissedMessages: string[];
++  dismissedPromoIndexes: number[];
+   isPrivateMode?: boolean;
+   isNotificationsEnabled?: boolean;
+   bypassInscriptionChecks?: boolean;
+@@ -14,6 +15,7 @@ interface InitialState {
+ const initialState: InitialState = {
+   userSelectedTheme: 'system',
+   dismissedMessages: [],
++  dismissedPromoIndexes: [],
+   discardedInscriptions: [],
+   isNotificationsEnabled: true,
+ };
+@@ -32,6 +34,13 @@ export const settingsSlice = createSlice({
+     resetMessages(state) {
+       state.dismissedMessages = [];
+     },
++    promoDismissed(state, action: PayloadAction<number>) {
++      if (!Array.isArray(state.dismissedPromoIndexes)) state.dismissedPromoIndexes = [];
++      state.dismissedPromoIndexes = [...state.dismissedPromoIndexes, action.payload];
++    },
++    resetPromoBanner(state) {
++      state.dismissedPromoIndexes = [];
++    },
+     togglePrivateMode(state) {
+       state.isPrivateMode = !state.isPrivateMode;
+     },
+diff --git a/tests/page-object-models/onboarding.page.ts b/tests/page-object-models/onboarding.page.ts
+index acb5e1a37..cbfc56dd9 100644
+--- a/tests/page-object-models/onboarding.page.ts
++++ b/tests/page-object-models/onboarding.page.ts
+@@ -54,6 +54,7 @@ export const testSoftwareAccountDefaultWalletState = {
+     discardedInscriptions: [],
+     userSelectedTheme: 'system',
+     dismissedMessages: [],
++    dismissedPromoIndexes: [],
+     isNotificationsEnabled: true,
+   },
+   manageTokens: { entities: {}, ids: [] },
+```

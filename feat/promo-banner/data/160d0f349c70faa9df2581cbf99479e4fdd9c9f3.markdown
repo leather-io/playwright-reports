@@ -1,17 +1,17 @@
 # Test info
 
-- Name: Send sip10 >> can send sip10 token
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:20:3
+- Name: send stx: tests on mainnet >> send form input fields >> that fee row defaults to middle fee estimation
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:235:5
 
 # Error details
 
 ```
-Error: locator.waitFor: Target page, context or browser has been closed
-Call log:
-  - waiting for getByTestId('send-form') to be visible
-
-    at SendPage.selectSIP10AndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:89:68)
-    at /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:17:5
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
 ```
 
 # Test source
@@ -98,15 +98,15 @@ Call log:
    79 |   async selectStxAndGoToSendForm() {
    80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    81 |     await this.page.getByTestId('STX').click();
-   82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
    83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    84 |   }
    85 |
    86 |   async selectSIP10AndGoToSendForm() {
    87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
->  89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
-      |                                                                    ^ Error: locator.waitFor: Target page, context or browser has been closed
+   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    90 |   }
    91 |
    92 |   async waitForSendPageReady() {
@@ -694,14 +694,13 @@ index 7742620b2..b989d3b5c 100644
        state.isPrivateMode = !state.isPrivateMode;
      },
 diff --git a/tests/page-object-models/onboarding.page.ts b/tests/page-object-models/onboarding.page.ts
-index acb5e1a37..0b96937ce 100644
+index acb5e1a37..cbfc56dd9 100644
 --- a/tests/page-object-models/onboarding.page.ts
 +++ b/tests/page-object-models/onboarding.page.ts
-@@ -54,6 +54,8 @@ export const testSoftwareAccountDefaultWalletState = {
+@@ -54,6 +54,7 @@ export const testSoftwareAccountDefaultWalletState = {
      discardedInscriptions: [],
      userSelectedTheme: 'system',
      dismissedMessages: [],
-+    promoIndexes: [],
 +    dismissedPromoIndexes: [],
      isNotificationsEnabled: true,
    },

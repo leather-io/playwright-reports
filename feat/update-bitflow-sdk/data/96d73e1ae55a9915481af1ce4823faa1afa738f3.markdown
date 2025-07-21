@@ -1,0 +1,240 @@
+# Test info
+
+- Name: send stx: tests on mainnet >> send form input fields >> that fee row defaults to middle fee estimation
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:235:5
+
+# Error details
+
+```
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
+```
+
+# Test source
+
+```ts
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
+  101 |
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
+  114 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
+```
+
+# Local changes
+
+```diff
+diff --git a/package.json b/package.json
+index 099de450c..817fb9dc4 100644
+--- a/package.json
++++ b/package.json
+@@ -140,7 +140,7 @@
+   },
+   "dependencies": {
+     "@bitcoinerlab/secp256k1": "1.0.2",
+-    "@bitflowlabs/core-sdk": "2.2.0",
++    "@bitflowlabs/core-sdk": "2.4.0",
+     "@blockstack/stacks-transactions": "0.7.0",
+     "@coinbase/cbpay-js": "2.1.0",
+     "@fungible-systems/zone-file": "2.0.0",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 2c22d091e..3de8085ca 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -33,8 +33,8 @@ importers:
+         specifier: 1.0.2
+         version: 1.0.2
+       '@bitflowlabs/core-sdk':
+-        specifier: 2.2.0
+-        version: 2.2.0(encoding@0.1.13)
++        specifier: 2.4.0
++        version: 2.4.0(encoding@0.1.13)
+       '@blockstack/stacks-transactions':
+         specifier: 0.7.0
+         version: 0.7.0(encoding@0.1.13)
+@@ -1857,8 +1857,8 @@ packages:
+   '@bitcoinerlab/secp256k1@1.2.0':
+     resolution: {integrity: sha512-jeujZSzb3JOZfmJYI0ph1PVpCRV5oaexCgy+RvCXV8XlY+XFB/2n3WOcvBsKLsOw78KYgnQrQWb2HrKE4be88Q==}
+ 
+-  '@bitflowlabs/core-sdk@2.2.0':
+-    resolution: {integrity: sha512-i/gcnVyM5A+c98SPgQcKoVsRCKW9q7KYKuls/LHYkEo0sGkPH83qQn6d1dMe6ALsHvkixlJmfosT+qG6gM4hhg==}
++  '@bitflowlabs/core-sdk@2.4.0':
++    resolution: {integrity: sha512-ii9W0/dfRb0tkw0Y44KJ+40VkHnH2a+Wgj+aWvcyCkFU9iE2LlQ3AQMZA+W1MHxTgBzah34ouzEs1+F6xhkSdg==}
+     engines: {node: '>=20.0.0'}
+ 
+   '@blockstack/stacks-transactions@0.7.0':
+@@ -16583,7 +16583,7 @@ snapshots:
+     dependencies:
+       '@noble/curves': 1.9.0
+ 
+-  '@bitflowlabs/core-sdk@2.2.0(encoding@0.1.13)':
++  '@bitflowlabs/core-sdk@2.4.0(encoding@0.1.13)':
+     dependencies:
+       '@stacks/connect': 7.10.2(encoding@0.1.13)
+       '@stacks/network': 7.0.2(encoding@0.1.13)
+diff --git a/src/shared/environment.ts b/src/shared/environment.ts
+index 81c6ce9bc..f200b448b 100644
+--- a/src/shared/environment.ts
++++ b/src/shared/environment.ts
+@@ -17,6 +17,7 @@ export const SWAP_ENABLED = process.env.SWAP_ENABLED === 'true';
+ export const BITFLOW_API_HOST = process.env.BITFLOW_API_HOST ?? '';
+ export const BITFLOW_API_KEY = process.env.BITFLOW_API_KEY ?? '';
+ export const BITFLOW_READONLY_CALL_API_HOST = process.env.BITFLOW_READONLY_CALL_API_HOST ?? '';
++export const BITFLOW_READONLY_CALL_API_KEY = process.env.BITFLOW_READONLY_CALL_API_KEY ?? '';
+ export const BITFLOW_KEEPER_API_KEY = process.env.BITFLOW_KEEPER_API_KEY ?? '';
+ export const BITFLOW_KEEPER_API_HOST = process.env.BITFLOW_KEEPER_API_HOST ?? '';
+ export const DEBUG_TX_MONITOR = process.env.DEBUG_TX_MONITOR === 'true';
+diff --git a/src/shared/utils/bitflow-sdk.ts b/src/shared/utils/bitflow-sdk.ts
+index 6eca5d2e2..e63613570 100644
+--- a/src/shared/utils/bitflow-sdk.ts
++++ b/src/shared/utils/bitflow-sdk.ts
+@@ -6,6 +6,7 @@ import {
+   BITFLOW_KEEPER_API_HOST,
+   BITFLOW_KEEPER_API_KEY,
+   BITFLOW_READONLY_CALL_API_HOST,
++  BITFLOW_READONLY_CALL_API_KEY,
+ } from '@shared/environment';
+ import { logger } from '@shared/logger';
+ 
+@@ -15,6 +16,7 @@ export const bitflow: BitflowSDK = (() => {
+       BITFLOW_API_HOST: BITFLOW_API_HOST,
+       BITFLOW_API_KEY: BITFLOW_API_KEY,
+       READONLY_CALL_API_HOST: BITFLOW_READONLY_CALL_API_HOST,
++      READONLY_CALL_API_KEY: BITFLOW_READONLY_CALL_API_KEY,
+       KEEPER_API_KEY: BITFLOW_KEEPER_API_KEY,
+       KEEPER_API_HOST: BITFLOW_KEEPER_API_HOST,
+     });
+```

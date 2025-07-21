@@ -1,0 +1,132 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
+
+# Error details
+
+```
+Error: page.click: Target crashed 
+Call log:
+  - waiting for locator('[data-testid="btn-confirm-transaction"]')
+    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-mt_space.04 leather-button leather-button--size_md leather-button--variant_solid leather-button--fullWidth_true leather-h_48px leather-py_unset">…</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
+
+    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
+```
+
+# Test source
+
+```ts
+   1 | import { Page } from '@playwright/test';
+   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
+   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   4 | import { createTestSelector } from '@tests/utils';
+   5 |
+   6 | export class TransactionRequestPage {
+   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
+   8 |     TransactionRequestSelectors.BtnConfirmTransaction
+   9 |   );
+  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
+  11 |   readonly transactionRequestPage = createTestSelector(
+  12 |     TransactionRequestSelectors.TransactionRequestPage
+  13 |   );
+  14 |
+  15 |   constructor(readonly page: Page) {}
+  16 |
+  17 |   async clickConfirmTransactionButton() {
+> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
+     |                      ^ Error: page.click: Target crashed 
+  19 |   }
+  20 |
+  21 |   async getDisplayedFeeValue() {
+  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
+  23 |   }
+  24 |
+  25 |   async waitForTransactionRequestError(msg: string) {
+  26 |     return this.page.waitForSelector(`text=${msg}`);
+  27 |   }
+  28 |
+  29 |   async waitForFee() {
+  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
+  31 |   }
+  32 |
+  33 |   async waitForTransactionRequestPage() {
+  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
+  35 |   }
+  36 | }
+  37 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/request-password.tsx b/src/app/components/request-password.tsx
+index 62159bb82..956fd584e 100644
+--- a/src/app/components/request-password.tsx
++++ b/src/app/components/request-password.tsx
+@@ -1,10 +1,10 @@
+-import { FormEvent, useCallback, useState } from 'react';
++import { useCallback, useState } from 'react';
+ import { useNavigate } from 'react-router';
+ 
+ import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+ import { Box, Stack, styled } from 'leather-styles/jsx';
+ 
+-import { Button, Link, Logo } from '@leather.io/ui';
++import { Button, Input, Link, Logo } from '@leather.io/ui';
+ 
+ import { RouteUrls } from '@shared/route-urls';
+ import { analytics } from '@shared/utils/analytics';
+@@ -85,28 +85,22 @@ export function RequestPassword({ onSuccess, showForgotPassword = false }: Reque
+         <Stack gap="space.05" px="space.05" minHeight="330px">
+           <styled.h3 textStyle="heading.03">Enter your password</styled.h3>
+           <styled.p textStyle="label.02">{(isRunning && waitingMessage) || caption}</styled.p>
+-          <styled.input
+-            _focus={{ border: 'focus' }}
+-            autoCapitalize="off"
+-            autoComplete="off"
+-            autoFocus
+-            border="active"
+-            borderRadius="sm"
+-            data-testid={SettingsSelectors.EnterPasswordInput}
+-            height="inputHeight"
+-            onChange={(e: FormEvent<HTMLInputElement>) => {
+-              setError('');
+-              setPassword(e.currentTarget.value);
+-            }}
+-            onKeyUp={buildEnterKeyEvent(submit)}
+-            p="space.04"
+-            placeholder="Enter your password"
+-            ring="none"
+-            type="password"
+-            textStyle="body.02"
+-            value={password}
+-            width="100%"
+-          />
++          <Input.Root>
++            <Input.Label>Enter your password</Input.Label>
++            <Input.Field
++              autoFocus
++              autoCapitalize="off"
++              autoComplete="off"
++              type="password"
++              data-testid={SettingsSelectors.EnterPasswordInput}
++              value={password}
++              onChange={event => {
++                setError('');
++                setPassword(event.currentTarget.value);
++              }}
++              onKeyUp={buildEnterKeyEvent(submit)}
++            />
++          </Input.Root>
+           {showForgotPassword && (
+             <Link width="fit-content" onClick={() => navigate(RouteUrls.ForgotPassword)}>
+               Forgot password?
+```

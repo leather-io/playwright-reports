@@ -1,0 +1,413 @@
+# Test info
+
+- Name: Compliance checks >> the addresses of all recipients are checked
+- Location: /home/runner/work/extension/extension/tests/specs/compliance-checks/compliance-checks.spec.ts:77:3
+
+# Error details
+
+```
+Error: expect(received).toEqual(expected) // deep equality
+
+Expected: 2
+Received: 1
+    at /home/runner/work/extension/extension/tests/specs/compliance-checks/compliance-checks.spec.ts:94:35
+```
+
+# Test source
+
+```ts
+   1 | import type { BrowserContext, Page, Route } from '@playwright/test';
+   2 |
+   3 | import { delay } from '@leather.io/utils';
+   4 |
+   5 | import { test } from '../../fixtures/fixtures';
+   6 |
+   7 | function mockChainalysisEntityRegistrationRequest(context: BrowserContext) {
+   8 |   return async (routeHandler: (route: Route) => void) => {
+   9 |     return context.route('https://api.chainalysis.com/api/risk/v2/entities', async route =>
+  10 |       routeHandler(route)
+  11 |     );
+  12 |   };
+  13 | }
+  14 |
+  15 | function mockChainalysisEntityCheckRequest(context: BrowserContext) {
+  16 |   return async (routeHandler: (route: Route) => void) => {
+  17 |     return context.route('https://api.chainalysis.com/api/risk/v2/entities/*', async route =>
+  18 |       routeHandler(route)
+  19 |     );
+  20 |   };
+  21 | }
+  22 |
+  23 | test.describe('Compliance checks', () => {
+  24 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
+  25 |     await globalPage.setupAndUseApiCalls(extensionId);
+  26 |     await onboardingPage.signInWithTestAccount(extensionId);
+  27 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
+  28 |   });
+  29 |
+  30 |   async function openIllegalTransfer(page: Page) {
+  31 |     return page.evaluate(
+  32 |       () =>
+  33 |         // We only want the page window, don't wait for actual promise to finish
+  34 |         void (window as any).LeatherProvider.request('sendTransfer', {
+  35 |           // Known address from list, in readme of this
+  36 |           // page https://github.com/0xB10C/ofac-sanctioned-digital-currency-addresses
+  37 |           address: '12QtD5BFwRsdNsAZY76UVE1xyCGNTojH9h',
+  38 |           amount: '1231',
+  39 |         }).catch((e: unknown) => e)
+  40 |     );
+  41 |   }
+  42 |
+  43 |   test('that it errors if non-compliant entity is detected', async ({ page, context }) => {
+  44 |     await mockChainalysisEntityRegistrationRequest(context)(route =>
+  45 |       route.fulfill({ json: { address: '12QtD5BFwRsdNsAZY76UVE1xyCGNTojH9h' } })
+  46 |     );
+  47 |     await mockChainalysisEntityCheckRequest(context)(route =>
+  48 |       route.fulfill({ json: { risk: 'Severe' } })
+  49 |     );
+  50 |
+  51 |     const [leatherApprover] = await Promise.all([
+  52 |       context.waitForEvent('page'),
+  53 |       openIllegalTransfer(page),
+  54 |     ]);
+  55 |
+  56 |     await test
+  57 |       .expect(leatherApprover.getByText('Unable to handle request, errorCode: 1398'))
+  58 |       .toBeVisible();
+  59 |   });
+  60 |
+  61 |   test('nothing happens when chainalysis is down', async ({ page, context }) => {
+  62 |     await mockChainalysisEntityCheckRequest(context)(route => route.abort());
+  63 |     await mockChainalysisEntityRegistrationRequest(context)(route => route.abort());
+  64 |
+  65 |     const [leatherApprover] = await Promise.all([
+  66 |       context.waitForEvent('page'),
+  67 |       openIllegalTransfer(page),
+  68 |     ]);
+  69 |
+  70 |     await test
+  71 |       .expect(leatherApprover.locator('text="Unable to handle request, errorCode: 1398"'))
+  72 |       .toBeHidden();
+  73 |
+  74 |     await test.expect(leatherApprover.locator('text="0.00001231 BTC"')).toBeVisible();
+  75 |   });
+  76 |
+  77 |   test('the addresses of all recipients are checked', async ({ context, page }) => {
+  78 |     let entityCheckCount = 0;
+  79 |
+  80 |     await mockChainalysisEntityCheckRequest(context)(route => {
+  81 |       entityCheckCount += 1;
+  82 |       return route.abort();
+  83 |     });
+  84 |
+  85 |     await Promise.all([context.waitForEvent('page'), openIllegalTransfer(page)]);
+  86 |
+  87 |     // Please forgive this timeout, we need to give the page time in order to
+  88 |     // make the request, to be sure it was made. If this test ends up failing
+  89 |     // due to a race condition, please let the author know.
+  90 |     await delay(2000);
+  91 |
+  92 |     const userAndRecipientAddressCount = 2;
+  93 |
+> 94 |     test.expect(entityCheckCount).toEqual(userAndRecipientAddressCount);
+     |                                   ^ Error: expect(received).toEqual(expected) // deep equality
+  95 |   });
+  96 | });
+  97 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/features/ledger/flows/bitcoin-tx-signing/ledger-bitcoin-sign-tx-container.tsx b/src/app/features/ledger/flows/bitcoin-tx-signing/ledger-bitcoin-sign-tx-container.tsx
+index f127b8379..921ddedac 100644
+--- a/src/app/features/ledger/flows/bitcoin-tx-signing/ledger-bitcoin-sign-tx-container.tsx
++++ b/src/app/features/ledger/flows/bitcoin-tx-signing/ledger-bitcoin-sign-tx-container.tsx
+@@ -74,24 +74,24 @@ function LedgerSignBitcoinTxContainer() {
+       connectApp: connectLedgerBitcoinApp(network.chain.bitcoin.mode),
+       async signTransactionWithDevice(bitcoinApp) {
+         if (!inputsToSign) {
+-          ledgerNavigate.cancelLedgerAction();
++          void ledgerNavigate.cancelLedgerAction();
+           toast.error('No input signing config defined');
+           return;
+         }
+ 
+-        ledgerNavigate.toDeviceBusyStep('Verifying public key on Ledger…');
++        void ledgerNavigate.toDeviceBusyStep('Verifying public key on Ledger…');
+ 
+-        ledgerNavigate.toConnectionSuccessStep('bitcoin');
++        void ledgerNavigate.toConnectionSuccessStep('bitcoin');
+         await delay(1200);
+         if (!unsignedTransaction) throw new Error('No unsigned tx');
+ 
+-        ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: false });
++        void ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: false });
+ 
+         try {
+           const btcTx = await signLedger(bitcoinApp, unsignedTransaction.toPSBT(), inputsToSign);
+ 
+           if (!btcTx || !unsignedTransactionRaw) throw new Error('No tx returned');
+-          ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: true });
++          void ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: true });
+           await delay(1200);
+           appEvents.publish('ledgerBitcoinTxSigned', {
+             signedPsbt: btcTx,
+@@ -100,7 +100,7 @@ function LedgerSignBitcoinTxContainer() {
+         } catch (e) {
+           logger.error('Unable to sign tx with ledger', e);
+           ledgerAnalytics.transactionSignedOnLedgerRejected();
+-          ledgerNavigate.toOperationRejectedStep();
++          void ledgerNavigate.toOperationRejectedStep();
+         } finally {
+           void bitcoinApp.transport.close();
+         }
+@@ -111,7 +111,7 @@ function LedgerSignBitcoinTxContainer() {
+     appEvents.publish('ledgerBitcoinTxSigningCancelled', {
+       unsignedPsbt: unsignedTransaction ? bytesToHex(unsignedTransaction.toPSBT()) : '',
+     });
+-    ledgerNavigate.cancelLedgerAction();
++    void ledgerNavigate.cancelLedgerAction();
+   }
+ 
+   const ledgerContextValue: LedgerTxSigningContext = {
+diff --git a/src/app/features/ledger/flows/stacks-tx-signing/ledger-sign-stacks-tx-container.tsx b/src/app/features/ledger/flows/stacks-tx-signing/ledger-sign-stacks-tx-container.tsx
+index 186e53db0..b6c8bdd27 100644
+--- a/src/app/features/ledger/flows/stacks-tx-signing/ledger-sign-stacks-tx-container.tsx
++++ b/src/app/features/ledger/flows/stacks-tx-signing/ledger-sign-stacks-tx-container.tsx
+@@ -49,7 +49,7 @@ function LedgerSignStacksTxContainer() {
+   const [unsignedTx, setUnsignedTx] = useState<null | string>(null);
+   const navigate = useNavigate();
+ 
+-  const chain = 'stacks' as const;
++  const chain = 'stacks';
+ 
+   useEffect(() => {
+     const tx = get(location.state, 'tx');
+@@ -74,11 +74,11 @@ function LedgerSignStacksTxContainer() {
+       }
+ 
+       if (isVersionOfLedgerStacksAppWithContractPrincipalBug(appVersion)) {
+-        navigate(RouteUrls.LedgerOutdatedAppWarning);
++        void navigate(RouteUrls.LedgerOutdatedAppWarning);
+         const response = await hasUserSkippedBuggyAppWarning.wait();
+ 
+         if (response === 'cancelled-operation') {
+-          ledgerNavigate.cancelLedgerAction();
++          void ledgerNavigate.cancelLedgerAction();
+         }
+         return false;
+       }
+@@ -88,28 +88,27 @@ function LedgerSignStacksTxContainer() {
+       // TODO: need better handling
+       if (!account) return;
+ 
+-      ledgerNavigate.toDeviceBusyStep('Verifying public key on Ledger…');
++      void ledgerNavigate.toDeviceBusyStep('Verifying public key on Ledger…');
+       await verifyLedgerPublicKey(stacksApp);
+-      ledgerNavigate.toConnectionSuccessStep('stacks');
++      void ledgerNavigate.toConnectionSuccessStep('stacks');
+       await delay(1000);
++
+       if (!unsignedTx) throw new Error('No unsigned tx');
+ 
+-      ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: false });
++      void ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: false });
+ 
+       const resp = await signLedgerStacksTransaction(stacksApp)(
+         Buffer.from(unsignedTx, 'hex'),
+         account.index
+       );
+ 
+-      // Assuming here that public keys are wrong. Alternatively, we may want
+-      // to proactively check the key before signing
+       if (resp.returnCode === LedgerError.DataIsInvalid) {
+-        ledgerNavigate.toDevicePayloadInvalid();
++        void ledgerNavigate.toDevicePayloadInvalid();
+         return;
+       }
+ 
+       if (resp.returnCode === LedgerError.TransactionRejected) {
+-        ledgerNavigate.toOperationRejectedStep();
++        void ledgerNavigate.toOperationRejectedStep();
+         ledgerAnalytics.transactionSignedOnLedgerRejected();
+         return;
+       }
+@@ -118,7 +117,7 @@ function LedgerSignStacksTxContainer() {
+         throw new Error('Some other error');
+       }
+ 
+-      ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: true });
++      void ledgerNavigate.toAwaitingDeviceOperation({ hasApprovedOperation: true });
+ 
+       await delay(1000);
+ 
+@@ -139,7 +138,7 @@ function LedgerSignStacksTxContainer() {
+           },
+         });
+ 
+-        ledgerNavigate.toBroadcastErrorStep(error);
++        void ledgerNavigate.toBroadcastErrorStep(error);
+         return;
+       }
+     },
+@@ -147,7 +146,7 @@ function LedgerSignStacksTxContainer() {
+ 
+   function closeAction() {
+     appEvents.publish('ledgerStacksTxSigningCancelled', { unsignedTx: unsignedTx ?? '' });
+-    ledgerNavigate.cancelLedgerAction();
++    void ledgerNavigate.cancelLedgerAction();
+   }
+ 
+   const ledgerContextValue: LedgerTxSigningContext = {
+diff --git a/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx b/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx
+index f28a079f4..3be3499cc 100644
+--- a/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx
++++ b/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx
+@@ -62,6 +62,23 @@ export function ApproveSignLedgerStacksTx() {
+         .map(cv => cvToString(cv))
+         .map((value, index) => [`Argument ${index + 0}`, value]);
+ 
++    if (
++      transaction.payload.payloadType === PayloadType.SmartContract ||
++      transaction.payload.payloadType === PayloadType.VersionedSmartContract
++    ) {
++      return [
++        ['Contract address', currentAccount?.address ?? ''],
++        ['Contract name', transaction.payload.contractName.content],
++        ['Contract code', transaction.payload.codeBody.content],
++        ['Nonce', String(transaction.auth.spendingCondition.nonce)],
++        [
++          'Fee (µSTX)',
++          String(transaction.auth.spendingCondition.fee),
++          formatTooltipLabel(transaction.auth.spendingCondition.fee),
++        ],
++      ];
++    }
++
+     return [];
+   }, [chain, currentAccount?.address, transaction]);
+ 
+diff --git a/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts b/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts
+index 5ae59f3cd..749572f72 100644
+--- a/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts
++++ b/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts
+@@ -61,7 +61,7 @@ export function useLedgerSignTx<App extends StacksApp | BitcoinApp>({
+       app = await connectApp();
+       await checkCorrectAppIsOpenWithFailState(app);
+       setAwaitingDeviceConnection(false);
+-      ledgerNavigate.toConnectionSuccessStep(chain);
++      void ledgerNavigate.toConnectionSuccessStep(chain);
+       await delay(1250);
+       await signTransactionWithDevice(app);
+       onSuccess?.();
+@@ -72,7 +72,7 @@ export function useLedgerSignTx<App extends StacksApp | BitcoinApp>({
+         return;
+       }
+ 
+-      ledgerNavigate.toErrorStep(chain);
++      return ledgerNavigate.toErrorStep(chain);
+     } finally {
+       await app?.transport.close();
+     }
+diff --git a/src/app/features/ledger/hooks/use-verify-matching-stacks-public-key.ts b/src/app/features/ledger/hooks/use-verify-matching-stacks-public-key.ts
+index ad2baff3f..7830fa990 100644
+--- a/src/app/features/ledger/hooks/use-verify-matching-stacks-public-key.ts
++++ b/src/app/features/ledger/hooks/use-verify-matching-stacks-public-key.ts
+@@ -16,7 +16,7 @@ export function useVerifyMatchingLedgerStacksPublicKey() {
+       if (!account) return;
+       const { publicKey } = await requestPublicKeyForStxAccount(stacksApp)(account.index);
+       if (publicKey.toString('hex') !== account.stxPublicKey) {
+-        ledgerNavigate.toPublicKeyMismatchStep();
++        void ledgerNavigate.toPublicKeyMismatchStep();
+         throw new Error('Mismatching public keys');
+       }
+     },
+diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+index f935c2686..472e669d1 100644
+--- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
++++ b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+@@ -86,7 +86,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+           })
+         );
+ 
+-        navigate(RouteUrls.BroadcastError, { state: { message } });
++        return navigate(RouteUrls.BroadcastError, { state: { message } });
+       }
+ 
+       async function onSuccess(txid: string, transaction: StacksTransactionWire) {
+diff --git a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
+index 119b3cb9e..99306cd6b 100644
+--- a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
++++ b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
+@@ -71,7 +71,7 @@ export function useStacksBroadcastTransaction({
+         });
+       }
+       if (txId) {
+-        navigate(
++        void navigate(
+           RouteUrls.SentStxTxSummary.replace(':symbol', token.toLowerCase()).replace(
+             ':txId',
+             `${txId}`
+@@ -97,11 +97,11 @@ export function useStacksBroadcastTransaction({
+           return await broadcastTransactionFn({
+             onError(e: Error | string) {
+               const message = isString(e) ? e : e.message;
+-              navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
++              return navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
+             },
+             onSuccess(txId) {
+               if (showSummaryPage) return handlePreviewSuccess(signedTx, txId);
+-              navigate(RouteUrls.Activity);
++              void navigate(RouteUrls.Activity);
+               if (isCancelTransaction) return toast.success('Transaction cancelled successfully');
+               if (isIncreaseFeeTransaction) return toast.success('Fee increased successfully');
+               return;
+@@ -110,7 +110,7 @@ export function useStacksBroadcastTransaction({
+           })(signedTx);
+         }
+       } catch (e) {
+-        navigate(RouteUrls.TransactionBroadcastError, {
++        return navigate(RouteUrls.TransactionBroadcastError, {
+           state: { message: isError(e) ? e.message : 'Unknown error' },
+         });
+       } finally {
+diff --git a/src/app/pages/transaction-request/transaction-request.tsx b/src/app/pages/transaction-request/transaction-request.tsx
+index 05d2b00c9..4d9508b41 100644
+--- a/src/app/pages/transaction-request/transaction-request.tsx
++++ b/src/app/pages/transaction-request/transaction-request.tsx
+@@ -99,8 +99,9 @@ function TransactionRequestBase() {
+           signedSponsoredTx
+         );
+         if (!result.txid) {
+-          navigate(RouteUrls.TransactionBroadcastError, { state: { message: result.error } });
+-          return;
++          return navigate(RouteUrls.TransactionBroadcastError, {
++            state: { message: result.error },
++          });
+         }
+         if (requestToken && tabId) {
+           finalizeTxSignature({
+@@ -114,7 +115,7 @@ function TransactionRequestBase() {
+         }
+       } catch (e: any) {
+         const message = isString(e) ? e : e.message;
+-        navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
++        return navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
+       }
+     } else {
+       const unsignedTx = await generateUnsignedTx(values);
+diff --git a/src/app/store/transactions/transaction.hooks.ts b/src/app/store/transactions/transaction.hooks.ts
+index dad61084e..e3ad705c8 100644
+--- a/src/app/store/transactions/transaction.hooks.ts
++++ b/src/app/store/transactions/transaction.hooks.ts
+@@ -131,7 +131,7 @@ export function useSignStacksTransaction() {
+     whenWallet({
+       async ledger(tx: StacksTransactionWire) {
+         const serializedTx = tx.serialize();
+-        ledgerNavigate.toConnectAndSignStacksTransactionStep(serializedTx);
++        void ledgerNavigate.toConnectAndSignStacksTransactionStep(serializedTx);
+         return listenForStacksTxLedgerSigning(serializedTx);
+       },
+       async software(tx: StacksTransactionWire) {
+```

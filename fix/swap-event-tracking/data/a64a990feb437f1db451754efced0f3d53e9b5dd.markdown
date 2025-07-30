@@ -1,0 +1,202 @@
+# Test info
+
+- Name: Swaps >> that the swap is broadcast
+- Location: /home/runner/work/extension/extension/tests/specs/swap/swap.spec.ts:44:3
+
+# Error details
+
+```
+Error: locator.click: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('swap-review-btn')
+    - locator resolved to <button disabled type="submit" aria-busy="false" data-testid="swap-review-btn" class="leather-button leather-button--size_md leather-button--variant_solid leather-button--fullWidth_true leather-h_48px leather-py_unset">…</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+    - retrying click action
+      - waiting 100ms
+    97 × waiting for element to be visible, enabled and stable
+       - element is not enabled
+     - retrying click action
+       - waiting 500ms
+
+    at /home/runner/work/extension/extension/tests/specs/swap/swap.spec.ts:48:34
+```
+
+# Test source
+
+```ts
+   1 | import { expect } from '@playwright/test';
+   2 | import { mockStacksBroadcastTransaction } from '@tests/mocks/mock-stacks-txs';
+   3 | import { SwapSelectors } from '@tests/selectors/swap.selectors';
+   4 |
+   5 | import { delay } from '@leather.io/utils';
+   6 |
+   7 | import { test } from '../../fixtures/fixtures';
+   8 |
+   9 | test.describe('Swaps', () => {
+  10 |   test.beforeEach(async ({ extensionId, globalPage, homePage, onboardingPage, swapPage }) => {
+  11 |     test.setTimeout(60_000);
+  12 |
+  13 |     await globalPage.setupAndUseApiCalls(extensionId);
+  14 |     await mockStacksBroadcastTransaction(globalPage.page);
+  15 |     await onboardingPage.signInWithTestAccount(extensionId);
+  16 |     await homePage.swapButton.click();
+  17 |     await swapPage.waitForSwapPageReady();
+  18 |   });
+  19 |
+  20 |   test('that it defaults to swapping STX', async ({ swapPage }) => {
+  21 |     test.expect(swapPage.page.getByText('STX')).toBeTruthy();
+  22 |   });
+  23 |
+  24 |   test('that it shows swap review details correctly', async ({ swapPage }) => {
+  25 |     await swapPage.inputSwapAmountBase();
+  26 |     await swapPage.selectAssetToReceive();
+  27 |     await swapPage.swapReviewBtn.click();
+  28 |
+  29 |     const swapProtocol = await swapPage.swapDetailsProtocol.innerText();
+  30 |     test.expect(swapProtocol).toContain('Bitflow');
+  31 |
+  32 |     const swapAssets = await swapPage.swapDetailsSymbol.all();
+  33 |     const swapAssetBase = await swapAssets[0].innerText();
+  34 |     const swapAssetQuote = await swapAssets[1].innerText();
+  35 |
+  36 |     test.expect(swapAssetBase).toEqual('STX');
+  37 |     test.expect(swapAssetQuote).toEqual('USDA');
+  38 |
+  39 |     const swapAmounts = await swapPage.swapDetailsAmount.all();
+  40 |     const swapAmountBase = await swapAmounts[0].innerText();
+  41 |     test.expect(swapAmountBase).toEqual('1');
+  42 |   });
+  43 |
+  44 |   test('that the swap is broadcast', async ({ swapPage }) => {
+  45 |     await swapPage.inputSwapAmountBase();
+  46 |     await swapPage.selectAssetToReceive();
+  47 |
+> 48 |     await swapPage.swapReviewBtn.click({ delay: 2000 });
+     |                                  ^ Error: locator.click: Target page, context or browser has been closed
+  49 |     await swapPage.swapSubmitBtn.click();
+  50 |
+  51 |     const toastMessage = 'Transaction submitted!';
+  52 |     const toast = swapPage.page.getByText(toastMessage, { exact: true });
+  53 |     await expect(toast).toBeVisible();
+  54 |   });
+  55 |
+  56 |   test('that it preselects cross-chain swap assets and restricts quote list', async ({
+  57 |     swapPage,
+  58 |   }) => {
+  59 |     await swapPage.selectBtcAsBaseAsset();
+  60 |     await delay(1000);
+  61 |
+  62 |     const selectedAssets = await swapPage.page.getByTestId(SwapSelectors.SelectedAssetSymbol).all();
+  63 |     const quoteAsset = await selectedAssets[1].innerText();
+  64 |     test.expect(quoteAsset).toEqual('sBTC');
+  65 |
+  66 |     await swapPage.selectQuoteAsset();
+  67 |     await swapPage.page.locator(swapPage.chooseAssetList).waitFor();
+  68 |     const quoteAssets = await swapPage.page.locator(swapPage.chooseAssetListItem).all();
+  69 |     test.expect(quoteAssets.length).toEqual(1);
+  70 |   });
+  71 | });
+  72 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+index c12932f11..a9d0d8785 100644
+--- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
++++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+@@ -154,7 +154,7 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         await client.notifySbtc(deposit);
+         toast.success('Transaction submitted!');
+         setIsIdle();
+-        navigate(RouteUrls.Activity);
++        return navigate(RouteUrls.Activity);
+       } catch (error) {
+         setIsIdle();
+         logger.error(`Deposit error: ${error}`);
+diff --git a/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx b/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
+index b3c7bf109..42465e03c 100644
+--- a/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
++++ b/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
+@@ -33,18 +33,18 @@ export function useStacksBroadcastSwap() {
+           onError(e: Error | string) {
+             setIsIdle();
+             const message = isString(e) ? e : e.message;
+-            navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
++            return navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
+           },
+           onSuccess() {
+             toast.success('Transaction submitted!');
+             setIsIdle();
+-            navigate(RouteUrls.Activity);
++            return navigate(RouteUrls.Activity);
+           },
+           replaceByFee: false,
+         })(signedTx);
+       } catch (e) {
+         setIsIdle();
+-        navigate(RouteUrls.TransactionBroadcastError, {
++        return navigate(RouteUrls.TransactionBroadcastError, {
+           state: { message: isError(e) ? e.message : 'Unknown error' },
+         });
+       } finally {
+diff --git a/src/app/pages/swap/providers/use-bitcoin-swap.tsx b/src/app/pages/swap/providers/use-bitcoin-swap.tsx
+index 80865f6d1..bf1c808e8 100644
+--- a/src/app/pages/swap/providers/use-bitcoin-swap.tsx
++++ b/src/app/pages/swap/providers/use-bitcoin-swap.tsx
+@@ -7,6 +7,7 @@ import type { UtxoResponseItem } from '@leather.io/query';
+ import { delay, isUndefined } from '@leather.io/utils';
+ 
+ import { logger } from '@shared/logger';
++import { analytics } from '@shared/utils/analytics';
+ 
+ import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
+ import type { SwapAsset } from '@app/query/common/alex-sdk/alex-sdk.hooks';
+@@ -45,6 +46,11 @@ export function useBitcoinSwap(signer: BitcoinSigner<P2Ret>, utxos: UtxoResponse
+ 
+       setIsLoading();
+ 
++      void analytics.untypedTrack('broadcast_bitcoin_swap', {
++        base: values.swapAssetBase.name,
++        quote: values.swapAssetQuote.name,
++      });
++
+       return await onDepositSbtc(swapData.deposit);
+     },
+     [isLoading, onDepositSbtc, setIsLoading]
+diff --git a/src/app/pages/swap/providers/use-stacks-swap.tsx b/src/app/pages/swap/providers/use-stacks-swap.tsx
+index 6ee332ca5..2b54c2c0f 100644
+--- a/src/app/pages/swap/providers/use-stacks-swap.tsx
++++ b/src/app/pages/swap/providers/use-stacks-swap.tsx
+@@ -9,6 +9,7 @@ import { isError, isUndefined } from '@leather.io/utils';
+ 
+ import { logger } from '@shared/logger';
+ import { RouteUrls } from '@shared/route-urls';
++import { analytics } from '@shared/utils/analytics';
+ import { bitflow } from '@shared/utils/bitflow-sdk';
+ import { type ContractCallPayload } from '@shared/utils/legacy-requests';
+ 
+@@ -165,9 +166,14 @@ export function useStacksSwap(nonce: number | string) {
+         if (!signedTx)
+           return logger.error('Attempted to generate raw tx, but signed tx is undefined');
+ 
++        void analytics.untypedTrack('broadcast_stacks_swap', {
++          base: values.swapAssetBase.name,
++          quote: values.swapAssetQuote.name,
++        });
++
+         return await broadcastStacksSwap(signedTx);
+       } catch (e) {
+-        navigate(RouteUrls.SwapError, {
++        return navigate(RouteUrls.SwapError, {
+           state: {
+             message: isError(e) ? e.message : '',
+             title: 'Swap Error',
+```

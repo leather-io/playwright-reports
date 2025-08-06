@@ -1,0 +1,259 @@
+# Test info
+
+- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
+- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
+
+# Error details
+
+```
+Error: locator.innerText: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('address-displayer')
+
+    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
+    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
+```
+
+# Test source
+
+```ts
+   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
+   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   6 | import { createTestSelector } from '@tests/utils';
+   7 |
+   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   9 | import { delay } from '@leather.io/utils';
+   10 |
+   11 | export class HomePage {
+   12 |   readonly page: Page;
+   13 |   readonly headerActionButton: Locator;
+   14 |   readonly receiveButton: Locator;
+   15 |   readonly sendButton: Locator;
+   16 |   readonly swapButton: Locator;
+   17 |   readonly settingsButton: Locator;
+   18 |   readonly settingsViewSecretKey: Locator;
+   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
+   20 |   readonly signOutConfirmPasswordDisable: Locator;
+   21 |   readonly signOutDeleteWalletBtn: Locator;
+   22 |   readonly signOutSettingsListItem: Locator;
+   23 |   readonly lockSettingsListItem: Locator;
+   24 |   readonly fundAccountBtn: Locator;
+   25 |   readonly manageTokensBtn: Locator;
+   26 |   readonly assetList: Locator;
+   27 |   readonly manageTokensAssetsList: Locator;
+   28 |
+   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
+   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   31 |   );
+   32 |   $signOutConfirmPasswordDisable = createTestSelector(
+   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
+   34 |   );
+   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
+   36 |
+   37 |   constructor(page: Page) {
+   38 |     this.page = page;
+   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
+   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
+   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
+   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
+   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
+   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
+   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
+   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   47 |     );
+   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
+   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
+   50 |     );
+   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
+   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
+   53 |     );
+   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
+   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
+   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
+   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
+   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
+   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
+   60 |   }
+   61 |
+   62 |   async goToReceiveDialog() {
+   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
+   64 |   }
+   65 |
+   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
+   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
+   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
+   69 |   // https://github.com/microsoft/playwright/issues/12168
+   70 |   // Using the `Receive` route to get the account address for now.
+   71 |   async getReceiveNativeSegwitAddress() {
+   72 |     await this.goToReceiveDialog();
+   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
+   74 |     const displayerAddress = await this.page
+   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   76 |       .innerText();
+   77 |     return displayerAddress.replaceAll('\n', '');
+   78 |   }
+   79 |
+   80 |   // Currently under Ordinals receive flow
+   81 |   async getReceiveTaprootAddress() {
+   82 |     await this.goToReceiveDialog();
+   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
+   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
+   85 |     // FIXME - add better test for Copy action
+   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
+   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
+   88 |     // return address;
+   89 |     const displayerAddress = await this.page
+   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   91 |       .innerText();
+   92 |     return displayerAddress.replaceAll('\n', '');
+   93 |   }
+   94 |
+   95 |   async getReceiveStxAddress() {
+   96 |     await this.goToReceiveDialog();
+   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
+   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
+   99 |     await delay(1000);
+  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
+  101 |     const displayerAddress = await this.page
+  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+> 103 |       .innerText();
+      |        ^ Error: locator.innerText: Target page, context or browser has been closed
+  104 |     return displayerAddress.replaceAll('\n', '');
+  105 |   }
+  106 |
+  107 |   async selectTestnet() {
+  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
+  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet).click();
+  112 |   }
+  113 |
+  114 |   async clickActivityTab() {
+  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
+  116 |   }
+  117 |
+  118 |   async clickSettingsButton() {
+  119 |     await this.settingsButton.click({ force: true });
+  120 |   }
+  121 |
+  122 |   async goToSecretKey() {
+  123 |     await this.clickSettingsButton();
+  124 |     await this.settingsViewSecretKey.click();
+  125 |   }
+  126 |
+  127 |   async signOut() {
+  128 |     await this.clickSettingsButton();
+  129 |     await this.signOutSettingsListItem.click();
+  130 |     await this.signOutConfirmHasBackupCheckbox.click();
+  131 |     await this.signOutConfirmPasswordDisable.click();
+  132 |     await this.signOutDeleteWalletBtn.click();
+  133 |   }
+  134 |
+  135 |   async lock() {
+  136 |     await this.clickSettingsButton();
+  137 |     await this.lockSettingsListItem.click();
+  138 |   }
+  139 |
+  140 |   async goToFundChooseCurrencyPage() {
+  141 |     await this.fundAccountBtn.click();
+  142 |   }
+  143 |
+  144 |   async waitForHomePageReady() {
+  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
+  146 |       state: 'attached',
+  147 |     });
+  148 |   }
+  149 |
+  150 |   async switchAccount(accountIndex: number) {
+  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
+  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
+  153 |   }
+  154 | }
+  155 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+index c12932f11..720bf3aea 100644
+--- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
++++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+@@ -21,6 +21,7 @@ import { btcToSat, createMoney } from '@leather.io/utils';
+ 
+ import { logger } from '@shared/logger';
+ import { RouteUrls } from '@shared/route-urls';
++import { analytics } from '@shared/utils/analytics';
+ 
+ import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
+ import {
+@@ -151,13 +152,16 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         const txid = await client.broadcastTx(deposit.transaction);
+         logger.info('Broadcasted tx', txid);
+ 
++        void analytics.untypedTrack('bitcoin_swap_succeeded', { txid });
++
+         await client.notifySbtc(deposit);
+         toast.success('Transaction submitted!');
+         setIsIdle();
+-        navigate(RouteUrls.Activity);
++        return navigate(RouteUrls.Activity);
+       } catch (error) {
+         setIsIdle();
+         logger.error(`Deposit error: ${error}`);
++        void analytics.untypedTrack('bitcoin_swap_failed', { error });
+       } finally {
+         setIsIdle();
+       }
+diff --git a/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx b/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
+index b3c7bf109..64f2841c7 100644
+--- a/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
++++ b/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
+@@ -7,6 +7,7 @@ import { isError, isString } from '@leather.io/utils';
+ 
+ import { logger } from '@shared/logger';
+ import { RouteUrls } from '@shared/route-urls';
++import { analytics } from '@shared/utils/analytics';
+ 
+ import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
+ import { useSubmitTransactionCallback } from '@app/common/hooks/use-submit-stx-transaction';
+@@ -33,18 +34,20 @@ export function useStacksBroadcastSwap() {
+           onError(e: Error | string) {
+             setIsIdle();
+             const message = isString(e) ? e : e.message;
+-            navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
++            return navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
+           },
+-          onSuccess() {
++          onSuccess(txId) {
+             toast.success('Transaction submitted!');
+             setIsIdle();
+-            navigate(RouteUrls.Activity);
++            void analytics.untypedTrack('stacks_swap_succeeded', { txid: txId });
++            return navigate(RouteUrls.Activity);
+           },
+           replaceByFee: false,
+         })(signedTx);
+       } catch (e) {
+         setIsIdle();
+-        navigate(RouteUrls.TransactionBroadcastError, {
++        void analytics.untypedTrack('stacks_swap_failed', { error: e });
++        return navigate(RouteUrls.TransactionBroadcastError, {
+           state: { message: isError(e) ? e.message : 'Unknown error' },
+         });
+       } finally {
+diff --git a/src/app/pages/swap/providers/use-stacks-swap.tsx b/src/app/pages/swap/providers/use-stacks-swap.tsx
+index 6ee332ca5..3a474e102 100644
+--- a/src/app/pages/swap/providers/use-stacks-swap.tsx
++++ b/src/app/pages/swap/providers/use-stacks-swap.tsx
+@@ -167,7 +167,7 @@ export function useStacksSwap(nonce: number | string) {
+ 
+         return await broadcastStacksSwap(signedTx);
+       } catch (e) {
+-        navigate(RouteUrls.SwapError, {
++        return navigate(RouteUrls.SwapError, {
+           state: {
+             message: isError(e) ? e.message : '',
+             title: 'Swap Error',
+```

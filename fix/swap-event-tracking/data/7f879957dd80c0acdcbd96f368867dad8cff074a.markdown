@@ -1,0 +1,150 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
+
+# Error details
+
+```
+Error: page.click: Target crashed 
+Call log:
+  - waiting for locator('[data-testid="btn-confirm-transaction"]')
+    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-mt_space.04 leather-button leather-button--size_md leather-button--variant_solid leather-button--fullWidth_true leather-h_48px leather-py_unset">…</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
+
+    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
+```
+
+# Test source
+
+```ts
+   1 | import { Page } from '@playwright/test';
+   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
+   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   4 | import { createTestSelector } from '@tests/utils';
+   5 |
+   6 | export class TransactionRequestPage {
+   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
+   8 |     TransactionRequestSelectors.BtnConfirmTransaction
+   9 |   );
+  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
+  11 |   readonly transactionRequestPage = createTestSelector(
+  12 |     TransactionRequestSelectors.TransactionRequestPage
+  13 |   );
+  14 |
+  15 |   constructor(readonly page: Page) {}
+  16 |
+  17 |   async clickConfirmTransactionButton() {
+> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
+     |                      ^ Error: page.click: Target crashed 
+  19 |   }
+  20 |
+  21 |   async getDisplayedFeeValue() {
+  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
+  23 |   }
+  24 |
+  25 |   async waitForTransactionRequestError(msg: string) {
+  26 |     return this.page.waitForSelector(`text=${msg}`);
+  27 |   }
+  28 |
+  29 |   async waitForFee() {
+  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
+  31 |   }
+  32 |
+  33 |   async waitForTransactionRequestPage() {
+  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
+  35 |   }
+  36 | }
+  37 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+index c12932f11..720bf3aea 100644
+--- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
++++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+@@ -21,6 +21,7 @@ import { btcToSat, createMoney } from '@leather.io/utils';
+ 
+ import { logger } from '@shared/logger';
+ import { RouteUrls } from '@shared/route-urls';
++import { analytics } from '@shared/utils/analytics';
+ 
+ import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
+ import {
+@@ -151,13 +152,16 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         const txid = await client.broadcastTx(deposit.transaction);
+         logger.info('Broadcasted tx', txid);
+ 
++        void analytics.untypedTrack('bitcoin_swap_succeeded', { txid });
++
+         await client.notifySbtc(deposit);
+         toast.success('Transaction submitted!');
+         setIsIdle();
+-        navigate(RouteUrls.Activity);
++        return navigate(RouteUrls.Activity);
+       } catch (error) {
+         setIsIdle();
+         logger.error(`Deposit error: ${error}`);
++        void analytics.untypedTrack('bitcoin_swap_failed', { error });
+       } finally {
+         setIsIdle();
+       }
+diff --git a/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx b/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
+index b3c7bf109..64f2841c7 100644
+--- a/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
++++ b/src/app/pages/swap/hooks/use-stacks-broadcast-swap.tsx
+@@ -7,6 +7,7 @@ import { isError, isString } from '@leather.io/utils';
+ 
+ import { logger } from '@shared/logger';
+ import { RouteUrls } from '@shared/route-urls';
++import { analytics } from '@shared/utils/analytics';
+ 
+ import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
+ import { useSubmitTransactionCallback } from '@app/common/hooks/use-submit-stx-transaction';
+@@ -33,18 +34,20 @@ export function useStacksBroadcastSwap() {
+           onError(e: Error | string) {
+             setIsIdle();
+             const message = isString(e) ? e : e.message;
+-            navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
++            return navigate(RouteUrls.TransactionBroadcastError, { state: { message } });
+           },
+-          onSuccess() {
++          onSuccess(txId) {
+             toast.success('Transaction submitted!');
+             setIsIdle();
+-            navigate(RouteUrls.Activity);
++            void analytics.untypedTrack('stacks_swap_succeeded', { txid: txId });
++            return navigate(RouteUrls.Activity);
+           },
+           replaceByFee: false,
+         })(signedTx);
+       } catch (e) {
+         setIsIdle();
+-        navigate(RouteUrls.TransactionBroadcastError, {
++        void analytics.untypedTrack('stacks_swap_failed', { error: e });
++        return navigate(RouteUrls.TransactionBroadcastError, {
+           state: { message: isError(e) ? e.message : 'Unknown error' },
+         });
+       } finally {
+diff --git a/src/app/pages/swap/providers/use-stacks-swap.tsx b/src/app/pages/swap/providers/use-stacks-swap.tsx
+index 6ee332ca5..3a474e102 100644
+--- a/src/app/pages/swap/providers/use-stacks-swap.tsx
++++ b/src/app/pages/swap/providers/use-stacks-swap.tsx
+@@ -167,7 +167,7 @@ export function useStacksSwap(nonce: number | string) {
+ 
+         return await broadcastStacksSwap(signedTx);
+       } catch (e) {
+-        navigate(RouteUrls.SwapError, {
++        return navigate(RouteUrls.SwapError, {
+           state: {
+             message: isError(e) ? e.message : '',
+             title: 'Swap Error',
+```

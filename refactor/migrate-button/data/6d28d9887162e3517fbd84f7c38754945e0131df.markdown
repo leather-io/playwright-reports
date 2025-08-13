@@ -1,17 +1,17 @@
 # Test info
 
-- Name: send stx: tests on mainnet >> send form input fields >> that recipient address matches bns name
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:210:5
+- Name: Send sip10 >> can send sip10 token
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:20:3
 
 # Error details
 
 ```
-Error: page.waitForURL: Target page, context or browser has been closed
-=========================== logs ===========================
-waiting for navigation to "**/send/stx" until "load"
-============================================================
-    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
-    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
+Error: locator.waitFor: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('send-form') to be visible
+
+    at SendPage.selectSIP10AndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:89:68)
+    at /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:17:5
 ```
 
 # Test source
@@ -98,15 +98,15 @@ waiting for navigation to "**/send/stx" until "load"
    79 |   async selectStxAndGoToSendForm() {
    80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    81 |     await this.page.getByTestId('STX').click();
->  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
-      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
    83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    84 |   }
    85 |
    86 |   async selectSIP10AndGoToSendForm() {
    87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
-   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+>  89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+      |                                                                    ^ Error: locator.waitFor: Target page, context or browser has been closed
    90 |   }
    91 |
    92 |   async waitForSendPageReady() {
@@ -226,6 +226,19 @@ index a89cfd1f4..71f2f8839 100644
          <HStack justifyContent="center" alignItems="center" gap="space.02">
            <CheckmarkIcon color="ink.text-primary" variant="small" />
            <styled.span textStyle="label.02">Submitted</styled.span>
+diff --git a/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx b/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx
+index f890f963e..d695ecf10 100644
+--- a/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx
++++ b/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx
+@@ -29,7 +29,7 @@ export function ConnectLedgerButton({ chain }: ConnectLedgerButtonProps) {
+   };
+ 
+   return (
+-    <Button variant="outline" size="sm" onClick={onClick}>
++    <Button variant="outline" size="md" onClick={onClick}>
+       <HStack>
+         <LedgerIcon />
+         <styled.span textStyle="label.02">Connect&nbsp;{capitalize(chain)}</styled.span>
 diff --git a/src/app/features/settings/network/components/network-list-item.layout.tsx b/src/app/features/settings/network/components/network-list-item.layout.tsx
 index b0aea3769..307c0b635 100644
 --- a/src/app/features/settings/network/components/network-list-item.layout.tsx

@@ -1,0 +1,432 @@
+# Test info
+
+- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
+- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
+
+# Error details
+
+```
+Error: locator.innerText: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('address-displayer')
+
+    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
+    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
+```
+
+# Test source
+
+```ts
+   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
+   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   6 | import { createTestSelector } from '@tests/utils';
+   7 |
+   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   9 | import { delay } from '@leather.io/utils';
+   10 |
+   11 | export class HomePage {
+   12 |   readonly page: Page;
+   13 |   readonly headerActionButton: Locator;
+   14 |   readonly receiveButton: Locator;
+   15 |   readonly sendButton: Locator;
+   16 |   readonly swapButton: Locator;
+   17 |   readonly settingsButton: Locator;
+   18 |   readonly settingsViewSecretKey: Locator;
+   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
+   20 |   readonly signOutConfirmPasswordDisable: Locator;
+   21 |   readonly signOutDeleteWalletBtn: Locator;
+   22 |   readonly signOutSettingsListItem: Locator;
+   23 |   readonly lockSettingsListItem: Locator;
+   24 |   readonly fundAccountBtn: Locator;
+   25 |   readonly manageTokensBtn: Locator;
+   26 |   readonly assetList: Locator;
+   27 |   readonly manageTokensAssetsList: Locator;
+   28 |
+   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
+   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   31 |   );
+   32 |   $signOutConfirmPasswordDisable = createTestSelector(
+   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
+   34 |   );
+   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
+   36 |
+   37 |   constructor(page: Page) {
+   38 |     this.page = page;
+   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
+   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
+   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
+   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
+   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
+   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
+   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
+   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   47 |     );
+   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
+   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
+   50 |     );
+   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
+   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
+   53 |     );
+   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
+   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
+   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
+   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
+   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
+   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
+   60 |   }
+   61 |
+   62 |   async goToReceiveDialog() {
+   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
+   64 |   }
+   65 |
+   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
+   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
+   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
+   69 |   // https://github.com/microsoft/playwright/issues/12168
+   70 |   // Using the `Receive` route to get the account address for now.
+   71 |   async getReceiveNativeSegwitAddress() {
+   72 |     await this.goToReceiveDialog();
+   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
+   74 |     const displayerAddress = await this.page
+   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   76 |       .innerText();
+   77 |     return displayerAddress.replaceAll('\n', '');
+   78 |   }
+   79 |
+   80 |   // Currently under Ordinals receive flow
+   81 |   async getReceiveTaprootAddress() {
+   82 |     await this.goToReceiveDialog();
+   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
+   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
+   85 |     // FIXME - add better test for Copy action
+   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
+   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
+   88 |     // return address;
+   89 |     const displayerAddress = await this.page
+   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   91 |       .innerText();
+   92 |     return displayerAddress.replaceAll('\n', '');
+   93 |   }
+   94 |
+   95 |   async getReceiveStxAddress() {
+   96 |     await this.goToReceiveDialog();
+   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
+   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
+   99 |     await delay(1000);
+  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
+  101 |     const displayerAddress = await this.page
+  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+> 103 |       .innerText();
+      |        ^ Error: locator.innerText: Target page, context or browser has been closed
+  104 |     return displayerAddress.replaceAll('\n', '');
+  105 |   }
+  106 |
+  107 |   async selectTestnet() {
+  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
+  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet).click();
+  112 |   }
+  113 |
+  114 |   async clickActivityTab() {
+  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
+  116 |   }
+  117 |
+  118 |   async clickSettingsButton() {
+  119 |     await this.settingsButton.click({ force: true });
+  120 |   }
+  121 |
+  122 |   async goToSecretKey() {
+  123 |     await this.clickSettingsButton();
+  124 |     await this.settingsViewSecretKey.click();
+  125 |   }
+  126 |
+  127 |   async signOut() {
+  128 |     await this.clickSettingsButton();
+  129 |     await this.signOutSettingsListItem.click();
+  130 |     await this.signOutConfirmHasBackupCheckbox.click();
+  131 |     await this.signOutConfirmPasswordDisable.click();
+  132 |     await this.signOutDeleteWalletBtn.click();
+  133 |   }
+  134 |
+  135 |   async lock() {
+  136 |     await this.clickSettingsButton();
+  137 |     await this.lockSettingsListItem.click();
+  138 |   }
+  139 |
+  140 |   async goToFundChooseCurrencyPage() {
+  141 |     await this.fundAccountBtn.click();
+  142 |   }
+  143 |
+  144 |   async waitForHomePageReady() {
+  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
+  146 |       state: 'attached',
+  147 |     });
+  148 |   }
+  149 |
+  150 |   async switchAccount(accountIndex: number) {
+  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
+  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
+  153 |   }
+  154 | }
+  155 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/info-card/info-card.tsx b/src/app/components/info-card/info-card.tsx
+index 8875d2da9..18cf2ead6 100644
+--- a/src/app/components/info-card/info-card.tsx
++++ b/src/app/components/info-card/info-card.tsx
+@@ -1,4 +1,4 @@
+-import { ReactNode } from 'react';
++import { ComponentType, ReactNode } from 'react';
+ 
+ import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+ import { Box, BoxProps, Flex, HStack, Stack, styled } from 'leather-styles/jsx';
+@@ -80,19 +80,14 @@ export function InfoCardAssetValue({
+ }
+ 
+ interface InfoCardBtnProps {
+-  icon: ReactNode;
++  icon: ComponentType;
+   label: string;
+   onClick(): void;
+ }
+ export function InfoCardBtn({ icon, label, onClick }: InfoCardBtnProps) {
+   return (
+-    <Button onClick={onClick} flex="1">
+-      <Flex alignItems="center" justifyContent="center">
+-        <styled.span mx="space.02" textStyle="label.02">
+-          {label}
+-        </styled.span>
+-        {icon}
+-      </Flex>
++    <Button onClick={onClick} flex="1" iconEnd={icon}>
++      {label}
+     </Button>
+   );
+ }
+diff --git a/src/app/components/layout/card/components/summary-footer.tsx b/src/app/components/layout/card/components/summary-footer.tsx
+index 6a0f625d1..ae389f280 100644
+--- a/src/app/components/layout/card/components/summary-footer.tsx
++++ b/src/app/components/layout/card/components/summary-footer.tsx
+@@ -11,16 +11,8 @@ interface SummaryFooterProps {
+ export function SummaryFooter({ onClickLink, onClickCopy }: SummaryFooterProps) {
+   return (
+     <HStack gap="space.04" width="100%">
+-      <InfoCardBtn
+-        icon={<ExternalLinkIcon color="ink.background-primary" />}
+-        label="View details"
+-        onClick={onClickLink}
+-      />
+-      <InfoCardBtn
+-        icon={<CopyIcon color="ink.background-primary" />}
+-        label="Copy ID"
+-        onClick={onClickCopy}
+-      />
++      <InfoCardBtn icon={ExternalLinkIcon} label="View details" onClick={onClickLink} />
++      <InfoCardBtn icon={CopyIcon} label="Copy ID" onClick={onClickCopy} />
+     </HStack>
+   );
+ }
+diff --git a/src/app/components/rpc-transaction-request/get-transaction-actions.tsx b/src/app/components/rpc-transaction-request/get-transaction-actions.tsx
+index a89cfd1f4..71f2f8839 100644
+--- a/src/app/components/rpc-transaction-request/get-transaction-actions.tsx
++++ b/src/app/components/rpc-transaction-request/get-transaction-actions.tsx
+@@ -37,7 +37,7 @@ export function getTransactionActions({
+ 
+   if (isSubmitted) {
+     return [
+-      <Button key="submitting" fullWidth variant="success" disabled>
++      <Button key="submitting" bg="green.action-primary-default" fullWidth disabled>
+         <HStack justifyContent="center" alignItems="center" gap="space.02">
+           <CheckmarkIcon color="ink.text-primary" variant="small" />
+           <styled.span textStyle="label.02">Submitted</styled.span>
+diff --git a/src/app/features/settings/network/components/network-list-item.layout.tsx b/src/app/features/settings/network/components/network-list-item.layout.tsx
+index b0aea3769..307c0b635 100644
+--- a/src/app/features/settings/network/components/network-list-item.layout.tsx
++++ b/src/app/features/settings/network/components/network-list-item.layout.tsx
+@@ -3,7 +3,7 @@ import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+ import { Flex, HStack, Stack, styled } from 'leather-styles/jsx';
+ 
+ import type { NetworkConfiguration } from '@leather.io/models';
+-import { Button, CheckmarkIcon, CloudOffIcon } from '@leather.io/ui';
++import { CheckmarkIcon, CloudOffIcon } from '@leather.io/ui';
+ 
+ import { getUrlHostname, truncateString } from '@app/common/utils';
+ 
+@@ -33,9 +33,8 @@ export function NetworkListItemLayout({
+   const unselectable = !isOnline || isActive;
+   return (
+     <Flex data-testid={SettingsSelectors.NetworkListItem}>
+-      <Button
++      <styled.button
+         width="100%"
+-        variant="ghost"
+         key={networkId}
+         _hover={
+           unselectable
+@@ -76,7 +75,7 @@ export function NetworkListItemLayout({
+             />
+           )}
+         </Flex>
+-      </Button>
++      </styled.button>
+     </Flex>
+   );
+ }
+diff --git a/src/app/pages/onboarding/sign-in/mnemonic-form.tsx b/src/app/pages/onboarding/sign-in/mnemonic-form.tsx
+index 0b5ea5156..76b77e9a5 100644
+--- a/src/app/pages/onboarding/sign-in/mnemonic-form.tsx
++++ b/src/app/pages/onboarding/sign-in/mnemonic-form.tsx
+@@ -93,7 +93,7 @@ export function MnemonicForm({ mnemonic, setMnemonic, twentyFourWordMode }: Mnem
+                 aria-disabled={isLoading || showMnemonicErrors}
+                 disabled={isEmpty(touched) || !isValid || !hasFormValues}
+                 aria-busy={isLoading}
+-                width="100%"
++                fullWidth
+                 type="submit"
+                 variant="solid"
+                 onClick={e => {
+diff --git a/src/app/pages/onboarding/welcome/welcome.layout.tsx b/src/app/pages/onboarding/welcome/welcome.layout.tsx
+index 83eca3fba..0a4b6ba34 100644
+--- a/src/app/pages/onboarding/welcome/welcome.layout.tsx
++++ b/src/app/pages/onboarding/welcome/welcome.layout.tsx
+@@ -99,20 +99,20 @@ export function WelcomeLayout({
+           <Flex gap="space.04">
+             <Button
+               variant="outline"
++              fullWidth
+               flex={1}
+               onClick={onRestoreWallet}
+               css={secondaryActionButton}
+               data-testid={OnboardingSelectors.SignInLink}
+-              fullWidth
+             >
+               Use existing key
+             </Button>
+             <Button
+               variant="outline"
++              fullWidth
+               flex={1}
+               onClick={onSelectConnectLedger}
+               css={secondaryActionButton}
+-              fullWidth
+             >
+               Use Ledger
+             </Button>
+diff --git a/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx b/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx
+index a171ed380..7115a2407 100644
+--- a/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx
++++ b/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx
+@@ -55,16 +55,8 @@ export function RpcSignPsbtSummary() {
+         </Stack>
+         <InfoCardFooter>
+           <HStack gap="space.04" width="100%">
+-            <InfoCardBtn
+-              icon={<ExternalLinkIcon color="ink.background-primary" />}
+-              label="View details"
+-              onClick={onClickLink}
+-            />
+-            <InfoCardBtn
+-              icon={<CopyIcon color="ink.background-primary" />}
+-              label="Copy ID"
+-              onClick={onClickCopy}
+-            />
++            <InfoCardBtn icon={ExternalLinkIcon} label="View details" onClick={onClickLink} />
++            <InfoCardBtn icon={CopyIcon} label="Copy ID" onClick={onClickCopy} />
+           </HStack>
+         </InfoCardFooter>
+       </Card>
+diff --git a/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx b/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx
+index eb00d1256..ff8933e8e 100644
+--- a/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx
++++ b/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx
+@@ -58,16 +58,8 @@ export function SendInscriptionSummary() {
+         border="unset"
+         footer={
+           <HStack gap="space.04" width="100%">
+-            <InfoCardBtn
+-              onClick={onClickLink}
+-              icon={<ExternalLinkIcon color="ink.background-primary" />}
+-              label="View details"
+-            />
+-            <InfoCardBtn
+-              onClick={onClickCopy}
+-              icon={<CopyIcon color="ink.background-primary" />}
+-              label="Copy ID"
+-            />
++            <InfoCardBtn onClick={onClickLink} icon={ExternalLinkIcon} label="View details" />
++            <InfoCardBtn onClick={onClickCopy} icon={CopyIcon} label="Copy ID" />
+           </HStack>
+         }
+         contentStyle={{
+diff --git a/src/app/ui/components/secret-key/secret-key.layout.tsx b/src/app/ui/components/secret-key/secret-key.layout.tsx
+index a80c34430..3f3e41bf9 100644
+--- a/src/app/ui/components/secret-key/secret-key.layout.tsx
++++ b/src/app/ui/components/secret-key/secret-key.layout.tsx
+@@ -2,7 +2,7 @@ import { useState } from 'react';
+ 
+ import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+ import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+-import { Flex, HStack, Stack, styled } from 'leather-styles/jsx';
++import { Flex, Stack } from 'leather-styles/jsx';
+ 
+ import { Button, CopyIcon, Eye1ClosedIcon, Eye1Icon } from '@leather.io/ui';
+ 
+@@ -37,45 +37,31 @@ export function SecretKeyLayout({
+       </SecretKeyGrid>
+       <Flex gap="space.04" direction={{ base: 'column', md: 'row' }}>
+         <Button
+-          fullWidth
+           variant="outline"
++          iconStart={showSecretKey ? Eye1ClosedIcon : Eye1Icon}
+           flex="1"
+-          display="flex"
+           p="space.03"
+-          justifyContent="center"
+-          alignItems="center"
+           data-testid={SettingsSelectors.ShowSecretKeyBtn}
+           onClick={() => setShowSecretKey(!showSecretKey)}
+         >
+-          <HStack>
+-            {showSecretKey ? <Eye1ClosedIcon /> : <Eye1Icon />}
+-            <styled.span textStyle="label.02">
+-              {showSecretKey ? 'Hide key' : 'Show key'}
+-            </styled.span>
+-          </HStack>
++          {showSecretKey ? 'Hide key' : 'Show key'}
+         </Button>
+         <Button
+-          fullWidth
+           variant="outline"
++          iconStart={CopyIcon}
+           flex="1"
+-          display="flex"
+           p="space.03"
+-          justifyContent="center"
+-          alignItems="center"
+           data-testid={SettingsSelectors.CopyKeyToClipboardBtn}
+           onClick={!hasCopied ? onCopyToClipboard : undefined}
+         >
+-          <HStack>
+-            <CopyIcon />
+-            <styled.p textStyle="body.02">{!hasCopied ? ' Copy' : 'Copied!'}</styled.p>
+-          </HStack>
++          {!hasCopied ? ' Copy' : 'Copied!'}
+         </Button>
+       </Flex>
+       <Button
+-        width="100%"
++        variant="solid"
++        fullWidth
+         data-testid={OnboardingSelectors.BackUpSecretKeyBtn}
+         onClick={onBackedUpSecretKey}
+-        variant="solid"
+       >
+         I've backed it up
+       </Button>
+```

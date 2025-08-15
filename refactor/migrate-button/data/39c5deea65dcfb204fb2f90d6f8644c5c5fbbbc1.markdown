@@ -1,0 +1,839 @@
+# Test info
+
+- Name: send stx: tests on testnet >> send form validation >> that the amount must be a number
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:118:5
+
+# Error details
+
+```
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:27:5
+```
+
+# Test source
+
+```ts
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
+  101 |
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
+  114 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
+```
+
+# Local changes
+
+```diff
+diff --git a/package.json b/package.json
+index 01bec61a7..4843c099e 100644
+--- a/package.json
++++ b/package.json
+@@ -157,7 +157,7 @@
+     "@leather.io/services": "1.27.0",
+     "@leather.io/stacks": "1.15.0",
+     "@leather.io/tokens": "0.23.0",
+-    "@leather.io/ui": "1.77.5",
++    "@leather.io/ui": "1.78.0",
+     "@leather.io/utils": "0.42.3",
+     "@ledgerhq/hw-transport-webusb": "6.27.19",
+     "@noble/hashes": "1.5.0",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 1e51bc02c..652e8a3e2 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -41,7 +41,7 @@ importers:
+         version: 0.7.0(encoding@0.1.13)
+       '@coinbase/cbpay-js':
+         specifier: 2.1.0
+-        version: 2.1.0(regenerator-runtime@0.14.1)
++        version: 2.1.0(regenerator-runtime@0.13.11)
+       '@fungible-systems/zone-file':
+         specifier: 2.0.0
+         version: 2.0.0
+@@ -85,8 +85,8 @@ importers:
+         specifier: 0.23.0
+         version: 0.23.0
+       '@leather.io/ui':
+-        specifier: 1.77.5
+-        version: 1.77.5(@babel/core@7.28.0)(@emotion/is-prop-valid@1.3.1)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react-dom@19.0.4(@types/react@19.0.12))(@types/react@19.0.12)(@vue/compiler-sfc@3.5.18)(graphql@16.11.0)
++        specifier: 1.78.0
++        version: 1.78.0(@babel/core@7.28.0)(@emotion/is-prop-valid@1.3.1)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react-dom@19.0.4(@types/react@19.0.12))(@types/react@19.0.12)(@vue/compiler-sfc@3.5.18)(graphql@16.11.0)
+       '@leather.io/utils':
+         specifier: 0.42.3
+         version: 0.42.3
+@@ -705,10 +705,10 @@ importers:
+         version: 1.1.2
+       web-ext:
+         specifier: 7.8.0
+-        version: 7.8.0(body-parser@2.2.0)
++        version: 7.8.0(body-parser@1.20.3)
+       web-ext-submit:
+         specifier: 7.8.0
+-        version: 7.8.0(body-parser@2.2.0)
++        version: 7.8.0(body-parser@1.20.3)
+       webpack:
+         specifier: 5.94.0
+         version: 5.94.0(@swc/core@1.11.21)(esbuild@0.25.0)(webpack-cli@5.1.4(webpack-bundle-analyzer@4.10.2)(webpack-dev-server@5.2.1)(webpack@5.94.0))
+@@ -3449,8 +3449,8 @@ packages:
+   '@leather.io/tokens@0.23.0':
+     resolution: {integrity: sha512-4RooKpCEV1xZKFw+Q/4mDj+jYMUx5f9S0AK89koRjEeIMNT+vtjxoQsfsJ9wZVZwXvHu+IUKWNqlFnaRN34WOw==}
+ 
+-  '@leather.io/ui@1.77.5':
+-    resolution: {integrity: sha512-42ju7Y6QYu2l995jme1JhFIZjyArlJcNB9T2jtGCiOHAecvaiL7WE2N3lOkq/K5stEdDtzyDbuy51tYr6eqa8g==}
++  '@leather.io/ui@1.78.0':
++    resolution: {integrity: sha512-zK6V4GRzv8nQCL4krbKdZn0zth4scJQfY+8Km8c0JrTAn5YQaEtGDjNV/1WMxcuPa+qBj7CXtYZ/YlV3c0lB9A==}
+ 
+   '@leather.io/utils@0.42.3':
+     resolution: {integrity: sha512-x8CwxOUG4pMfqb9JEE/WbVl+2fnKc6v0Y824UnOxkPW1Qe4y0H8THo/FN1NA/LVUOvtM2JkxL511y+W9d4s0qA==}
+@@ -7382,10 +7382,6 @@ packages:
+     resolution: {integrity: sha512-7rAxByjUMqQ3/bHJy7D6OGXvx/MMc4IqBn/X0fcM1QUcAItpZrBEYhWGem+tzXH90c+G01ypMcYJBO9Y30203g==}
+     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
+ 
+-  body-parser@2.2.0:
+-    resolution: {integrity: sha512-02qvAaxv8tp7fBa/mw1ga98OGm+eCbqzJOKoRt70sLmfEEi+jyBYVTDGfCL/k06/4EMk/z01gCe7HoCH/f2LTg==}
+-    engines: {node: '>=18'}
+-
+   bonjour-service@1.3.0:
+     resolution: {integrity: sha512-3YuAUiSkWykd+2Azjgyxei8OWf8thdn8AITIog2M4UICzoqfjlqr64WIjEXZllf/W6vK1goqleSR6brGomxQqA==}
+ 
+@@ -11416,10 +11412,6 @@ packages:
+     resolution: {integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==}
+     engines: {node: '>= 0.6'}
+ 
+-  media-typer@1.1.0:
+-    resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
+-    engines: {node: '>= 0.8'}
+-
+   mem@5.1.1:
+     resolution: {integrity: sha512-qvwipnozMohxLXG1pOqoLiZKNkC4r4qqRucSoDwXowsNGDSULiqFTRUF05vcZWnwJSG22qTsynQhxbaMtnX9gw==}
+     engines: {node: '>=8'}
+@@ -11661,10 +11653,6 @@ packages:
+     resolution: {integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==}
+     engines: {node: '>= 0.6'}
+ 
+-  mime-types@3.0.1:
+-    resolution: {integrity: sha512-xRc4oEhT6eaBpU1XF7AjpOFD+xQmXNB5OVKwp4tqCuBpHLS/ZbBDrc07mYTDqVMg6PfxUjjNp85O6Cd2Z/5HWA==}
+-    engines: {node: '>= 0.6'}
+-
+   mime@1.6.0:
+     resolution: {integrity: sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==}
+     engines: {node: '>=4'}
+@@ -12962,10 +12950,6 @@ packages:
+     resolution: {integrity: sha512-8zGqypfENjCIqGhgXToC8aB2r7YrBX+AQAfIPs/Mlk+BtPTztOvTS01NRW/3Eh60J+a48lt8qsCzirQ6loCVfA==}
+     engines: {node: '>= 0.8'}
+ 
+-  raw-body@3.0.0:
+-    resolution: {integrity: sha512-RmkhL8CAyCRPXCE28MMH0z2PNWQBNk2Q09ZdxM9IOOXwxwZbN+qbWaatPkdkWIKL2ZVDImrN/pK5HTRz2PcS4g==}
+-    engines: {node: '>= 0.8'}
+-
+   rc@1.2.8:
+     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
+     hasBin: true
+@@ -14579,10 +14563,6 @@ packages:
+     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
+     engines: {node: '>= 0.6'}
+ 
+-  type-is@2.0.1:
+-    resolution: {integrity: sha512-OZs6gsjF4vMp32qrCbiVSkrFmXtG/AZhY3t0iAMrMBiAZyV9oALtXO8hsrHbMXF9x6L3grlFuwW2oAz7cav+Gw==}
+-    engines: {node: '>= 0.6'}
+-
+   typed-array-buffer@1.0.3:
+     resolution: {integrity: sha512-nAYYwfY3qnzX30IkA6AQZjVbtK6duGontcQm1WSG1MD94YLqK0515GNApXkoxKOWMusVssAHWLh9SeaoefYFGw==}
+     engines: {node: '>= 0.4'}
+@@ -17070,9 +17050,9 @@ snapshots:
+       picocolors: 1.1.1
+       sisteransi: 1.0.5
+ 
+-  '@coinbase/cbpay-js@2.1.0(regenerator-runtime@0.14.1)':
++  '@coinbase/cbpay-js@2.1.0(regenerator-runtime@0.13.11)':
+     optionalDependencies:
+-      regenerator-runtime: 0.14.1
++      regenerator-runtime: 0.13.11
+ 
+   '@cspotcode/source-map-support@0.8.1':
+     dependencies:
+@@ -17355,24 +17335,24 @@ snapshots:
+       react: 18.3.1
+       tslib: 2.8.1
+ 
+-  '@dnd-kit/core@6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
++  '@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+     dependencies:
+       '@dnd-kit/accessibility': 3.1.1(react@18.3.1)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+-      react: 19.0.0
+-      react-dom: 19.0.0(react@19.0.0)
++      react: 18.3.1
++      react-dom: 18.3.1(react@18.3.1)
+       tslib: 2.8.1
+ 
+   '@dnd-kit/modifiers@7.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
+     dependencies:
+-      '@dnd-kit/core': 6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
++      '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+       react: 18.3.1
+       tslib: 2.8.1
+ 
+   '@dnd-kit/sortable@8.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
+     dependencies:
+-      '@dnd-kit/core': 6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
++      '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+       react: 18.3.1
+       tslib: 2.8.1
+@@ -18585,13 +18565,13 @@ snapshots:
+ 
+   '@leather.io/tokens@0.23.0': {}
+ 
+-  '@leather.io/ui@1.77.5(@babel/core@7.28.0)(@emotion/is-prop-valid@1.3.1)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react-dom@19.0.4(@types/react@19.0.12))(@types/react@19.0.12)(@vue/compiler-sfc@3.5.18)(graphql@16.11.0)':
++  '@leather.io/ui@1.78.0(@babel/core@7.28.0)(@emotion/is-prop-valid@1.3.1)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react-dom@19.0.4(@types/react@19.0.12))(@types/react@19.0.12)(@vue/compiler-sfc@3.5.18)(graphql@16.11.0)':
+     dependencies:
+       '@expo/vector-icons': 14.1.0(expo-font@13.3.1(expo@53.0.9(@babel/core@7.28.0)(graphql@16.11.0)(react-native-webview@13.14.1(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0))(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0))(react@19.0.0))(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0)
+       '@gorhom/bottom-sheet': 5.1.4(@types/react@19.0.12)(react-native-gesture-handler@2.24.0(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0))(react-native-reanimated@3.17.5(@babel/core@7.28.0)(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0))(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0)
+       '@leather.io/prettier-config': 0.8.1(@vue/compiler-sfc@3.5.18)
+       '@leather.io/tokens': 0.23.0
+-      '@leather.io/utils': 0.42.3
++      '@leather.io/utils': 0.42.4
+       '@react-native/assets-registry': 0.73.1
+       '@rnx-kit/metro-resolver-symlinks': 0.2.3
+       '@shopify/restyle': 2.4.2(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0)
+@@ -20605,8 +20585,8 @@ snapshots:
+       '@babel/runtime': 7.27.0
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+       '@redux-devtools/chart-monitor': 5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react@18.3.1)(redux@5.0.1)
+-      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)
+-      '@redux-devtools/inspector-monitor': 6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
++      '@redux-devtools/inspector-monitor': 6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)
+       '@redux-devtools/inspector-monitor-test-tab': 4.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@redux-devtools/inspector-monitor-trace-tab': 4.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)
+       '@redux-devtools/log-monitor': 5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react@18.3.1)(redux@5.0.1)
+@@ -20656,7 +20636,7 @@ snapshots:
+   '@redux-devtools/chart-monitor@5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react@18.3.1)(redux@5.0.1)':
+     dependencies:
+       '@babel/runtime': 7.27.0
+-      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
+       '@types/react': 18.3.20
+       d3-state-visualizer: 3.0.0
+       deepmerge: 4.3.1
+@@ -20708,11 +20688,11 @@ snapshots:
+       - tedious
+       - utf-8-validate
+ 
+-  '@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)':
++  '@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)':
+     dependencies:
+       '@babel/runtime': 7.27.0
+       '@redux-devtools/instrument': 2.2.0(redux@5.0.1)
+-      react: 19.0.0
++      react: 18.3.1
+       react-redux: 9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1)
+       redux: 5.0.1
+ 
+@@ -20720,7 +20700,7 @@ snapshots:
+     dependencies:
+       '@babel/runtime': 7.27.0
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+-      '@redux-devtools/inspector-monitor': 6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/inspector-monitor': 6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)
+       '@redux-devtools/ui': 1.4.0(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@types/react': 18.3.20
+       '@types/styled-components': 5.1.34
+@@ -20742,7 +20722,7 @@ snapshots:
+       '@babel/code-frame': 8.0.0-alpha.17
+       '@babel/runtime': 7.27.0
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+-      '@redux-devtools/inspector-monitor': 6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/inspector-monitor': 6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)
+       '@types/chrome': 0.0.306
+       '@types/react': 18.3.20
+       anser: 2.3.2
+@@ -20754,15 +20734,15 @@ snapshots:
+       redux: 5.0.1
+       source-map: 0.5.7
+ 
+-  '@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)':
++  '@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)':
+     dependencies:
+       '@babel/runtime': 7.27.0
+-      '@dnd-kit/core': 6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
++      '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+       '@dnd-kit/modifiers': 7.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+       '@dnd-kit/sortable': 8.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+-      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
+       '@types/lodash': 4.17.16
+       '@types/react': 19.0.12
+       dateformat: 5.0.3
+@@ -20786,7 +20766,7 @@ snapshots:
+   '@redux-devtools/log-monitor@5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react@18.3.1)(redux@5.0.1)':
+     dependencies:
+       '@babel/runtime': 7.27.0
+-      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
+       '@types/lodash.debounce': 4.0.9
+       '@types/react': 18.3.20
+       lodash.debounce: 4.0.8
+@@ -20814,7 +20794,7 @@ snapshots:
+     dependencies:
+       '@babel/runtime': 7.27.0
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+-      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
+       '@redux-devtools/ui': 1.4.0(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@reduxjs/toolkit': 2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)
+       '@types/lodash': 4.17.16
+@@ -20841,7 +20821,7 @@ snapshots:
+   '@redux-devtools/slider-monitor@5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
+     dependencies:
+       '@babel/runtime': 7.27.0
+-      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
+       '@redux-devtools/ui': 1.4.0(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@types/react': 18.3.20
+       '@types/styled-components': 5.1.34
+@@ -20879,7 +20859,7 @@ snapshots:
+   '@redux-devtools/utils@3.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(immutable@5.1.3)(redux@5.0.1)':
+     dependencies:
+       '@babel/runtime': 7.27.0
+-      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1)
++      '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
+       '@redux-devtools/serialize': 0.4.2(immutable@5.1.3)
+       '@types/get-params': 0.1.2
+       get-params: 0.1.2
+@@ -23335,12 +23315,12 @@ snapshots:
+ 
+   acorn@8.15.0: {}
+ 
+-  addons-linter@6.13.0(body-parser@2.2.0)(node-fetch@3.3.1):
++  addons-linter@6.13.0(body-parser@1.20.3)(node-fetch@3.3.1):
+     dependencies:
+       '@fluent/syntax': 0.19.0
+       '@mdn/browser-compat-data': 5.3.14
+       addons-moz-compare: 1.3.0
+-      addons-scanner-utils: 9.3.0(body-parser@2.2.0)(node-fetch@3.3.1)
++      addons-scanner-utils: 9.3.0(body-parser@1.20.3)(node-fetch@3.3.1)
+       ajv: 8.12.0
+       chalk: 4.1.2
+       cheerio: 1.0.0-rc.12
+@@ -23378,7 +23358,7 @@ snapshots:
+ 
+   addons-moz-compare@1.3.0: {}
+ 
+-  addons-scanner-utils@9.3.0(body-parser@2.2.0)(node-fetch@3.3.1):
++  addons-scanner-utils@9.3.0(body-parser@1.20.3)(node-fetch@3.3.1):
+     dependencies:
+       '@types/yauzl': 2.10.0
+       common-tags: 1.8.2
+@@ -23387,7 +23367,7 @@ snapshots:
+       upath: 2.0.1
+       yauzl: 2.10.0
+     optionalDependencies:
+-      body-parser: 2.2.0
++      body-parser: 1.20.3
+       node-fetch: 3.3.1
+ 
+   address@1.2.2: {}
+@@ -24032,21 +24012,6 @@ snapshots:
+     transitivePeerDependencies:
+       - supports-color
+ 
+-  body-parser@2.2.0:
+-    dependencies:
+-      bytes: 3.1.2
+-      content-type: 1.0.5
+-      debug: 4.4.1
+-      http-errors: 2.0.0
+-      iconv-lite: 0.6.3
+-      on-finished: 2.4.1
+-      qs: 6.14.0
+-      raw-body: 3.0.0
+-      type-is: 2.0.1
+-    transitivePeerDependencies:
+-      - supports-color
+-    optional: true
+-
+   bonjour-service@1.3.0:
+     dependencies:
+       fast-deep-equal: 3.1.3
+@@ -28771,9 +28736,6 @@ snapshots:
+ 
+   media-typer@0.3.0: {}
+ 
+-  media-typer@1.1.0:
+-    optional: true
+-
+   mem@5.1.1:
+     dependencies:
+       map-age-cleaner: 0.1.3
+@@ -29301,11 +29263,6 @@ snapshots:
+     dependencies:
+       mime-db: 1.52.0
+ 
+-  mime-types@3.0.1:
+-    dependencies:
+-      mime-db: 1.54.0
+-    optional: true
+-
+   mime@1.6.0: {}
+ 
+   mime@2.6.0:
+@@ -30755,14 +30712,6 @@ snapshots:
+       iconv-lite: 0.4.24
+       unpipe: 1.0.0
+ 
+-  raw-body@3.0.0:
+-    dependencies:
+-      bytes: 3.1.2
+-      http-errors: 2.0.0
+-      iconv-lite: 0.6.3
+-      unpipe: 1.0.0
+-    optional: true
+-
+   rc@1.2.8:
+     dependencies:
+       deep-extend: 0.6.0
+@@ -32719,13 +32668,6 @@ snapshots:
+       media-typer: 0.3.0
+       mime-types: 2.1.35
+ 
+-  type-is@2.0.1:
+-    dependencies:
+-      content-type: 1.0.5
+-      media-typer: 1.1.0
+-      mime-types: 3.0.1
+-    optional: true
+-
+   typed-array-buffer@1.0.3:
+     dependencies:
+       call-bound: 1.0.4
+@@ -33262,9 +33204,9 @@ snapshots:
+     dependencies:
+       defaults: 1.0.4
+ 
+-  web-ext-submit@7.8.0(body-parser@2.2.0):
++  web-ext-submit@7.8.0(body-parser@1.20.3):
+     dependencies:
+-      web-ext: 7.8.0(body-parser@2.2.0)
++      web-ext: 7.8.0(body-parser@1.20.3)
+     transitivePeerDependencies:
+       - body-parser
+       - bufferutil
+@@ -33273,11 +33215,11 @@ snapshots:
+       - supports-color
+       - utf-8-validate
+ 
+-  web-ext@7.8.0(body-parser@2.2.0):
++  web-ext@7.8.0(body-parser@1.20.3):
+     dependencies:
+       '@babel/runtime': 7.21.0
+       '@devicefarmer/adbkit': 3.2.3
+-      addons-linter: 6.13.0(body-parser@2.2.0)(node-fetch@3.3.1)
++      addons-linter: 6.13.0(body-parser@1.20.3)(node-fetch@3.3.1)
+       bunyan: 1.8.15
+       camelcase: 7.0.1
+       chrome-launcher: 0.15.1
+diff --git a/src/app/components/info-card/info-card.tsx b/src/app/components/info-card/info-card.tsx
+index 8875d2da9..18cf2ead6 100644
+--- a/src/app/components/info-card/info-card.tsx
++++ b/src/app/components/info-card/info-card.tsx
+@@ -1,4 +1,4 @@
+-import { ReactNode } from 'react';
++import { ComponentType, ReactNode } from 'react';
+ 
+ import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+ import { Box, BoxProps, Flex, HStack, Stack, styled } from 'leather-styles/jsx';
+@@ -80,19 +80,14 @@ export function InfoCardAssetValue({
+ }
+ 
+ interface InfoCardBtnProps {
+-  icon: ReactNode;
++  icon: ComponentType;
+   label: string;
+   onClick(): void;
+ }
+ export function InfoCardBtn({ icon, label, onClick }: InfoCardBtnProps) {
+   return (
+-    <Button onClick={onClick} flex="1">
+-      <Flex alignItems="center" justifyContent="center">
+-        <styled.span mx="space.02" textStyle="label.02">
+-          {label}
+-        </styled.span>
+-        {icon}
+-      </Flex>
++    <Button onClick={onClick} flex="1" iconEnd={icon}>
++      {label}
+     </Button>
+   );
+ }
+diff --git a/src/app/components/layout/card/components/summary-footer.tsx b/src/app/components/layout/card/components/summary-footer.tsx
+index 6a0f625d1..ae389f280 100644
+--- a/src/app/components/layout/card/components/summary-footer.tsx
++++ b/src/app/components/layout/card/components/summary-footer.tsx
+@@ -11,16 +11,8 @@ interface SummaryFooterProps {
+ export function SummaryFooter({ onClickLink, onClickCopy }: SummaryFooterProps) {
+   return (
+     <HStack gap="space.04" width="100%">
+-      <InfoCardBtn
+-        icon={<ExternalLinkIcon color="ink.background-primary" />}
+-        label="View details"
+-        onClick={onClickLink}
+-      />
+-      <InfoCardBtn
+-        icon={<CopyIcon color="ink.background-primary" />}
+-        label="Copy ID"
+-        onClick={onClickCopy}
+-      />
++      <InfoCardBtn icon={ExternalLinkIcon} label="View details" onClick={onClickLink} />
++      <InfoCardBtn icon={CopyIcon} label="Copy ID" onClick={onClickCopy} />
+     </HStack>
+   );
+ }
+diff --git a/src/app/components/rpc-transaction-request/get-transaction-actions.tsx b/src/app/components/rpc-transaction-request/get-transaction-actions.tsx
+index a89cfd1f4..71f2f8839 100644
+--- a/src/app/components/rpc-transaction-request/get-transaction-actions.tsx
++++ b/src/app/components/rpc-transaction-request/get-transaction-actions.tsx
+@@ -37,7 +37,7 @@ export function getTransactionActions({
+ 
+   if (isSubmitted) {
+     return [
+-      <Button key="submitting" fullWidth variant="success" disabled>
++      <Button key="submitting" bg="green.action-primary-default" fullWidth disabled>
+         <HStack justifyContent="center" alignItems="center" gap="space.02">
+           <CheckmarkIcon color="ink.text-primary" variant="small" />
+           <styled.span textStyle="label.02">Submitted</styled.span>
+diff --git a/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx b/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx
+index f890f963e..d695ecf10 100644
+--- a/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx
++++ b/src/app/features/asset-list/_components/connect-ledger-asset-button.tsx
+@@ -29,7 +29,7 @@ export function ConnectLedgerButton({ chain }: ConnectLedgerButtonProps) {
+   };
+ 
+   return (
+-    <Button variant="outline" size="sm" onClick={onClick}>
++    <Button variant="outline" size="md" onClick={onClick}>
+       <HStack>
+         <LedgerIcon />
+         <styled.span textStyle="label.02">Connect&nbsp;{capitalize(chain)}</styled.span>
+diff --git a/src/app/features/settings/network/components/network-list-item.layout.tsx b/src/app/features/settings/network/components/network-list-item.layout.tsx
+index b0aea3769..307c0b635 100644
+--- a/src/app/features/settings/network/components/network-list-item.layout.tsx
++++ b/src/app/features/settings/network/components/network-list-item.layout.tsx
+@@ -3,7 +3,7 @@ import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+ import { Flex, HStack, Stack, styled } from 'leather-styles/jsx';
+ 
+ import type { NetworkConfiguration } from '@leather.io/models';
+-import { Button, CheckmarkIcon, CloudOffIcon } from '@leather.io/ui';
++import { CheckmarkIcon, CloudOffIcon } from '@leather.io/ui';
+ 
+ import { getUrlHostname, truncateString } from '@app/common/utils';
+ 
+@@ -33,9 +33,8 @@ export function NetworkListItemLayout({
+   const unselectable = !isOnline || isActive;
+   return (
+     <Flex data-testid={SettingsSelectors.NetworkListItem}>
+-      <Button
++      <styled.button
+         width="100%"
+-        variant="ghost"
+         key={networkId}
+         _hover={
+           unselectable
+@@ -76,7 +75,7 @@ export function NetworkListItemLayout({
+             />
+           )}
+         </Flex>
+-      </Button>
++      </styled.button>
+     </Flex>
+   );
+ }
+diff --git a/src/app/pages/onboarding/sign-in/mnemonic-form.tsx b/src/app/pages/onboarding/sign-in/mnemonic-form.tsx
+index 0b5ea5156..76b77e9a5 100644
+--- a/src/app/pages/onboarding/sign-in/mnemonic-form.tsx
++++ b/src/app/pages/onboarding/sign-in/mnemonic-form.tsx
+@@ -93,7 +93,7 @@ export function MnemonicForm({ mnemonic, setMnemonic, twentyFourWordMode }: Mnem
+                 aria-disabled={isLoading || showMnemonicErrors}
+                 disabled={isEmpty(touched) || !isValid || !hasFormValues}
+                 aria-busy={isLoading}
+-                width="100%"
++                fullWidth
+                 type="submit"
+                 variant="solid"
+                 onClick={e => {
+diff --git a/src/app/pages/onboarding/welcome/welcome.layout.tsx b/src/app/pages/onboarding/welcome/welcome.layout.tsx
+index 83eca3fba..0a4b6ba34 100644
+--- a/src/app/pages/onboarding/welcome/welcome.layout.tsx
++++ b/src/app/pages/onboarding/welcome/welcome.layout.tsx
+@@ -99,20 +99,20 @@ export function WelcomeLayout({
+           <Flex gap="space.04">
+             <Button
+               variant="outline"
++              fullWidth
+               flex={1}
+               onClick={onRestoreWallet}
+               css={secondaryActionButton}
+               data-testid={OnboardingSelectors.SignInLink}
+-              fullWidth
+             >
+               Use existing key
+             </Button>
+             <Button
+               variant="outline"
++              fullWidth
+               flex={1}
+               onClick={onSelectConnectLedger}
+               css={secondaryActionButton}
+-              fullWidth
+             >
+               Use Ledger
+             </Button>
+diff --git a/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx b/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx
+index a171ed380..7115a2407 100644
+--- a/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx
++++ b/src/app/pages/rpc-sign-psbt/rpc-sign-psbt-summary.tsx
+@@ -55,16 +55,8 @@ export function RpcSignPsbtSummary() {
+         </Stack>
+         <InfoCardFooter>
+           <HStack gap="space.04" width="100%">
+-            <InfoCardBtn
+-              icon={<ExternalLinkIcon color="ink.background-primary" />}
+-              label="View details"
+-              onClick={onClickLink}
+-            />
+-            <InfoCardBtn
+-              icon={<CopyIcon color="ink.background-primary" />}
+-              label="Copy ID"
+-              onClick={onClickCopy}
+-            />
++            <InfoCardBtn icon={ExternalLinkIcon} label="View details" onClick={onClickLink} />
++            <InfoCardBtn icon={CopyIcon} label="Copy ID" onClick={onClickCopy} />
+           </HStack>
+         </InfoCardFooter>
+       </Card>
+diff --git a/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx b/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx
+index eb00d1256..ff8933e8e 100644
+--- a/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx
++++ b/src/app/pages/send/ordinal-inscription/sent-inscription-summary.tsx
+@@ -58,16 +58,8 @@ export function SendInscriptionSummary() {
+         border="unset"
+         footer={
+           <HStack gap="space.04" width="100%">
+-            <InfoCardBtn
+-              onClick={onClickLink}
+-              icon={<ExternalLinkIcon color="ink.background-primary" />}
+-              label="View details"
+-            />
+-            <InfoCardBtn
+-              onClick={onClickCopy}
+-              icon={<CopyIcon color="ink.background-primary" />}
+-              label="Copy ID"
+-            />
++            <InfoCardBtn onClick={onClickLink} icon={ExternalLinkIcon} label="View details" />
++            <InfoCardBtn onClick={onClickCopy} icon={CopyIcon} label="Copy ID" />
+           </HStack>
+         }
+         contentStyle={{
+diff --git a/src/app/ui/components/secret-key/secret-key.layout.tsx b/src/app/ui/components/secret-key/secret-key.layout.tsx
+index a80c34430..3f3e41bf9 100644
+--- a/src/app/ui/components/secret-key/secret-key.layout.tsx
++++ b/src/app/ui/components/secret-key/secret-key.layout.tsx
+@@ -2,7 +2,7 @@ import { useState } from 'react';
+ 
+ import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+ import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+-import { Flex, HStack, Stack, styled } from 'leather-styles/jsx';
++import { Flex, Stack } from 'leather-styles/jsx';
+ 
+ import { Button, CopyIcon, Eye1ClosedIcon, Eye1Icon } from '@leather.io/ui';
+ 
+@@ -37,45 +37,31 @@ export function SecretKeyLayout({
+       </SecretKeyGrid>
+       <Flex gap="space.04" direction={{ base: 'column', md: 'row' }}>
+         <Button
+-          fullWidth
+           variant="outline"
++          iconStart={showSecretKey ? Eye1ClosedIcon : Eye1Icon}
+           flex="1"
+-          display="flex"
+           p="space.03"
+-          justifyContent="center"
+-          alignItems="center"
+           data-testid={SettingsSelectors.ShowSecretKeyBtn}
+           onClick={() => setShowSecretKey(!showSecretKey)}
+         >
+-          <HStack>
+-            {showSecretKey ? <Eye1ClosedIcon /> : <Eye1Icon />}
+-            <styled.span textStyle="label.02">
+-              {showSecretKey ? 'Hide key' : 'Show key'}
+-            </styled.span>
+-          </HStack>
++          {showSecretKey ? 'Hide key' : 'Show key'}
+         </Button>
+         <Button
+-          fullWidth
+           variant="outline"
++          iconStart={CopyIcon}
+           flex="1"
+-          display="flex"
+           p="space.03"
+-          justifyContent="center"
+-          alignItems="center"
+           data-testid={SettingsSelectors.CopyKeyToClipboardBtn}
+           onClick={!hasCopied ? onCopyToClipboard : undefined}
+         >
+-          <HStack>
+-            <CopyIcon />
+-            <styled.p textStyle="body.02">{!hasCopied ? ' Copy' : 'Copied!'}</styled.p>
+-          </HStack>
++          {!hasCopied ? ' Copy' : 'Copied!'}
+         </Button>
+       </Flex>
+       <Button
+-        width="100%"
++        variant="solid"
++        fullWidth
+         data-testid={OnboardingSelectors.BackUpSecretKeyBtn}
+         onClick={onBackedUpSecretKey}
+-        variant="solid"
+       >
+         I've backed it up
+       </Button>
+```

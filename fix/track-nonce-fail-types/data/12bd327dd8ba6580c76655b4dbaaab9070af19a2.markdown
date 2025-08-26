@@ -1,7 +1,7 @@
 # Test info
 
-- Name: send stx: tests on mainnet >> send form input fields >> that low fee estimate can be selected
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:245:5
+- Name: send stx: tests on mainnet >> send form input fields >> that fee row defaults to middle fee estimation
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:235:5
 
 # Error details
 
@@ -293,7 +293,7 @@ index 0fb9e4ba0..cef3489f1 100644
 +  };
 +}
 diff --git a/src/app/components/loaders/stacks-nonce-loader.tsx b/src/app/components/loaders/stacks-nonce-loader.tsx
-index feb714455..ddd3542cc 100644
+index feb714455..8ba648df0 100644
 --- a/src/app/components/loaders/stacks-nonce-loader.tsx
 +++ b/src/app/components/loaders/stacks-nonce-loader.tsx
 @@ -1,13 +1,66 @@
@@ -324,7 +324,7 @@ index feb714455..ddd3542cc 100644
 +
 +  return {
 +    nonceCalculation: context ?? {},
-+    trackIfxNonceError(error: Error | string) {
++    trackIfNonceError(error: Error | string) {
 +      if (!('nonceType' in context)) return;
 +      if (isString(error)) return;
 +
@@ -367,7 +367,7 @@ index feb714455..ddd3542cc 100644
 +  );
  }
 diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
-index 472e669d1..2f2b36e88 100644
+index 472e669d1..9720e927e 100644
 --- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
 +++ b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
 @@ -1,11 +1,7 @@
@@ -400,7 +400,7 @@ index 472e669d1..2f2b36e88 100644
    const network = useCurrentStacksNetworkState();
    const navigate = useNavigate();
 -  const toast = useToast();
-+  const { trackIfxNonceError } = useAnalyticsOnlyStacksNonceTracker();
++  const { trackIfNonceError } = useAnalyticsOnlyStacksNonceTracker();
  
    return useCallback(
      async (unsignedTx: StacksTransactionWire) => {
@@ -413,7 +413,7 @@ index 472e669d1..2f2b36e88 100644
          const message = isString(error) ? error : error.message;
 -        if (reason) toast.error(getErrorMessage(reason));
 +
-+        trackIfxNonceError(error);
++        trackIfNonceError(error);
  
          chrome.tabs.sendMessage(
            tabId,

@@ -1,119 +1,108 @@
 # Test info
 
-- Name: Compliance checks >> the addresses of all recipients are checked
-- Location: /home/runner/work/extension/extension/tests/specs/compliance-checks/compliance-checks.spec.ts:77:3
+- Name: Manage tokens >> that token can be removed from asset list and added back
+- Location: /home/runner/work/extension/extension/tests/specs/manage-tokens/manage-tokens.spec.ts:18:3
 
 # Error details
 
 ```
-Error: expect(received).toEqual(expected) // deep equality
+Error: Timed out 5000ms waiting for expect(locator).not.toBeAttached()
 
-Expected: 2
-Received: 1
-    at /home/runner/work/extension/extension/tests/specs/compliance-checks/compliance-checks.spec.ts:94:35
+Locator: getByTestId('asset-list').getByTestId('doge')
+Expected: not attached
+Received: attached
+Call log:
+  - expect.not.toBeAttached with timeout 5000ms
+  - waiting for getByTestId('asset-list').getByTestId('doge')
+    8 × locator resolved to <div data-testid="doge" class="leather-my_space.02">…</div>
+      - unexpected value "attached"
+
+    at /home/runner/work/extension/extension/tests/specs/manage-tokens/manage-tokens.spec.ts:59:40
 ```
 
 # Test source
 
 ```ts
-   1 | import type { BrowserContext, Page, Route } from '@playwright/test';
+   1 | import { expect } from '@playwright/test';
    2 |
-   3 | import { delay } from '@leather.io/utils';
-   4 |
-   5 | import { test } from '../../fixtures/fixtures';
-   6 |
-   7 | function mockChainalysisEntityRegistrationRequest(context: BrowserContext) {
-   8 |   return async (routeHandler: (route: Route) => void) => {
-   9 |     return context.route('https://api.chainalysis.com/api/risk/v2/entities', async route =>
-  10 |       routeHandler(route)
-  11 |     );
-  12 |   };
-  13 | }
-  14 |
-  15 | function mockChainalysisEntityCheckRequest(context: BrowserContext) {
-  16 |   return async (routeHandler: (route: Route) => void) => {
-  17 |     return context.route('https://api.chainalysis.com/api/risk/v2/entities/*', async route =>
-  18 |       routeHandler(route)
-  19 |     );
-  20 |   };
-  21 | }
-  22 |
-  23 | test.describe('Compliance checks', () => {
-  24 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
-  25 |     await globalPage.setupAndUseApiCalls(extensionId);
-  26 |     await onboardingPage.signInWithTestAccount(extensionId);
-  27 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
-  28 |   });
-  29 |
-  30 |   async function openIllegalTransfer(page: Page) {
-  31 |     return page.evaluate(
-  32 |       () =>
-  33 |         // We only want the page window, don't wait for actual promise to finish
-  34 |         void (window as any).LeatherProvider.request('sendTransfer', {
-  35 |           // Known address from list, in readme of this
-  36 |           // page https://github.com/0xB10C/ofac-sanctioned-digital-currency-addresses
-  37 |           address: '12QtD5BFwRsdNsAZY76UVE1xyCGNTojH9h',
-  38 |           amount: '1231',
-  39 |         }).catch((e: unknown) => e)
-  40 |     );
-  41 |   }
-  42 |
-  43 |   test('that it errors if non-compliant entity is detected', async ({ page, context }) => {
-  44 |     await mockChainalysisEntityRegistrationRequest(context)(route =>
-  45 |       route.fulfill({ json: { address: '12QtD5BFwRsdNsAZY76UVE1xyCGNTojH9h' } })
-  46 |     );
-  47 |     await mockChainalysisEntityCheckRequest(context)(route =>
-  48 |       route.fulfill({ json: { risk: 'Severe' } })
+   3 | import { test } from '../../fixtures/fixtures';
+   4 | import { MockedTokensSelectors } from '../../selectors/mocked-tokens.selectors';
+   5 |
+   6 | test.describe('Manage tokens', () => {
+   7 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
+   8 |     await globalPage.setupAndUseApiCalls(extensionId);
+   9 |     await onboardingPage.signInWithTestAccount(extensionId);
+  10 |   });
+  11 |
+  12 |   test('that supported sip10 token is shown', async ({ homePage }) => {
+  13 |     await homePage.manageTokensBtn.click();
+  14 |     const sip10Token = homePage.assetList.getByTestId(MockedTokensSelectors.Sip10TokenTestId);
+  15 |     await expect(sip10Token).toBeAttached();
+  16 |   });
+  17 |
+  18 |   test('that token can be removed from asset list and added back', async ({ homePage }) => {
+  19 |     await homePage.manageTokensBtn.click();
+  20 |
+  21 |     // sip10 token
+  22 |     const sip10InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Sip10TokenTestId);
+  23 |     const sip10TokenInManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  24 |       MockedTokensSelectors.Sip10TokenTestId
+  25 |     );
+  26 |
+  27 |     // brc20 token
+  28 |     const brc20InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Brc20TokenTestId);
+  29 |     const brc20InManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  30 |       MockedTokensSelectors.Brc20TokenTestId
+  31 |     );
+  32 |
+  33 |     // src20 token
+  34 |     const src20InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Src20TokenTestId);
+  35 |     const src20InManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  36 |       MockedTokensSelectors.Src20TokenTestId
+  37 |     );
+  38 |
+  39 |     // rune token
+  40 |     const runeInAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.RuneTokenTestId);
+  41 |     const runeInManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  42 |       MockedTokensSelectors.RuneTokenTestId
+  43 |     );
+  44 |
+  45 |     // stx20 token (disabled by default)
+  46 |     const stx20InAssetList = homePage.assetList.getByTestId(MockedTokensSelectors.Stx20TokenTestId);
+  47 |     const stx20InManageTokensList = homePage.manageTokensAssetsList.getByTestId(
+  48 |       MockedTokensSelectors.Stx20TokenTestId
   49 |     );
   50 |
-  51 |     const [leatherApprover] = await Promise.all([
-  52 |       context.waitForEvent('page'),
-  53 |       openIllegalTransfer(page),
-  54 |     ]);
-  55 |
-  56 |     await test
-  57 |       .expect(leatherApprover.getByText('Unable to handle request, errorCode: 1398'))
-  58 |       .toBeVisible();
-  59 |   });
-  60 |
-  61 |   test('nothing happens when chainalysis is down', async ({ page, context }) => {
-  62 |     await mockChainalysisEntityCheckRequest(context)(route => route.abort());
-  63 |     await mockChainalysisEntityRegistrationRequest(context)(route => route.abort());
-  64 |
-  65 |     const [leatherApprover] = await Promise.all([
-  66 |       context.waitForEvent('page'),
-  67 |       openIllegalTransfer(page),
-  68 |     ]);
-  69 |
-  70 |     await test
-  71 |       .expect(leatherApprover.locator('text="Unable to handle request, errorCode: 1398"'))
-  72 |       .toBeHidden();
-  73 |
-  74 |     await test.expect(leatherApprover.locator('text="0.00001231 BTC"')).toBeVisible();
-  75 |   });
-  76 |
-  77 |   test('the addresses of all recipients are checked', async ({ context, page }) => {
-  78 |     let entityCheckCount = 0;
+  51 |     // disable tokens that are enabled by default
+  52 |     await sip10TokenInManageTokensList.click();
+  53 |     await brc20InManageTokensList.click();
+  54 |     await src20InManageTokensList.click();
+  55 |     await runeInManageTokensList.click();
+  56 |
+  57 |     // test that tokens are disabled
+  58 |     await expect(sip10InAssetList).not.toBeAttached();
+> 59 |     await expect(brc20InAssetList).not.toBeAttached();
+     |                                        ^ Error: Timed out 5000ms waiting for expect(locator).not.toBeAttached()
+  60 |     await expect(src20InAssetList).not.toBeAttached();
+  61 |     await expect(stx20InAssetList).not.toBeAttached();
+  62 |     await expect(runeInAssetList).not.toBeAttached();
+  63 |
+  64 |     // enable tokens
+  65 |     await sip10TokenInManageTokensList.click();
+  66 |     await brc20InManageTokensList.click();
+  67 |     await src20InManageTokensList.click();
+  68 |     await stx20InManageTokensList.click();
+  69 |     await runeInManageTokensList.click();
+  70 |
+  71 |     // test that tokens are enabled
+  72 |     await expect(sip10InAssetList).toBeAttached();
+  73 |     await expect(brc20InAssetList).toBeAttached();
+  74 |     await expect(src20InAssetList).toBeAttached();
+  75 |     await expect(stx20InAssetList).toBeAttached();
+  76 |     await expect(runeInAssetList).toBeAttached();
+  77 |   });
+  78 | });
   79 |
-  80 |     await mockChainalysisEntityCheckRequest(context)(route => {
-  81 |       entityCheckCount += 1;
-  82 |       return route.abort();
-  83 |     });
-  84 |
-  85 |     await Promise.all([context.waitForEvent('page'), openIllegalTransfer(page)]);
-  86 |
-  87 |     // Please forgive this timeout, we need to give the page time in order to
-  88 |     // make the request, to be sure it was made. If this test ends up failing
-  89 |     // due to a race condition, please let the author know.
-  90 |     await delay(2000);
-  91 |
-  92 |     const userAndRecipientAddressCount = 2;
-  93 |
-> 94 |     test.expect(entityCheckCount).toEqual(userAndRecipientAddressCount);
-     |                                   ^ Error: expect(received).toEqual(expected) // deep equality
-  95 |   });
-  96 | });
-  97 |
 ```
 
 # Local changes
@@ -329,7 +318,7 @@ index feb714455..8ba648df0 100644
 +  );
  }
 diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
-index 472e669d1..9720e927e 100644
+index 472e669d1..a74ec4ba6 100644
 --- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
 +++ b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
 @@ -1,11 +1,7 @@
@@ -396,7 +385,7 @@ index 472e669d1..9720e927e 100644
        signStacksTransaction,
        tabId,
 -      toast,
-+      trackIfxNonceError,
++      trackIfNonceError,
      ]
    );
  }

@@ -1,157 +1,139 @@
 # Test info
 
-- Name: send stx: tests on mainnet >> send form input fields >> that fee row defaults to middle fee estimation
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:235:5
+- Name: Rpc: stx_getAddresses >> softwareWallet  >> it returns the second accounts data after changing account
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:165:11
 
 # Error details
 
 ```
-Error: page.waitForURL: Target page, context or browser has been closed
-=========================== logs ===========================
-waiting for navigation to "**/send/stx" until "load"
-============================================================
-    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
-    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
+Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+    1) <span aria-busy="false" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka locator('#app').getByTestId('switch-account-item-1')
+    2) <span aria-busy="false" data-testid="switch-account-sheet-account-name-1" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka getByTestId('virtuoso-item-list').getByTestId('switch-account-item-1')
+
+Call log:
+  - expect.toBeVisible with timeout 5000ms
+  - waiting for getByText('Account 2')
+
+    at /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:176:61
 ```
 
 # Test source
 
 ```ts
-   1 | import { Locator, Page } from '@playwright/test';
-   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
-   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
-   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
-   5 | import { createTestSelector } from '@tests/utils';
-   6 |
-   7 | import { RouteUrls } from '@shared/route-urls';
-   8 |
-   9 | export class SendPage {
-   10 |   readonly page: Page;
-   11 |   readonly amountInput: Locator;
-   12 |   readonly amountInputErrorLabel: Locator;
-   13 |   readonly confirmationDetails: Locator;
-   14 |   readonly confirmationDetailsRecipient: Locator;
-   15 |   readonly formInputErrorLabel: Locator;
-   16 |   readonly memoInput: Locator;
-   17 |   readonly previewSendTxButton: Locator;
-   18 |   readonly recipientChooseAccountButton: Locator;
-   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
-   20 |   readonly recipientSelectFieldAddress: Locator;
-   21 |   readonly recipientSelectFieldBnsName: Locator;
-   22 |   readonly recipientInput: Locator;
-   23 |   readonly recipientBnsAddressLabel: Locator;
-   24 |   readonly sendMaxButton: Locator;
-   25 |   readonly feesRow: Locator;
-   26 |   readonly memoRow: Locator;
-   27 |   readonly feesListItem: Locator;
-   28 |   readonly feeToBePaid: Locator;
-   29 |   readonly infoCardButton: Locator;
-   30 |   readonly broadcastErrorTitle: Locator;
-   31 |
-   32 |   constructor(page: Page) {
-   33 |     this.page = page;
-   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
-   35 |     this.amountInputErrorLabel = this.page.getByTestId(
-   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
-   37 |     );
-   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
-   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
-   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
-   41 |     );
-   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
-   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
-   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
-   45 |     this.recipientChooseAccountButton = page.getByTestId(
-   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
-   47 |     );
-   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
-   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
-   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
-   51 |     );
-   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
-   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
-   54 |     );
-   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
-   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
-   57 |     );
-   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
-   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
-   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
-   61 |     );
-   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
-   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
-   64 |
-   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
-   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
-   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
-   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
-   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
-   70 |   }
-   71 |
-   72 |   async selectBtcAndGoToSendForm() {
-   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
-   74 |     await this.page.getByTestId('BTC').click();
-   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
-   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
-   77 |   }
-   78 |
-   79 |   async selectStxAndGoToSendForm() {
-   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
-   81 |     await this.page.getByTestId('STX').click();
->  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
-      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
-   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
-   84 |   }
-   85 |
-   86 |   async selectSIP10AndGoToSendForm() {
-   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
-   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
-   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
-   90 |   }
-   91 |
-   92 |   async waitForSendPageReady() {
-   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
-   94 |       state: 'attached',
-   95 |     });
-   96 |   }
-   97 |
-   98 |   async goBack() {
-   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
-  100 |   }
-  101 |
-  102 |   async goBackSelectStx() {
-  103 |     await this.goBack();
-  104 |     await this.selectStxAndGoToSendForm();
-  105 |   }
-  106 |
-  107 |   async clickInfoCardButton() {
-  108 |     await this.infoCardButton.click();
-  109 |   }
-  110 |
-  111 |   async waitForFeeRow() {
-  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
-  113 |   }
-  114 |
-  115 |   async selectInscription() {
-  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
-  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
-  118 |     const count = await inscriptions.count();
-  119 |     if (count === 1) {
-  120 |       await inscriptions.hover();
-  121 |       await this.page
-  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
-  123 |         .click({ force: true });
-  124 |     } else {
-  125 |       await inscriptions.nth(0).hover();
-  126 |       await sendButton.nth(0).click({ force: true });
-  127 |     }
-  128 |   }
-  129 |
-  130 |   async confirmSendTransaction() {
-  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
-  132 |   }
-  133 | }
-  134 |
+   76 |   const button = popup.getByTestId('get-addresses-approve-button');
+   77 |   await test.expect(button).toBeVisible();
+   78 |   await button.click();
+   79 | }
+   80 |
+   81 | getAddressesMethods.forEach(method => {
+   82 |   test.describe(`Rpc: ${method}`, () => {
+   83 |     test.beforeEach(
+   84 |       async ({ extensionId, globalPage }) => await globalPage.setupAndUseApiCalls(extensionId)
+   85 |     );
+   86 |
+   87 |     const specs = {
+   88 |       softwareWallet: {
+   89 |         beforeEach: softwareBeforeEach(),
+   90 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   91 |       },
+   92 |       ledgerWithBitcoinAndStacksKey: {
+   93 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin', 'stacks'])),
+   94 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   95 |       },
+   96 |       ledgerWithStacksKeysOnly: {
+   97 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['stacks'])),
+   98 |         expectedResult: getExpectedResponseForKeys(['stacks']),
+   99 |       },
+  100 |       ledgerWithBitcoinKeysOnly: {
+  101 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin'])),
+  102 |         expectedResult: getExpectedResponseForKeys(['bitcoin']),
+  103 |       },
+  104 |     } as const;
+  105 |
+  106 |     Object.entries(specs).forEach(([walletPreset, { beforeEach, expectedResult }]) => {
+  107 |       test.describe(`${walletPreset} `, () => {
+  108 |         beforeEach();
+  109 |
+  110 |         test('the promise resolves with addresses successfully', async ({ page, context }) => {
+  111 |           await page.goto('localhost:3000');
+  112 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  113 |
+  114 |           const popup = await interceptRequestPopup(context);
+  115 |           await clickConnectLeatherButton(popup);
+  116 |
+  117 |           const result = await getAddressesPromise;
+  118 |           if (!result) throw new Error('Expected result');
+  119 |           const { id, ...payloadWithoutId } = result;
+  120 |
+  121 |           test.expect(payloadWithoutId).toEqual(expectedResult);
+  122 |         });
+  123 |
+  124 |         test('the promise rejects when user closes popup window', async ({ page, context }) => {
+  125 |           await page.goto('localhost:3000');
+  126 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  127 |           const popup = await interceptRequestPopup(context);
+  128 |           await popup.close();
+  129 |           await test.expect(getAddressesPromise).rejects.toThrow();
+  130 |         });
+  131 |
+  132 |         if (walletPreset === 'softwareWallet') {
+  133 |           test('it redirects back to get addresses flow when wallet is locked', async ({
+  134 |             homePage,
+  135 |             page,
+  136 |             context,
+  137 |           }) => {
+  138 |             await homePage.lock();
+  139 |             await page.goto('localhost:3000');
+  140 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  141 |             const popup = await interceptRequestPopup(context);
+  142 |             await popup.getByRole('textbox').fill(TEST_PASSWORD);
+  143 |             await popup.getByRole('button', { name: 'Continue' }).click();
+  144 |             await popup.getByText('Connect').isVisible();
+  145 |             await test.expect(popup.getByTestId('get-addresses-approve-button')).toBeVisible();
+  146 |             await clickConnectLeatherButton(popup);
+  147 |             await test.expect(getAddressesPromise).resolves.toMatchObject(expectedResult);
+  148 |           });
+  149 |
+  150 |           test('it returns testnet addresses with the network param set', async ({
+  151 |             page,
+  152 |             context,
+  153 |           }) => {
+  154 |             await page.goto('localhost:3000');
+  155 |             const getAddressesPromise = initiateGetAddresses(page, method, { network: 'testnet' });
+  156 |             const popup = await interceptRequestPopup(context);
+  157 |             await clickConnectLeatherButton(popup);
+  158 |
+  159 |             const result = await getAddressesPromise;
+  160 |             test
+  161 |               .expect(result.result.addresses[0].address)
+  162 |               .toEqual('tb1q4qgnjewwun2llgken94zqjrx5kpqqycaz5522d');
+  163 |           });
+  164 |
+  165 |           test('it returns the second accounts data after changing account', async ({
+  166 |             page,
+  167 |             context,
+  168 |           }) => {
+  169 |             await page.goto('localhost:3000');
+  170 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  171 |             const popup = await interceptRequestPopup(context);
+  172 |             const switchAccountButton = popup.getByTestId('switch-account-item-0');
+  173 |             await switchAccountButton.click();
+  174 |             const secondAccountInListButton = popup.getByTestId('switch-account-item-1');
+  175 |             await secondAccountInListButton.click();
+> 176 |             await test.expect(popup.getByText('Account 2')).toBeVisible();
+      |                                                             ^ Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+  177 |             await clickConnectLeatherButton(popup);
+  178 |             const result = await getAddressesPromise;
+  179 |             test
+  180 |               .expect(result.result.addresses[0].address)
+  181 |               .toEqual('bc1qr9wmz342txkcmxxq5ysmfqrd5rvmxtu6nldjgp');
+  182 |           });
+  183 |         }
+  184 |       });
+  185 |     });
+  186 |   });
+  187 | });
+  188 |
 ```
 
 # Local changes
@@ -367,7 +349,7 @@ index feb714455..8ba648df0 100644
 +  );
  }
 diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
-index 472e669d1..9720e927e 100644
+index 472e669d1..a74ec4ba6 100644
 --- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
 +++ b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
 @@ -1,11 +1,7 @@
@@ -434,7 +416,7 @@ index 472e669d1..9720e927e 100644
        signStacksTransaction,
        tabId,
 -      toast,
-+      trackIfxNonceError,
++      trackIfNonceError,
      ]
    );
  }

@@ -1,17 +1,17 @@
 # Test info
 
-- Name: send stx: tests on testnet >> that empty memo on preview matches default empty value
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:60:3
+- Name: send btc >> btc send form >> that fee value on preview match chosen one
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-btc.spec.ts:66:5
 
 # Error details
 
 ```
 Error: page.waitForURL: Target page, context or browser has been closed
 =========================== logs ===========================
-waiting for navigation to "**/send/stx" until "load"
+waiting for navigation to "**/send/btc" until "load"
 ============================================================
-    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
-    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:27:5
+    at SendPage.selectBtcAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:75:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-btc.spec.ts:17:5
 ```
 
 # Test source
@@ -91,15 +91,15 @@ waiting for navigation to "**/send/stx" until "load"
    72 |   async selectBtcAndGoToSendForm() {
    73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    74 |     await this.page.getByTestId('BTC').click();
-   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+>  75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
    76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    77 |   }
    78 |
    79 |   async selectStxAndGoToSendForm() {
    80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    81 |     await this.page.getByTestId('STX').click();
->  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
-      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
    83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    84 |   }
    85 |

@@ -1,0 +1,231 @@
+# Test info
+
+- Name: send stx: tests on mainnet >> send form input fields >> that recipient address matches bns name
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:210:5
+
+# Error details
+
+```
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
+```
+
+# Test source
+
+```ts
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
+  101 |
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
+  114 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/full-screen-button.tsx b/src/app/components/full-screen-button.tsx
+new file mode 100644
+index 000000000..9187910de
+--- /dev/null
++++ b/src/app/components/full-screen-button.tsx
+@@ -0,0 +1,29 @@
++import { useLocation } from 'react-router';
++
++import { Box } from 'leather-styles/jsx';
++
++import { ExpandIcon } from '@leather.io/ui';
++
++import { analytics } from '@shared/utils/analytics';
++
++import { openIndexPageInNewTab } from '@app/common/utils/open-in-new-tab';
++
++export function FullScreenButton() {
++  const location = useLocation();
++  return (
++    <Box
++      _hover={{ bg: 'ink.component-background-hover' }}
++      _focus={{ outline: 'none' }}
++      p="space.02"
++      onClick={() => {
++        void analytics.untypedTrack('click_open_in_new_tab', {
++          location: 'header',
++        });
++        void analytics.identify(undefined, { hasVisitedFullPageMode: true });
++        openIndexPageInNewTab(location.pathname);
++      }}
++    >
++      <ExpandIcon />
++    </Box>
++  );
++}
+diff --git a/src/app/features/container/headers/home.header.tsx b/src/app/features/container/headers/home.header.tsx
+index 9117c0108..97b0f08cb 100644
+--- a/src/app/features/container/headers/home.header.tsx
++++ b/src/app/features/container/headers/home.header.tsx
+@@ -3,6 +3,8 @@ import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+ import { BarsTwoIcon } from '@leather.io/ui';
+ 
+ import { useSwitchAccountSheet } from '@app/common/switch-account/use-switch-account-sheet-context';
++import { whenPageMode } from '@app/common/utils';
++import { FullScreenButton } from '@app/components/full-screen-button';
+ import { Header } from '@app/components/layout/headers/header';
+ import { HeaderGrid, HeaderGridRightCol } from '@app/components/layout/headers/header-grid';
+ import { LogoBox } from '@app/components/layout/headers/logo-box';
+@@ -17,6 +19,7 @@ export function HomeHeader() {
+         leftCol={<LogoBox hideBelow={undefined} />}
+         rightCol={
+           <HeaderGridRightCol>
++            {whenPageMode({ full: null, popup: <FullScreenButton /> })}
+             <Settings
+               triggerButton={<BarsTwoIcon data-testid={SettingsSelectors.SettingsMenuBtn} />}
+               toggleSwitchAccount={() => setIsShowingSwitchAccount(!isShowingSwitchAccount)}
+diff --git a/src/app/features/settings/settings.tsx b/src/app/features/settings/settings.tsx
+index f4f0e8f27..d2cb60779 100644
+--- a/src/app/features/settings/settings.tsx
++++ b/src/app/features/settings/settings.tsx
+@@ -184,6 +184,10 @@ export function Settings({
+                   data-testid={SettingsSelectors.OpenWalletInNewTab}
+                   onSelect={() => {
+                     void analytics.track('click_open_in_new_tab_menu_item');
++                    void analytics.untypedTrack('click_open_in_new_tab', {
++                      location: 'settings-menu',
++                    });
++                    void analytics.identify(undefined, { hasVisitedFullPageMode: true });
+                     openIndexPageInNewTab(location.pathname);
+                   }}
+                 >
+```

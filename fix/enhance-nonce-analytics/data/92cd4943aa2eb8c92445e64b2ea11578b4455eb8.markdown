@@ -1,135 +1,136 @@
 # Test info
 
-- Name: Gaia profile request >> should send a signed profile token to gaia
-- Location: /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:53:3
+- Name: Compliance checks >> the addresses of all recipients are checked
+- Location: /home/runner/work/extension/extension/tests/specs/compliance-checks/compliance-checks.spec.ts:77:3
 
 # Error details
 
 ```
-Error: locator.click: Element is not visible
-Call log:
-  - waiting for getByTestId('switch-account-item-0')
-    - locator resolved to <button data-testid="switch-account-item-0" class="group leather-pos_relative leather-bg_ink.background-primary leather-c_ink.text-primary leather-cursor_pointer leather-d_flex leather-h_auto leather-ring_none leather-bdr_xs leather-us_none leather-w_100% before:leather-content_"" before:leather-bdr_xs before:leather-pos_absolute before:leather-top_-space.03 before:leather-left_-space.03 before:leather-bottom_-space.03 before:leather-right_-space.03 [&:is(:active)]:before:leather-bg_ink.component-back…>…</button>
-  - attempting click action
-    - scrolling into view if needed
+Error: expect(received).toEqual(expected) // deep equality
 
-    at /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:58:61
+Expected: 2
+Received: 0
+    at /home/runner/work/extension/extension/tests/specs/compliance-checks/compliance-checks.spec.ts:94:35
 ```
 
 # Test source
 
 ```ts
-   1 | import { mockGaiaProfileResponse } from '@tests/mocks/mock-profile';
-   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
-   3 | import { UpdateProfileRequestPage } from '@tests/page-object-models/update-profile-request.page';
-   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
-   5 |
-   6 | import { delay } from '@leather.io/utils';
-   7 |
-   8 | import { test } from '../../fixtures/fixtures';
-   9 |
-   10 | test.describe.configure({ mode: 'serial' });
-   11 |
-   12 | test.describe('Profile updating', () => {
-   13 |   let testAppPage: TestAppPage;
-   14 |
-   15 |   test.beforeEach(async ({ context, extensionId, globalPage, onboardingPage }) => {
-   16 |     await globalPage.setupAndUseApiCalls(extensionId);
-   17 |     await onboardingPage.signInWithTestAccount(extensionId);
-   18 |     testAppPage = await TestAppPage.openDemoPage(context);
-   19 |   });
-   20 |
-   21 |   test('should show an error for invalid profile', async ({ context }) => {
-   22 |     const newPagePromise = context.waitForEvent('page');
-   23 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   24 |     const accountsPage = await newPagePromise;
-   25 |     await delay(2000);
-   26 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   27 |     await testAppPage.page.bringToFront();
-   28 |     await testAppPage.page.click('text=Profile', {
-   29 |       timeout: 30000,
-   30 |     });
-   31 |     await accountsPage.close();
-   32 |
-   33 |     await testAppPage.clickUpdateInvalidProfileButton();
-   34 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
-   35 |     const error = await profileUpdatingPage.waitForUpdateProfileRequestError(
-   36 |       'Invalid profile update request (Profile must follow Person schema).'
-   37 |     );
-   38 |
-   39 |     test.expect(error).toBeTruthy();
-   40 |     await profileUpdatingPage.page.close();
-   41 |   });
-   42 | });
-   43 |
-   44 | test.describe('Gaia profile request', () => {
-   45 |   let testAppPage: TestAppPage;
-   46 |
-   47 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
-   48 |     await globalPage.setupAndUseApiCalls(extensionId);
-   49 |     await onboardingPage.signInWithTestAccount(extensionId);
-   50 |     testAppPage = await TestAppPage.openDemoPage(context);
-   51 |   });
-   52 |
-   53 |   test('should send a signed profile token to gaia', async ({ context }) => {
-   54 |     const newPagePromise = context.waitForEvent('page');
-   55 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   56 |     const accountsPage = await newPagePromise;
-   57 |     await delay(2000);
->  58 |     await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
-      |                                                             ^ Error: locator.click: Element is not visible
-   59 |     await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
-   60 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   61 |     await testAppPage.page.bringToFront();
-   62 |     await testAppPage.page.click('text=Profile', {
-   63 |       timeout: 30000,
-   64 |     });
-   65 |
-   66 |     await testAppPage.clickUpdateProfileButton();
-   67 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
-   68 |
-   69 |     const requestPromise = profileUpdatingPage.page.waitForRequest('https://hub.blockstack.org/*');
-   70 |
-   71 |     await profileUpdatingPage.page.route('https://gaia.hiro.so/hub/*', async route => {
-   72 |       await route.fulfill({
-   73 |         status: 200,
-   74 |         contentType: 'application/octet-stream',
-   75 |         body: JSON.stringify(mockGaiaProfileResponse),
-   76 |       });
-   77 |     });
-   78 |
-   79 |     await profileUpdatingPage.page.route('https://hub.blockstack.org/*', async route => {
-   80 |       await route.abort();
-   81 |     });
-   82 |
-   83 |     const name = profileUpdatingPage.page.getByText('twitter');
-   84 |     const nameText = await name.innerText();
-   85 |     test.expect(nameText).toBe('https://twitter.com/twitterHandle');
-   86 |
-   87 |     await profileUpdatingPage.clickUpdateProfileButton();
-   88 |
-   89 |     const request = await requestPromise;
-   90 |     const requestBody = request.postData();
-   91 |     if (!requestBody) return;
-   92 |
-   93 |     const { decodedToken } = JSON.parse(requestBody)[0];
-   94 |     test.expect(decodedToken).toBeDefined();
-   95 |
-   96 |     test.expect(decodedToken?.header?.alg).toEqual('ES256K');
-   97 |     test.expect(decodedToken?.payload?.claim?.name).toContain('Name ');
-   98 |     test
-   99 |       .expect(decodedToken?.payload?.claim?.image?.[0]?.contentUrl)
-  100 |       .toEqual(
-  101 |         'https://byzantion.mypinata.cloud/ipfs/Qmb84UcaMr1MUwNbYBnXWHM3kEaDcYrKuPWwyRLVTNKELC/2256.png'
-  102 |       );
-  103 |   });
-  104 | });
-  105 |
+   1 | import type { BrowserContext, Page, Route } from '@playwright/test';
+   2 |
+   3 | import { delay } from '@leather.io/utils';
+   4 |
+   5 | import { test } from '../../fixtures/fixtures';
+   6 |
+   7 | function mockChainalysisEntityRegistrationRequest(context: BrowserContext) {
+   8 |   return async (routeHandler: (route: Route) => void) => {
+   9 |     return context.route('https://api.chainalysis.com/api/risk/v2/entities', async route =>
+  10 |       routeHandler(route)
+  11 |     );
+  12 |   };
+  13 | }
+  14 |
+  15 | function mockChainalysisEntityCheckRequest(context: BrowserContext) {
+  16 |   return async (routeHandler: (route: Route) => void) => {
+  17 |     return context.route('https://api.chainalysis.com/api/risk/v2/entities/*', async route =>
+  18 |       routeHandler(route)
+  19 |     );
+  20 |   };
+  21 | }
+  22 |
+  23 | test.describe('Compliance checks', () => {
+  24 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
+  25 |     await globalPage.setupAndUseApiCalls(extensionId);
+  26 |     await onboardingPage.signInWithTestAccount(extensionId);
+  27 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
+  28 |   });
+  29 |
+  30 |   async function openIllegalTransfer(page: Page) {
+  31 |     return page.evaluate(
+  32 |       () =>
+  33 |         // We only want the page window, don't wait for actual promise to finish
+  34 |         void (window as any).LeatherProvider.request('sendTransfer', {
+  35 |           // Known address from list, in readme of this
+  36 |           // page https://github.com/0xB10C/ofac-sanctioned-digital-currency-addresses
+  37 |           address: '12QtD5BFwRsdNsAZY76UVE1xyCGNTojH9h',
+  38 |           amount: '1231',
+  39 |         }).catch((e: unknown) => e)
+  40 |     );
+  41 |   }
+  42 |
+  43 |   test('that it errors if non-compliant entity is detected', async ({ page, context }) => {
+  44 |     await mockChainalysisEntityRegistrationRequest(context)(route =>
+  45 |       route.fulfill({ json: { address: '12QtD5BFwRsdNsAZY76UVE1xyCGNTojH9h' } })
+  46 |     );
+  47 |     await mockChainalysisEntityCheckRequest(context)(route =>
+  48 |       route.fulfill({ json: { risk: 'Severe' } })
+  49 |     );
+  50 |
+  51 |     const [leatherApprover] = await Promise.all([
+  52 |       context.waitForEvent('page'),
+  53 |       openIllegalTransfer(page),
+  54 |     ]);
+  55 |
+  56 |     await test
+  57 |       .expect(leatherApprover.getByText('Unable to handle request, errorCode: 1398'))
+  58 |       .toBeVisible();
+  59 |   });
+  60 |
+  61 |   test('nothing happens when chainalysis is down', async ({ page, context }) => {
+  62 |     await mockChainalysisEntityCheckRequest(context)(route => route.abort());
+  63 |     await mockChainalysisEntityRegistrationRequest(context)(route => route.abort());
+  64 |
+  65 |     const [leatherApprover] = await Promise.all([
+  66 |       context.waitForEvent('page'),
+  67 |       openIllegalTransfer(page),
+  68 |     ]);
+  69 |
+  70 |     await test
+  71 |       .expect(leatherApprover.locator('text="Unable to handle request, errorCode: 1398"'))
+  72 |       .toBeHidden();
+  73 |
+  74 |     await test.expect(leatherApprover.locator('text="0.00001231 BTC"')).toBeVisible();
+  75 |   });
+  76 |
+  77 |   test('the addresses of all recipients are checked', async ({ context, page }) => {
+  78 |     let entityCheckCount = 0;
+  79 |
+  80 |     await mockChainalysisEntityCheckRequest(context)(route => {
+  81 |       entityCheckCount += 1;
+  82 |       return route.abort();
+  83 |     });
+  84 |
+  85 |     await Promise.all([context.waitForEvent('page'), openIllegalTransfer(page)]);
+  86 |
+  87 |     // Please forgive this timeout, we need to give the page time in order to
+  88 |     // make the request, to be sure it was made. If this test ends up failing
+  89 |     // due to a race condition, please let the author know.
+  90 |     await delay(2000);
+  91 |
+  92 |     const userAndRecipientAddressCount = 2;
+  93 |
+> 94 |     test.expect(entityCheckCount).toEqual(userAndRecipientAddressCount);
+     |                                   ^ Error: expect(received).toEqual(expected) // deep equality
+  95 |   });
+  96 | });
+  97 |
 ```
 
 # Local changes
 
 ```diff
+diff --git a/.github/workflows/all-checks-pass.yml b/.github/workflows/all-checks-pass.yml
+index 49b82c78c..34c182a9c 100644
+--- a/.github/workflows/all-checks-pass.yml
++++ b/.github/workflows/all-checks-pass.yml
+@@ -19,4 +19,7 @@ jobs:
+     steps:
+       - uses: wechuli/allcheckspassed@v1
+         with:
++          delay: 4
++          retries: 20
++          polling_interval: 1
+           checks_exclude: 'Dependabot'
 diff --git a/package.json b/package.json
 index e55448147..975d2954e 100644
 --- a/package.json
@@ -1476,9 +1477,5 @@ index bf5245a99..348e2973d 100644
        lottie-web: 5.12.2
        react: 19.0.0
  
--  react-native-edge-to-edge@1.6.0(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0):
-+  react-native-edge-to-edge@1.6.0(react-native@0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.1(typescript@5.4.5))(@types/react@19.0.12)(react@19.0.0))(react@19.0.0):
-     dependencies:
-       react: 19.0.0
--      react-native: 0.79.2(@babel/core@7.28.0)(@react-native-community/cli@20.0.0(ty
+-  react-native-edge-to-edge@1.6.0(react-native@0.79.2(@babel/core@
 ```

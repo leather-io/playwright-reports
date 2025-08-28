@@ -15,7 +15,6 @@ Call log:
     - element is visible, enabled and stable
     - scrolling into view if needed
     - done scrolling
-    - performing click action
 
     at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
     at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36

@@ -1,0 +1,237 @@
+# Test info
+
+- Name: Send sip10 >> can send sip10 token
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:20:3
+
+# Error details
+
+```
+Error: locator.waitFor: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('send-form') to be visible
+
+    at SendPage.selectSIP10AndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:89:68)
+    at /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:17:5
+```
+
+# Test source
+
+```ts
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+   82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+>  89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+      |                                                                    ^ Error: locator.waitFor: Target page, context or browser has been closed
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
+  101 |
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
+  114 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
+```
+
+# Local changes
+
+```diff
+diff --git a/.github/workflows/all-checks-pass.yml b/.github/workflows/all-checks-pass.yml
+index 34c182a9c..3e0c0cac8 100644
+--- a/.github/workflows/all-checks-pass.yml
++++ b/.github/workflows/all-checks-pass.yml
+@@ -19,7 +19,9 @@ jobs:
+     steps:
+       - uses: wechuli/allcheckspassed@v1
+         with:
+-          delay: 4
++          # Initial run delays while we wait for all slow jobs to pass
++          # When running a second time, we want it to run immediately
++          delay: ${{ github.run_attempt == 1 && 4 || 0 }}
+           retries: 20
+           polling_interval: 1
+           checks_exclude: 'Dependabot'
+diff --git a/src/app/components/loaders/stacks-nonce-loader.tsx b/src/app/components/loaders/stacks-nonce-loader.tsx
+index 1d5a90eab..1471ed681 100644
+--- a/src/app/components/loaders/stacks-nonce-loader.tsx
++++ b/src/app/components/loaders/stacks-nonce-loader.tsx
+@@ -1,5 +1,6 @@
+ import { createContext, useContext } from 'react';
+ 
++import type { StacksTransactionWire } from '@stacks/transactions';
+ import z from 'zod';
+ 
+ import { isString } from '@leather.io/utils';
+@@ -25,13 +26,15 @@ export function useAnalyticsOnlyStacksNonceTracker() {
+ 
+   return {
+     nonceCalculation: context ?? {},
+-    trackIfNonceError(error: Error | string) {
++    trackIfNonceError(unsignedTx: StacksTransactionWire, error: Error | string) {
++      const txNonce = Number(unsignedTx.auth.spendingCondition.nonce);
++
+       if (!('nonceType' in context)) return;
+       if (isString(error)) return;
+ 
+       const serializedError = serializeError(error);
+       if ('name' in serializedError && serializedError.name === 'BadNonce') {
+-        const report = { ...serializedError, ...context };
++        const report = { ...serializedError, ...context, txNonce };
+         if ('stack' in report) delete report.stack;
+         void analytics.untypedTrack('investigation_bad_nonce_increase', report);
+       }
+diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+index 8445c85ec..97de8b895 100644
+--- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
++++ b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+@@ -17,6 +17,7 @@ import { closeWindow } from '@shared/utils';
+ 
+ import { useRpcRequestParams } from '@app/common/hooks/use-rpc-request-params';
+ import { stacksBroadcastTransaction } from '@app/common/transactions/stacks/stacks-broadcast-transaction';
++import { createError } from '@app/common/utils';
+ import { useAnalyticsOnlyStacksNonceTracker } from '@app/components/loaders/stacks-nonce-loader';
+ import { useCurrentStacksNetworkState } from '@app/store/networks/networks.hooks';
+ import { useSignStacksTransaction } from '@app/store/transactions/transaction.hooks';
+@@ -46,7 +47,10 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+             },
+           })
+         );
+-        throw new Error('Error signing stacks transaction');
++        throw createError({
++          name: 'TransactionReturnedFromSignerNull',
++          message: 'Unable to sign transaction',
++        });
+       }
+ 
+       // If the transaction is sponsored, we do not broadcast it
+@@ -68,7 +72,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+ 
+       function onError(error: Error | string) {
+         const message = isString(error) ? error : error.message;
+-        trackIfNonceError(error);
++        trackIfNonceError(unsignedTx, error);
+ 
+         return navigate(RouteUrls.BroadcastError, { state: { message } });
+       }
+```

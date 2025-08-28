@@ -130,6 +130,21 @@ Call log:
 # Local changes
 
 ```diff
+diff --git a/.github/workflows/all-checks-pass.yml b/.github/workflows/all-checks-pass.yml
+index 34c182a9c..3e0c0cac8 100644
+--- a/.github/workflows/all-checks-pass.yml
++++ b/.github/workflows/all-checks-pass.yml
+@@ -19,7 +19,9 @@ jobs:
+     steps:
+       - uses: wechuli/allcheckspassed@v1
+         with:
+-          delay: 4
++          # Initial run delays while we wait for all slow jobs to pass
++          # When running a second time, we want it to run immediately
++          delay: ${{ github.run_attempt == 1 && 4 || 0 }}
+           retries: 20
+           polling_interval: 1
+           checks_exclude: 'Dependabot'
 diff --git a/src/app/components/loaders/stacks-nonce-loader.tsx b/src/app/components/loaders/stacks-nonce-loader.tsx
 index 1d5a90eab..1471ed681 100644
 --- a/src/app/components/loaders/stacks-nonce-loader.tsx
@@ -160,10 +175,30 @@ index 1d5a90eab..1471ed681 100644
          void analytics.untypedTrack('investigation_bad_nonce_increase', report);
        }
 diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
-index 8445c85ec..d3d366b5b 100644
+index 8445c85ec..97de8b895 100644
 --- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
 +++ b/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
-@@ -68,7 +68,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+@@ -17,6 +17,7 @@ import { closeWindow } from '@shared/utils';
+ 
+ import { useRpcRequestParams } from '@app/common/hooks/use-rpc-request-params';
+ import { stacksBroadcastTransaction } from '@app/common/transactions/stacks/stacks-broadcast-transaction';
++import { createError } from '@app/common/utils';
+ import { useAnalyticsOnlyStacksNonceTracker } from '@app/components/loaders/stacks-nonce-loader';
+ import { useCurrentStacksNetworkState } from '@app/store/networks/networks.hooks';
+ import { useSignStacksTransaction } from '@app/store/transactions/transaction.hooks';
+@@ -46,7 +47,10 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+             },
+           })
+         );
+-        throw new Error('Error signing stacks transaction');
++        throw createError({
++          name: 'TransactionReturnedFromSignerNull',
++          message: 'Unable to sign transaction',
++        });
+       }
+ 
+       // If the transaction is sponsored, we do not broadcast it
+@@ -68,7 +72,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
  
        function onError(error: Error | string) {
          const message = isString(error) ? error : error.message;

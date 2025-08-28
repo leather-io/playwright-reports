@@ -1,0 +1,1021 @@
+# Test info
+
+- Name: send stx: tests on testnet >> that send max button sets available balance minus fee
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:52:3
+
+# Error details
+
+```
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:27:5
+```
+
+# Test source
+
+```ts
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
+  101 |
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
+  114 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
+```
+
+# Local changes
+
+```diff
+diff --git a/.github/workflows/all-checks-pass.yml b/.github/workflows/all-checks-pass.yml
+index 34c182a9c..3e0c0cac8 100644
+--- a/.github/workflows/all-checks-pass.yml
++++ b/.github/workflows/all-checks-pass.yml
+@@ -19,7 +19,9 @@ jobs:
+     steps:
+       - uses: wechuli/allcheckspassed@v1
+         with:
+-          delay: 4
++          # Initial run delays while we wait for all slow jobs to pass
++          # When running a second time, we want it to run immediately
++          delay: ${{ github.run_attempt == 1 && 4 || 0 }}
+           retries: 20
+           polling_interval: 1
+           checks_exclude: 'Dependabot'
+diff --git a/package.json b/package.json
+index d1dd70bab..b04b1ddd4 100644
+--- a/package.json
++++ b/package.json
+@@ -189,10 +189,10 @@
+     "@stitches/react": "1.2.8",
+     "@storybook/addon-styling-webpack": "1.0.1",
+     "@styled-system/theme-get": "5.1.2",
+-    "@tanstack/query-async-storage-persister": "5.59.16",
+-    "@tanstack/react-query": "5.59.16",
+-    "@tanstack/react-query-devtools": "5.59.16",
+-    "@tanstack/react-query-persist-client": "5.59.16",
++    "@tanstack/query-async-storage-persister": "5.85.5",
++    "@tanstack/react-query": "5.85.5",
++    "@tanstack/react-query-devtools": "5.85.5",
++    "@tanstack/react-query-persist-client": "5.85.5",
+     "@types/lodash.uniqby": "4.7.7",
+     "@typescript-eslint/eslint-plugin": "7.5.0",
+     "@zondax/ledger-stacks": "1.0.4",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 8bd08fdee..978a9951d 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -182,17 +182,17 @@ importers:
+         specifier: 5.1.2
+         version: 5.1.2
+       '@tanstack/query-async-storage-persister':
+-        specifier: 5.59.16
+-        version: 5.59.16
++        specifier: 5.85.5
++        version: 5.85.5
+       '@tanstack/react-query':
+-        specifier: 5.59.16
+-        version: 5.59.16(react@19.0.0)
++        specifier: 5.85.5
++        version: 5.85.5(react@19.0.0)
+       '@tanstack/react-query-devtools':
+-        specifier: 5.59.16
+-        version: 5.59.16(@tanstack/react-query@5.59.16(react@19.0.0))(react@19.0.0)
++        specifier: 5.85.5
++        version: 5.85.5(@tanstack/react-query@5.85.5(react@19.0.0))(react@19.0.0)
+       '@tanstack/react-query-persist-client':
+-        specifier: 5.59.16
+-        version: 5.59.16(@tanstack/react-query@5.59.16(react@19.0.0))(react@19.0.0)
++        specifier: 5.85.5
++        version: 5.85.5(@tanstack/react-query@5.85.5(react@19.0.0))(react@19.0.0)
+       '@types/lodash.uniqby':
+         specifier: 4.7.7
+         version: 4.7.7
+@@ -5902,32 +5902,32 @@ packages:
+     resolution: {integrity: sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw==}
+     engines: {node: '>=14.16'}
+ 
+-  '@tanstack/query-async-storage-persister@5.59.16':
+-    resolution: {integrity: sha512-aooVIjBsuVX5EvAjNooZO64lyURjsd/lqCIU785vvVQ6i1cCJBWyh2jeRkGYQIUlIwk3zht+otC9UdVXYG4CQA==}
++  '@tanstack/query-async-storage-persister@5.85.5':
++    resolution: {integrity: sha512-E1N+eMPWfV0PwTNa8tRqyOgIzFJSGvrC5hVIxNehLL/jucPvLi0QUlIG/KC4Vg6jVarONSLhONCM4dkSugEUFw==}
+ 
+-  '@tanstack/query-core@5.59.16':
+-    resolution: {integrity: sha512-crHn+G3ltqb5JG0oUv6q+PMz1m1YkjpASrXTU+sYWW9pLk0t2GybUHNRqYPZWhxgjPaVGC4yp92gSFEJgYEsPw==}
++  '@tanstack/query-core@5.85.5':
++    resolution: {integrity: sha512-KO0WTob4JEApv69iYp1eGvfMSUkgw//IpMnq+//cORBzXf0smyRwPLrUvEe5qtAEGjwZTXrjxg+oJNP/C00t6w==}
+ 
+-  '@tanstack/query-devtools@5.58.0':
+-    resolution: {integrity: sha512-iFdQEFXaYYxqgrv63ots+65FGI+tNp5ZS5PdMU1DWisxk3fez5HG3FyVlbUva+RdYS5hSLbxZ9aw3yEs97GNTw==}
++  '@tanstack/query-devtools@5.84.0':
++    resolution: {integrity: sha512-fbF3n+z1rqhvd9EoGp5knHkv3p5B2Zml1yNRjh7sNXklngYI5RVIWUrUjZ1RIcEoscarUb0+bOvIs5x9dwzOXQ==}
+ 
+-  '@tanstack/query-persist-client-core@5.59.16':
+-    resolution: {integrity: sha512-UXu9GEOXAlH4pROhct+zBuMeTXUIvHh9ECfKs8Ux2RgBFBs4hwUqlhUNjb/ezji4lxF+F0Dqtg48O60ii3DArg==}
++  '@tanstack/query-persist-client-core@5.85.5':
++    resolution: {integrity: sha512-2JQiyiTVaaUu8pwPqOp6tjNa64ZN+0T9eZ3lfksV4le1VuG99fTcAYmZFIydvzwWlSM7GEF/1kpl5bwW2Y1qfQ==}
+ 
+-  '@tanstack/react-query-devtools@5.59.16':
+-    resolution: {integrity: sha512-Dejo39QBXmDqXZ3vdrk7vHDvs7TvL573/AX2NveMBmRAufAPYuE3oWSKP/gGqkDfEqyr4CmldOj+v9cKskUchQ==}
++  '@tanstack/react-query-devtools@5.85.5':
++    resolution: {integrity: sha512-6Ol6Q+LxrCZlQR4NoI5181r+ptTwnlPG2t7H9Sp3klxTBhYGunONqcgBn2YKRPsaKiYM8pItpKMdMXMEINntMQ==}
+     peerDependencies:
+-      '@tanstack/react-query': ^5.59.16
++      '@tanstack/react-query': ^5.85.5
+       react: ^18 || ^19
+ 
+-  '@tanstack/react-query-persist-client@5.59.16':
+-    resolution: {integrity: sha512-JtcCHtGyRmwuSf/wzWfRqbTbq3C+fffaOZsSSWm/AXybql/Q+iA6TCqSS+vXX8s40o2yN4aKstr+W8pfn2qfsg==}
++  '@tanstack/react-query-persist-client@5.85.5':
++    resolution: {integrity: sha512-KzISZPtJtWZAwH/Ln1FclaiHVwdeV04WX7wUYLe1vw7zyfcPljHeyXlmVf8nxhFm8ujMBdGQVzP2iNn6ehzjQA==}
+     peerDependencies:
+-      '@tanstack/react-query': ^5.59.16
++      '@tanstack/react-query': ^5.85.5
+       react: ^18 || ^19
+ 
+-  '@tanstack/react-query@5.59.16':
+-    resolution: {integrity: sha512-MuyWheG47h6ERd4PKQ6V8gDyBu3ThNG22e1fRVwvq6ap3EqsFhyuxCAwhNP/03m/mLg+DAb0upgbPaX6VB+CkQ==}
++  '@tanstack/react-query@5.85.5':
++    resolution: {integrity: sha512-/X4EFNcnPiSs8wM2v+b6DqS5mmGeuJQvxBglmDxl6ZQb5V26ouD2SJYAcC3VjbNwqhY2zjxVD15rDA5nGbMn3A==}
+     peerDependencies:
+       react: ^18 || ^19
+ 
+@@ -17418,24 +17418,24 @@ snapshots:
+       react: 18.3.1
+       tslib: 2.8.1
+ 
+-  '@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
++  '@dnd-kit/core@6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+     dependencies:
+       '@dnd-kit/accessibility': 3.1.1(react@18.3.1)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+-      react: 18.3.1
+-      react-dom: 18.3.1(react@18.3.1)
++      react: 19.0.0
++      react-dom: 19.0.0(react@19.0.0)
+       tslib: 2.8.1
+ 
+   '@dnd-kit/modifiers@7.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
+     dependencies:
+-      '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
++      '@dnd-kit/core': 6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+       react: 18.3.1
+       tslib: 2.8.1
+ 
+   '@dnd-kit/sortable@8.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
+     dependencies:
+-      '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
++      '@dnd-kit/core': 6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+       react: 18.3.1
+       tslib: 2.8.1
+@@ -20740,17 +20740,17 @@ snapshots:
+     optionalDependencies:
+       '@types/react': 19.0.12
+ 
+-  '@redux-devtools/app-core@1.1.2(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux-persist@6.0.0(react@19.0.0)(redux@5.0.1))(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
++  '@redux-devtools/app-core@1.1.2(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux-persist@6.0.0(react@19.0.0)(redux@5.0.1))(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
+     dependencies:
+       '@babel/runtime': 7.27.0
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+       '@redux-devtools/chart-monitor': 5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react@18.3.1)(redux@5.0.1)
+       '@redux-devtools/core': 4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1)
+       '@redux-devtools/inspector-monitor': 6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)
+-      '@redux-devtools/inspector-monitor-test-tab': 4.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+-      '@redux-devtools/inspector-monitor-trace-tab': 4.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)
++      '@redux-devtools/inspector-monitor-test-tab': 4.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
++      '@redux-devtools/inspector-monitor-trace-tab': 4.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)
+       '@redux-devtools/log-monitor': 5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react@18.3.1)(redux@5.0.1)
+-      '@redux-devtools/rtk-query-monitor': 5.2.0(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
++      '@redux-devtools/rtk-query-monitor': 5.2.0(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@redux-devtools/slider-monitor': 5.1.1(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@redux-devtools/ui': 1.4.0(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@reduxjs/toolkit': 2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)
+@@ -20771,10 +20771,10 @@ snapshots:
+     transitivePeerDependencies:
+       - supports-color
+ 
+-  '@redux-devtools/app@6.2.2(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
++  '@redux-devtools/app@6.2.2(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
+     dependencies:
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+-      '@redux-devtools/app-core': 1.1.2(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux-persist@6.0.0(react@19.0.0)(redux@5.0.1))(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
++      '@redux-devtools/app-core': 1.1.2(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux-persist@6.0.0(react@19.0.0)(redux@5.0.1))(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@redux-devtools/ui': 1.4.0(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@reduxjs/toolkit': 2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)
+       '@types/react': 18.3.20
+@@ -20808,7 +20808,7 @@ snapshots:
+     dependencies:
+       '@apollo/server': 4.12.0(encoding@0.1.13)(graphql@16.11.0)
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+-      '@redux-devtools/app': 6.2.2(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
++      '@redux-devtools/app': 6.2.2(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))
+       '@reduxjs/toolkit': 2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)
+       '@types/react': 18.3.20
+       body-parser: 1.20.3
+@@ -20856,7 +20856,7 @@ snapshots:
+       react-redux: 9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1)
+       redux: 5.0.1
+ 
+-  '@redux-devtools/inspector-monitor-test-tab@4.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
++  '@redux-devtools/inspector-monitor-test-tab@4.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
+     dependencies:
+       '@babel/runtime': 7.27.0
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+@@ -20877,7 +20877,7 @@ snapshots:
+     transitivePeerDependencies:
+       - supports-color
+ 
+-  '@redux-devtools/inspector-monitor-trace-tab@4.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)':
++  '@redux-devtools/inspector-monitor-trace-tab@4.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)':
+     dependencies:
+       '@babel/code-frame': 8.0.0-alpha.17
+       '@babel/runtime': 7.27.0
+@@ -20897,7 +20897,7 @@ snapshots:
+   '@redux-devtools/inspector-monitor@6.1.1(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@19.0.0)(redux@5.0.1))(@types/react@19.0.12)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(redux@5.0.1)':
+     dependencies:
+       '@babel/runtime': 7.27.0
+-      '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
++      '@dnd-kit/core': 6.3.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+       '@dnd-kit/modifiers': 7.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+       '@dnd-kit/sortable': 8.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+@@ -20950,7 +20950,7 @@ snapshots:
+       - immutable
+       - utf-8-validate
+ 
+-  '@redux-devtools/rtk-query-monitor@5.2.0(@emotion/react@11.14.0(@types/react@19.0.12)(react@19.0.0))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
++  '@redux-devtools/rtk-query-monitor@5.2.0(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@redux-devtools/core@4.1.1(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1)(redux@5.0.1))(@reduxjs/toolkit@2.7.0(react-redux@9.2.0(@types/react@19.0.12)(react@19.0.0)(redux@5.0.1))(react@18.3.1))(@types/react@18.3.20)(@types/styled-components@5.1.34)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(redux@5.0.1)(styled-components@5.3.11(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react-is@18.3.1)(react@18.3.1))':
+     dependencies:
+       '@babel/runtime': 7.27.0
+       '@emotion/react': 11.14.0(@types/react@18.3.20)(react@18.3.1)
+@@ -22217,33 +22217,33 @@ snapshots:
+     dependencies:
+       defer-to-connect: 2.0.1
+ 
+-  '@tanstack/query-async-storage-persister@5.59.16':
++  '@tanstack/query-async-storage-persister@5.85.5':
+     dependencies:
+-      '@tanstack/query-persist-client-core': 5.59.16
++      '@tanstack/query-persist-client-core': 5.85.5
+ 
+-  '@tanstack/query-core@5.59.16': {}
++  '@tanstack/query-core@5.85.5': {}
+ 
+-  '@tanstack/query-devtools@5.58.0': {}
++  '@tanstack/query-devtools@5.84.0': {}
+ 
+-  '@tanstack/query-persist-client-core@5.59.16':
++  '@tanstack/query-persist-client-core@5.85.5':
+     dependencies:
+-      '@tanstack/query-core': 5.59.16
++      '@tanstack/query-core': 5.85.5
+ 
+-  '@tanstack/react-query-devtools@5.59.16(@tanstack/react-query@5.59.16(react@19.0.0))(react@19.0.0)':
++  '@tanstack/react-query-devtools@5.85.5(@tanstack/react-query@5.85.5(react@19.0.0))(react@19.0.0)':
+     dependencies:
+-      '@tanstack/query-devtools': 5.58.0
+-      '@tanstack/react-query': 5.59.16(react@19.0.0)
++      '@tanstack/query-devtools': 5.84.0
++      '@tanstack/react-query': 5.85.5(react@19.0.0)
+       react: 19.0.0
+ 
+-  '@tanstack/react-query-persist-client@5.59.16(@tanstack/react-query@5.59.16(react@19.0.0))(react@19.0.0)':
++  '@tanstack/react-query-persist-client@5.85.5(@tanstack/react-query@5.85.5(react@19.0.0))(react@19.0.0)':
+     dependencies:
+-      '@tanstack/query-persist-client-core': 5.59.16
+-      '@tanstack/react-query': 5.59.16(react@19.0.0)
++      '@tanstack/query-persist-client-core': 5.85.5
++      '@tanstack/react-query': 5.85.5(react@19.0.0)
+       react: 19.0.0
+ 
+-  '@tanstack/react-query@5.59.16(react@19.0.0)':
++  '@tanstack/react-query@5.85.5(react@19.0.0)':
+     dependencies:
+-      '@tanstack/query-core': 5.59.16
++      '@tanstack/query-core': 5.85.5
+       react: 19.0.0
+ 
+   '@testing-library/dom@10.4.0':
+diff --git a/src/app/components/loaders/stacks-nonce-loader.tsx b/src/app/components/loaders/stacks-nonce-loader.tsx
+index 1d5a90eab..4064d93d0 100644
+--- a/src/app/components/loaders/stacks-nonce-loader.tsx
++++ b/src/app/components/loaders/stacks-nonce-loader.tsx
+@@ -1,5 +1,6 @@
+ import { createContext, useContext } from 'react';
+ 
++import type { StacksTransactionWire } from '@stacks/transactions';
+ import z from 'zod';
+ 
+ import { isString } from '@leather.io/utils';
+@@ -25,13 +26,15 @@ export function useAnalyticsOnlyStacksNonceTracker() {
+ 
+   return {
+     nonceCalculation: context ?? {},
+-    trackIfNonceError(error: Error | string) {
++    trackIfNonceError(unsignedTx: StacksTransactionWire, error: Error | string) {
++      const txNonce = Number(unsignedTx.auth.spendingCondition.nonce);
++
+       if (!('nonceType' in context)) return;
+       if (isString(error)) return;
+ 
+       const serializedError = serializeError(error);
+       if ('name' in serializedError && serializedError.name === 'BadNonce') {
+-        const report = { ...serializedError, ...context };
++        const report = { ...serializedError, ...context, txNonce };
+         if ('stack' in report) delete report.stack;
+         void analytics.untypedTrack('investigation_bad_nonce_increase', report);
+       }
+@@ -49,6 +52,7 @@ interface StacksNonceLoaderProps {
+ export function StacksNonceLoader({ children }: StacksNonceLoaderProps) {
+   const stxAddress = useCurrentStacksAccountAddress();
+   const { data: nextNonce } = useNextNonce(stxAddress);
++
+   if (!nextNonce) return null;
+ 
+   const schemaResult = nextNonceSchema.safeParse(nextNonce);
+diff --git a/src/app/features/devtool/devtools.tsx b/src/app/features/devtool/devtools.tsx
+index 34f9e696e..1588679a5 100644
+--- a/src/app/features/devtool/devtools.tsx
++++ b/src/app/features/devtool/devtools.tsx
+@@ -1,12 +1,15 @@
+ import { QueryClientProvider } from '@tanstack/react-query';
+ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
++import { Box } from 'leather-styles/jsx/box';
+ 
+ import { queryClient } from '@app/common/persistence';
+ 
+ export function Devtools() {
+   return queryClient ? (
+     <QueryClientProvider client={queryClient}>
+-      <ReactQueryDevtools buttonPosition="bottom-left" />
++      <Box fontSize="16px">
++        <ReactQueryDevtools buttonPosition="bottom-left" />
++      </Box>
+     </QueryClientProvider>
+   ) : null;
+ }
+diff --git a/src/app/features/nonce-editor/nonce-editor.provider.tsx b/src/app/features/nonce-editor/nonce-editor.provider.tsx
+index 117b4af9a..2200c187b 100644
+--- a/src/app/features/nonce-editor/nonce-editor.provider.tsx
++++ b/src/app/features/nonce-editor/nonce-editor.provider.tsx
+@@ -1,4 +1,4 @@
+-import { useState } from 'react';
++import { useEffect, useState } from 'react';
+ import { useNavigate } from 'react-router';
+ 
+ import { RouteUrls } from '@shared/route-urls';
+@@ -16,9 +16,17 @@ export function NonceEditorProvider({
+   nonce: currentNonce,
+   onGoBack,
+ }: NonceEditorProviderProps) {
++  const [hasUserSetManualNonce, setHasUserSetManualNonce] = useState(false);
++
+   const [loadedNonce, setLoadedNonce] = useState<Nonce>(currentNonce);
+   const [nonce, setNonce] = useState<Nonce>(currentNonce);
+ 
++  useEffect(() => {
++    if (hasUserSetManualNonce) return;
++    setLoadedNonce(currentNonce);
++    setNonce(currentNonce);
++  }, [currentNonce, hasUserSetManualNonce]);
++
+   const navigate = useNavigate();
+ 
+   return (
+@@ -28,7 +36,10 @@ export function NonceEditorProvider({
+         nonce,
+         onGoBack,
+         onSetLoadedNonce: (value: Nonce) => setLoadedNonce(value),
+-        onSetNonce: (value: Nonce) => setNonce(value),
++        onSetNonce: (value: Nonce) => {
++          setNonce(value);
++          setHasUserSetManualNonce(true);
++        },
+         onUserActivatesNonceEditor: () => navigate(RouteUrls.NonceEditor),
+       }}
+     >
+diff --git a/src/app/features/rpc-transaction-request/rpc-transaction-request.layout.tsx b/src/app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/rpc-transaction-request.layout.tsx
+rename to src/app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout.tsx
+diff --git a/src/app/features/rpc-transaction-request/signing-account-card/signing-account-card.tsx b/src/app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/signing-account-card/signing-account-card.tsx
+rename to src/app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/contract-call/contract-call-details.layout.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/contract-call/contract-call-details.layout.tsx
+similarity index 95%
+rename from src/app/features/rpc-transaction-request/stacks/contract-call/contract-call-details.layout.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/contract-call/contract-call-details.layout.tsx
+index 0aec69cec..1ccc53a88 100644
+--- a/src/app/features/rpc-transaction-request/stacks/contract-call/contract-call-details.layout.tsx
++++ b/src/app/features/rpc-stacks-transaction-request/stacks/contract-call/contract-call-details.layout.tsx
+@@ -8,7 +8,7 @@ import { AddressDisplayer, Approver } from '@leather.io/ui';
+ 
+ import { useStacksExplorerLink } from '@app/common/hooks/use-stacks-explorer-link';
+ import { LoadingSpinner } from '@app/components/loading-spinner';
+-import { FunctionArgumentList } from '@app/features/rpc-transaction-request/stacks/contract-call/function-arguments/function-argument-list';
++import { FunctionArgumentList } from '@app/features/rpc-stacks-transaction-request/stacks/contract-call/function-arguments/function-argument-list';
+ import { useGetContractInterface } from '@app/query/stacks/contract-interface.query';
+ 
+ interface ContractCallDetailsLayoutProps {
+diff --git a/src/app/features/rpc-transaction-request/stacks/contract-call/function-arguments/function-argument-item.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/contract-call/function-arguments/function-argument-item.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/contract-call/function-arguments/function-argument-item.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/contract-call/function-arguments/function-argument-item.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/contract-call/function-arguments/function-argument-list.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/contract-call/function-arguments/function-argument-list.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/contract-call/function-arguments/function-argument-list.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/contract-call/function-arguments/function-argument-list.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/contract-deploy/contract-deploy-details.layout.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/contract-deploy/contract-deploy-details.layout.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/contract-deploy/contract-deploy-details.layout.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/contract-deploy/contract-deploy-details.layout.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/post-conditions/fungible-post-condition-item.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/fungible-post-condition-item.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/post-conditions/fungible-post-condition-item.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/fungible-post-condition-item.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/post-conditions/no-post-conditions.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/no-post-conditions.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/post-conditions/no-post-conditions.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/no-post-conditions.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/post-conditions/post-condition-item.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-condition-item.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/post-conditions/post-condition-item.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-condition-item.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/post-conditions/post-condition-list.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-condition-list.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/post-conditions/post-condition-list.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-condition-list.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/post-conditions/post-condition-mode-warning.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-condition-mode-warning.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/post-conditions/post-condition-mode-warning.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-condition-mode-warning.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions-details.layout.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions-details.layout.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/post-conditions/post-conditions.utils.ts b/src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions.utils.ts
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/post-conditions/post-conditions.utils.ts
+rename to src/app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions.utils.ts
+diff --git a/src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context.tsx
+similarity index 86%
+rename from src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context.tsx
+index 5e6a23160..71778e093 100644
+--- a/src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context.tsx
++++ b/src/app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context.tsx
+@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
+ 
+ import type { StacksNetwork } from '@stacks/network';
+ 
+-import type { RpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import type { RpcTransactionRequest } from '@app/features/rpc-stacks-transaction-request/use-rpc-transaction-request';
+ 
+ interface StacksRpcTransactionRequestContext extends RpcTransactionRequest {
+   address: string;
+diff --git a/src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes.tsx
+diff --git a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+similarity index 93%
+rename from src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+rename to src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+index 8445c85ec..97de8b895 100644
+--- a/src/app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
++++ b/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+@@ -17,6 +17,7 @@ import { closeWindow } from '@shared/utils';
+ 
+ import { useRpcRequestParams } from '@app/common/hooks/use-rpc-request-params';
+ import { stacksBroadcastTransaction } from '@app/common/transactions/stacks/stacks-broadcast-transaction';
++import { createError } from '@app/common/utils';
+ import { useAnalyticsOnlyStacksNonceTracker } from '@app/components/loaders/stacks-nonce-loader';
+ import { useCurrentStacksNetworkState } from '@app/store/networks/networks.hooks';
+ import { useSignStacksTransaction } from '@app/store/transactions/transaction.hooks';
+@@ -46,7 +47,10 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+             },
+           })
+         );
+-        throw new Error('Error signing stacks transaction');
++        throw createError({
++          name: 'TransactionReturnedFromSignerNull',
++          message: 'Unable to sign transaction',
++        });
+       }
+ 
+       // If the transaction is sponsored, we do not broadcast it
+@@ -68,7 +72,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+ 
+       function onError(error: Error | string) {
+         const message = isString(error) ? error : error.message;
+-        trackIfNonceError(error);
++        trackIfNonceError(unsignedTx, error);
+ 
+         return navigate(RouteUrls.BroadcastError, { state: { message } });
+       }
+diff --git a/src/app/features/rpc-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
+rename to src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
+diff --git a/src/app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend.tsx b/src/app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend.tsx
+similarity index 100%
+rename from src/app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend.tsx
+rename to src/app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend.tsx
+diff --git a/src/app/features/rpc-transaction-request/use-rpc-transaction-request.tsx b/src/app/features/rpc-stacks-transaction-request/use-rpc-transaction-request.tsx
+similarity index 99%
+rename from src/app/features/rpc-transaction-request/use-rpc-transaction-request.tsx
+rename to src/app/features/rpc-stacks-transaction-request/use-rpc-transaction-request.tsx
+index 8591330e7..0c85ccb1c 100644
+--- a/src/app/features/rpc-transaction-request/use-rpc-transaction-request.tsx
++++ b/src/app/features/rpc-stacks-transaction-request/use-rpc-transaction-request.tsx
+@@ -19,7 +19,6 @@ export interface RpcTransactionRequest {
+   onClickRequestedByLink(method: RpcMethodNames): void;
+   onSetTransactionStatus(status: TransactionStatus): void;
+ }
+-
+ export function useRpcTransactionRequest(): RpcTransactionRequest {
+   const [status, setStatus] = useState<TransactionStatus>('idle');
+   const { origin, requestId, tabId } = useRpcRequestParams();
+diff --git a/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx b/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx
+index d85a48c07..e598e02c2 100644
+--- a/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx
++++ b/src/app/pages/rpc-send-transfer/rpc-send-transfer.tsx
+@@ -19,7 +19,7 @@ import { TransactionRecipientsLayout } from '@app/components/rpc-transaction-req
+ import { TransactionWrapper } from '@app/components/rpc-transaction-request/transaction-wrapper';
+ import { FeeEditor } from '@app/features/fee-editor/fee-editor';
+ import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
+-import { SigningAccountCard } from '@app/features/rpc-transaction-request/signing-account-card/signing-account-card';
++import { SigningAccountCard } from '@app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+ import { useCurrentAccountIndex } from '@app/store/accounts/account';
+ 
+diff --git a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract-container.tsx b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract-container.tsx
+index 902edecbc..75967a78b 100644
+--- a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract-container.tsx
++++ b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract-container.tsx
+@@ -11,9 +11,9 @@ import { StacksNonceLoader } from '@app/components/loaders/stacks-nonce-loader';
+ import { StxBalanceLoader } from '@app/components/loaders/stx-balance-loader';
+ import { StacksFeeEditorProvider } from '@app/features/fee-editor/stacks/stacks-fee-editor.provider';
+ import { NonceEditorProvider } from '@app/features/nonce-editor/nonce-editor.provider';
+-import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
+-import { useRpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
++import { useRpcTransactionRequest } from '@app/features/rpc-stacks-transaction-request/use-rpc-transaction-request';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+ import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
+ import type { StacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.models';
+diff --git a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.routes.tsx b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.routes.tsx
+index 2e2ccac47..c980c313e 100644
+--- a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.routes.tsx
++++ b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.routes.tsx
+@@ -1,7 +1,7 @@
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+ import { RpcStxCallContract } from './rpc-stx-call-contract';
+ import { RpcStxCallContractContainer } from './rpc-stx-call-contract-container';
+diff --git a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
+index dc2770dad..9cee54dff 100644
+--- a/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
++++ b/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
+@@ -13,13 +13,13 @@ import { FeeEditor } from '@app/features/fee-editor/fee-editor';
+ import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
+ import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+ import { useNonceEditorContext } from '@app/features/nonce-editor/nonce-editor.context';
+-import { RpcTransactionRequestLayout } from '@app/features/rpc-transaction-request/rpc-transaction-request.layout';
+-import { SigningAccountCard } from '@app/features/rpc-transaction-request/signing-account-card/signing-account-card';
+-import { ContractCallDetailsLayout } from '@app/features/rpc-transaction-request/stacks/contract-call/contract-call-details.layout';
+-import { PostConditionsDetailsLayout } from '@app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout';
+-import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
+-import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend';
++import { RpcTransactionRequestLayout } from '@app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout';
++import { SigningAccountCard } from '@app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card';
++import { ContractCallDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/contract-call/contract-call-details.layout';
++import { PostConditionsDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions-details.layout';
++import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
++import { TransactionActionsWithSpend } from '@app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend';
+ 
+ import {
+   getDecodedRpcStxCallContractRequest,
+diff --git a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract-container.tsx b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract-container.tsx
+index 9c0312368..4c82ecf8a 100644
+--- a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract-container.tsx
++++ b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract-container.tsx
+@@ -11,9 +11,9 @@ import { StacksNonceLoader } from '@app/components/loaders/stacks-nonce-loader';
+ import { StxBalanceLoader } from '@app/components/loaders/stx-balance-loader';
+ import { StacksFeeEditorProvider } from '@app/features/fee-editor/stacks/stacks-fee-editor.provider';
+ import { NonceEditorProvider } from '@app/features/nonce-editor/nonce-editor.provider';
+-import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
+-import { useRpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
++import { useRpcTransactionRequest } from '@app/features/rpc-stacks-transaction-request/use-rpc-transaction-request';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+ import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
+ import type { StacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.models';
+diff --git a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.routes.tsx b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.routes.tsx
+index 66c5a29d2..1f1cf2140 100644
+--- a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.routes.tsx
++++ b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.routes.tsx
+@@ -1,7 +1,7 @@
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+ import { RpcStxDeployContract } from './rpc-stx-deploy-contract';
+ import { RpcStxDeployContractContainer } from './rpc-stx-deploy-contract-container';
+diff --git a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx
+index 6823b23f8..26a4fdd2a 100644
+--- a/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx
++++ b/src/app/pages/rpc-stx-deploy-contract/rpc-stx-deploy-contract.tsx
+@@ -13,13 +13,13 @@ import { FeeEditor } from '@app/features/fee-editor/fee-editor';
+ import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
+ import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+ import { useNonceEditorContext } from '@app/features/nonce-editor/nonce-editor.context';
+-import { RpcTransactionRequestLayout } from '@app/features/rpc-transaction-request/rpc-transaction-request.layout';
+-import { SigningAccountCard } from '@app/features/rpc-transaction-request/signing-account-card/signing-account-card';
+-import { ContractDeployDetailsLayout } from '@app/features/rpc-transaction-request/stacks/contract-deploy/contract-deploy-details.layout';
+-import { PostConditionsDetailsLayout } from '@app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout';
+-import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
+-import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend';
++import { RpcTransactionRequestLayout } from '@app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout';
++import { SigningAccountCard } from '@app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card';
++import { ContractDeployDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/contract-deploy/contract-deploy-details.layout';
++import { PostConditionsDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions-details.layout';
++import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
++import { TransactionActionsWithSpend } from '@app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend';
+ 
+ import { getUnsignedStacksDeployContractOptions } from './rpc-stx-deploy-contract.utils';
+ 
+diff --git a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction-container.tsx b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction-container.tsx
+index b739fdba1..584bd842e 100644
+--- a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction-container.tsx
++++ b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction-container.tsx
+@@ -10,8 +10,8 @@ import { StacksNonceLoader } from '@app/components/loaders/stacks-nonce-loader';
+ import { StxBalanceLoader } from '@app/components/loaders/stx-balance-loader';
+ import { StacksFeeEditorProvider } from '@app/features/fee-editor/stacks/stacks-fee-editor.provider';
+ import { NonceEditorProvider } from '@app/features/nonce-editor/nonce-editor.provider';
+-import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useRpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useRpcTransactionRequest } from '@app/features/rpc-stacks-transaction-request/use-rpc-transaction-request';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+ import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
+ import type { StacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.models';
+diff --git a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.routes.tsx b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.routes.tsx
+index 1974cb946..6136c899d 100644
+--- a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.routes.tsx
++++ b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.routes.tsx
+@@ -1,7 +1,7 @@
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+ import { RpcStxSignTransaction } from './rpc-stx-sign-transaction';
+ import { RpcStxSignTransactionContainer } from './rpc-stx-sign-transaction-container';
+diff --git a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+index c226d7eb8..19bdcf8f8 100644
+--- a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
++++ b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+@@ -28,13 +28,13 @@ import { FeeEditor } from '@app/features/fee-editor/fee-editor';
+ import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
+ import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+ import { useNonceEditorContext } from '@app/features/nonce-editor/nonce-editor.context';
+-import { RpcTransactionRequestLayout } from '@app/features/rpc-transaction-request/rpc-transaction-request.layout';
+-import { SigningAccountCard } from '@app/features/rpc-transaction-request/signing-account-card/signing-account-card';
+-import { ContractCallDetailsLayout } from '@app/features/rpc-transaction-request/stacks/contract-call/contract-call-details.layout';
+-import { ContractDeployDetailsLayout } from '@app/features/rpc-transaction-request/stacks/contract-deploy/contract-deploy-details.layout';
+-import { PostConditionsDetailsLayout } from '@app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout';
+-import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend';
++import { RpcTransactionRequestLayout } from '@app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout';
++import { SigningAccountCard } from '@app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card';
++import { ContractCallDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/contract-call/contract-call-details.layout';
++import { ContractDeployDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/contract-deploy/contract-deploy-details.layout';
++import { PostConditionsDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions-details.layout';
++import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { TransactionActionsWithSpend } from '@app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend';
+ import { useSignStacksTransaction } from '@app/store/transactions/transaction.hooks';
+ 
+ import {
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx
+index 0036b30ca..6a0cd92c9 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft-container.tsx
+@@ -11,9 +11,9 @@ import { StacksNonceLoader } from '@app/components/loaders/stacks-nonce-loader';
+ import { StxBalanceLoader } from '@app/components/loaders/stx-balance-loader';
+ import { StacksFeeEditorProvider } from '@app/features/fee-editor/stacks/stacks-fee-editor.provider';
+ import { NonceEditorProvider } from '@app/features/nonce-editor/nonce-editor.provider';
+-import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
+-import { useRpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
++import { useRpcTransactionRequest } from '@app/features/rpc-stacks-transaction-request/use-rpc-transaction-request';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+ import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
+ import type { StacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.models';
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx
+index 3a9a6c222..fcc4f88ab 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.routes.tsx
+@@ -1,7 +1,7 @@
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+ import { RpcStxTransferSip10Ft } from './rpc-stx-transfer-sip10-ft';
+ import { RpcStxTransferSip10FtContainer } from './rpc-stx-transfer-sip10-ft-container';
+diff --git a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
+index ec3c1b1b8..36e542803 100644
+--- a/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip10-ft/rpc-stx-transfer-sip10-ft.tsx
+@@ -13,13 +13,13 @@ import { FeeEditor } from '@app/features/fee-editor/fee-editor';
+ import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
+ import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+ import { useNonceEditorContext } from '@app/features/nonce-editor/nonce-editor.context';
+-import { RpcTransactionRequestLayout } from '@app/features/rpc-transaction-request/rpc-transaction-request.layout';
+-import { SigningAccountCard } from '@app/features/rpc-transaction-request/signing-account-card/signing-account-card';
+-import { ContractCallDetailsLayout } from '@app/features/rpc-transaction-request/stacks/contract-call/contract-call-details.layout';
+-import { PostConditionsDetailsLayout } from '@app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout';
+-import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
+-import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend';
++import { RpcTransactionRequestLayout } from '@app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout';
++import { SigningAccountCard } from '@app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card';
++import { ContractCallDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/contract-call/contract-call-details.layout';
++import { PostConditionsDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions-details.layout';
++import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
++import { TransactionActionsWithSpend } from '@app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend';
+ 
+ import {
+   getDecodedRpcStxTransferSip10FtRequest,
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft-container.tsx b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft-container.tsx
+index 78bdd0312..59f61ae5a 100644
+--- a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft-container.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft-container.tsx
+@@ -11,9 +11,9 @@ import { StacksNonceLoader } from '@app/components/loaders/stacks-nonce-loader';
+ import { StxBalanceLoader } from '@app/components/loaders/stx-balance-loader';
+ import { StacksFeeEditorProvider } from '@app/features/fee-editor/stacks/stacks-fee-editor.provider';
+ import { NonceEditorProvider } from '@app/features/nonce-editor/nonce-editor.provider';
+-import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
+-import { useRpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
++import { useRpcTransactionRequest } from '@app/features/rpc-stacks-transaction-request/use-rpc-transaction-request';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+ import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
+ import type { StacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.models';
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes.tsx b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes.tsx
+index 155c1d69a..1a3f5f340 100644
+--- a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.routes.tsx
+@@ -1,7 +1,7 @@
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+ import { RpcStxTransferSip9Nft } from './rpc-stx-transfer-sip9-nft';
+ import { RpcStxTransferSip9NftContainer } from './rpc-stx-transfer-sip9-nft-container';
+diff --git a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
+index ee01b558f..a18125135 100644
+--- a/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
++++ b/src/app/pages/rpc-stx-transfer-sip9-nft/rpc-stx-transfer-sip9-nft.tsx
+@@ -13,13 +13,13 @@ import { FeeEditor } from '@app/features/fee-editor/fee-editor';
+ import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
+ import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+ import { useNonceEditorContext } from '@app/features/nonce-editor/nonce-editor.context';
+-import { RpcTransactionRequestLayout } from '@app/features/rpc-transaction-request/rpc-transaction-request.layout';
+-import { SigningAccountCard } from '@app/features/rpc-transaction-request/signing-account-card/signing-account-card';
+-import { ContractCallDetailsLayout } from '@app/features/rpc-transaction-request/stacks/contract-call/contract-call-details.layout';
+-import { PostConditionsDetailsLayout } from '@app/features/rpc-transaction-request/stacks/post-conditions/post-conditions-details.layout';
+-import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
+-import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend';
++import { RpcTransactionRequestLayout } from '@app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout';
++import { SigningAccountCard } from '@app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card';
++import { ContractCallDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/contract-call/contract-call-details.layout';
++import { PostConditionsDetailsLayout } from '@app/features/rpc-stacks-transaction-request/stacks/post-conditions/post-conditions-details.layout';
++import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
++import { TransactionActionsWithSpend } from '@app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend';
+ 
+ import { getUnsignedStacksContractCallOptions } from './rpc-stx-transfer-sip9-nft.utils';
+ 
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx
+index ca2f2e50b..f7e6eb805 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx-container.tsx
+@@ -11,9 +11,9 @@ import { StacksNonceLoader } from '@app/components/loaders/stacks-nonce-loader';
+ import { StxBalanceLoader } from '@app/components/loaders/stx-balance-loader';
+ import { StacksFeeEditorProvider } from '@app/features/fee-editor/stacks/stacks-fee-editor.provider';
+ import { NonceEditorProvider } from '@app/features/nonce-editor/nonce-editor.provider';
+-import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
+-import { useRpcTransactionRequest } from '@app/features/rpc-transaction-request/use-rpc-transaction-request';
++import { StacksRpcTransactionRequestProvider } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useUnsignedStacksTransactionForFeeEstimation } from '@app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation';
++import { useRpcTransactionRequest } from '@app/features/rpc-stacks-transaction-request/use-rpc-transaction-request';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+ import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
+ import type { StacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.models';
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx
+index 9c604feb1..03b81b2cf 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.routes.tsx
+@@ -1,7 +1,7 @@
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { CurrentStacksAccountLoader } from '@app/components/loaders/stacks-account-loader';
+-import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.routes';
++import { generateStacksRpcTransactionRequestRoutes } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.routes';
+ 
+ import { RpcStxTransferStx } from './rpc-stx-transfer-stx';
+ import { RpcStxTransferStxContainer } from './rpc-stx-transfer-stx-container';
+diff --git a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
+index e1862e83c..6e8a99028 100644
+--- a/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
++++ b/src/app/pages/rpc-stx-transfer-stx/rpc-stx-transfer-stx.tsx
+@@ -12,11 +12,11 @@ import { FeeEditor } from '@app/features/fee-editor/fee-editor';
+ import { useFeeEditorContext } from '@app/features/fee-editor/fee-editor.context';
+ import { NonceEditor } from '@app/features/nonce-editor/nonce-editor';
+ import { useNonceEditorContext } from '@app/features/nonce-editor/nonce-editor.context';
+-import { RpcTransactionRequestLayout } from '@app/features/rpc-transaction-request/rpc-transaction-request.layout';
+-import { SigningAccountCard } from '@app/features/rpc-transaction-request/signing-account-card/signing-account-card';
+-import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-transaction-request/stacks/stacks-rpc-transaction-request.context';
+-import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
+-import { TransactionActionsWithSpend } from '@app/features/rpc-transaction-request/transaction-actions/transaction-actions-with-spend';
++import { RpcTransactionRequestLayout } from '@app/features/rpc-stacks-transaction-request/rpc-transaction-request.layout';
++import { SigningAccountCard } from '@app/features/rpc-stacks-transaction-request/signing-account-card/signing-account-card';
++import { useStacksRpcTransactionRequestContext } from '@app/features/rpc-stacks-transaction-request/stacks/stacks-rpc-transaction-request.context';
++import { useSignAndBroadcastStacksTransaction } from '@app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction';
++import { TransactionActionsWithSpend } from '@app/features/rpc-stacks-transaction-request/transaction-actions/transaction-actions-with-spend';
+ 
+ import { getUnsignedStacksTokenTransferOptions } from './rpc-stx-transfer-stx.utils';
+ 
+diff --git a/src/app/query/stacks/nonce/account-nonces.hooks.ts b/src/app/query/stacks/nonce/account-nonces.hooks.ts
+index ef7dd52cb..657144012 100644
+--- a/src/app/query/stacks/nonce/account-nonces.hooks.ts
++++ b/src/app/query/stacks/nonce/account-nonces.hooks.ts
+@@ -16,6 +16,7 @@ export function useNextNonce(address: string) {
+ 
+   return useQuery({
+     ...createGetAccountNoncesQueryOptions({ address, client, network: network.chain.stacks.url }),
++    staleTime: 0,
+     select: resp =>
+       parseAccountNoncesResponse({
+         addressNonces: resp,
+```

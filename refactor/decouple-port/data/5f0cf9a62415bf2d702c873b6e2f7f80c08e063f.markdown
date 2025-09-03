@@ -1,6 +1,6 @@
 # Test info
 
-- Name: Rpc: getAddresses >> softwareWallet  >> it returns the second accounts data after changing account
+- Name: Rpc: stx_getAddresses >> softwareWallet  >> it returns the second accounts data after changing account
 - Location: /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:165:11
 
 # Error details
@@ -440,10 +440,18 @@ index 6b16dcf63..adc2455dd 100644
            id: requestId,
            error: {
 diff --git a/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts b/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
-index ff1d91318..637b0b44e 100644
+index ff1d91318..0c2d187c9 100644
 --- a/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
 +++ b/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
-@@ -87,13 +87,11 @@ export function useRpcSignStacksMessageParams() {
+@@ -4,6 +4,7 @@ import { networkFromName } from '@stacks/network';
+ import { deserializeCV } from '@stacks/transactions';
+ 
+ import { RpcErrorCode, createRpcErrorResponse, createRpcSuccessResponse } from '@leather.io/rpc';
++import { delay } from '@leather.io/utils';
+ 
+ import {
+   isSignableMessageType,
+@@ -87,13 +88,11 @@ export function useRpcSignStacksMessageParams() {
  }
  
  export function useRpcSignStacksMessage() {
@@ -452,18 +460,27 @@ index ff1d91318..637b0b44e 100644
 +  const { requestId } = useRpcSignStacksMessageParams();
  
    const { isLoading, signMessage } = useSignStacksMessage({
-     onSignMessageCompleted(messageSignature) {
+-    onSignMessageCompleted(messageSignature) {
 -      chrome.tabs.sendMessage(
 -        tabId,
++    async onSignMessageCompleted(messageSignature) {
 +      chrome.runtime.sendMessage(
          createRpcSuccessResponse('stx_signMessage', {
            id: requestId,
            result: {
-@@ -108,10 +106,9 @@ export function useRpcSignStacksMessage() {
+@@ -102,16 +101,16 @@ export function useRpcSignStacksMessage() {
+           },
+         })
+       );
++      await delay(100);
+       closeWindow();
+     },
+     onSignMessageCancelled: onCancelMessageSigning,
    });
  
-   function onCancelMessageSigning() {
+-  function onCancelMessageSigning() {
 -    if (!requestId || !tabId) return;
++  async function onCancelMessageSigning() {
 +    if (!requestId) return;
      void analytics.track('request_signature_cancel');
 -    chrome.tabs.sendMessage(
@@ -472,6 +489,15 @@ index ff1d91318..637b0b44e 100644
        createRpcErrorResponse('stx_signMessage', {
          id: requestId,
          error: {
+@@ -120,6 +119,8 @@ export function useRpcSignStacksMessage() {
+         },
+       })
+     );
++    await delay(100);
++
+     closeWindow();
+   }
+ 
 diff --git a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
 index 19bdcf8f8..e6e4ff423 100644
 --- a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
@@ -746,7 +772,7 @@ index a44f4fa01..6d94c4d7c 100644
        const { id } = await triggerRequestPopupWindowOpen(RouteUrls.PsbtRequest, urlParams);
        listenForPopupClose({
 diff --git a/src/background/messaging/rpc-message-handler.ts b/src/background/messaging/rpc-message-handler.ts
-index b55300e7a..145158165 100644
+index b55300e7a..54817aa17 100644
 --- a/src/background/messaging/rpc-message-handler.ts
 +++ b/src/background/messaging/rpc-message-handler.ts
 @@ -24,9 +24,19 @@ import { stxTransferSip9NftHandler } from './rpc-methods/stx-transfer-sip9-nft';
@@ -785,7 +811,7 @@ index b55300e7a..145158165 100644
  
    logger.info(`Received RPC request ${request.method}`, request);
  
-@@ -58,10 +71,15 @@ export async function rpcMessageHandler(request: RpcRequests, port: chrome.runti
+@@ -58,10 +71,14 @@ export async function rpcMessageHandler(request: RpcRequests, port: chrome.runti
    // one. Type safety is guaranteed by `registerRpcRequestHandler`
    const handler = rpcHandlers[request.method] as RpcHandler<any>;
  
@@ -793,9 +819,8 @@ index b55300e7a..145158165 100644
 +  const sendMessage = createRpcResponder(sender);
 +
 +  if (handler) {
-+    await handler(request, sender, sendMessage);
 +    listenAndForwardRpcRequest(request.id, sendMessage);
-+    return;
++    return await handler(request, sender, sendMessage);
 +  }
  
 -  chrome.tabs.sendMessage(
@@ -805,7 +830,7 @@ index b55300e7a..145158165 100644
        id: request.id,
        error: {
 diff --git a/src/background/messaging/rpc-methods/get-addresses.ts b/src/background/messaging/rpc-methods/get-addresses.ts
-index 941932743..015c559d1 100644
+index 941932743..0047abdfe 100644
 --- a/src/background/messaging/rpc-methods/get-addresses.ts
 +++ b/src/background/messaging/rpc-methods/get-addresses.ts
 @@ -12,9 +12,9 @@ import {
@@ -820,16 +845,6 @@ index 941932743..015c559d1 100644
      ['requestId', request.id],
      ['rpcRequest', encodeBase64Json(request)],
    ]);
-@@ -27,6 +27,9 @@ const sharedGetAddressesHandler = async (
-   void trackRpcRequestSuccess({ endpoint: request.method });
- 
-   sendErrorResponseOnUserPopupClose({ tabId, id, request });
-+
-+  // I want a function that listens to chrome.runtime.onMessage for a response
-+  // that contains the same id as the request id
- };
- 
- export const getAddressesHandler = defineRpcRequestHandler(
 diff --git a/src/background/messaging/rpc-methods/open.ts b/src/background/messaging/rpc-methods/open.ts
 index 9160f41bd..1d0bd52b7 100644
 --- a/src/background/messaging/rpc-methods/open.ts
@@ -1126,18 +1141,18 @@ index 6f64eec19..62b0d0bad 100644
 -});
 +);
 diff --git a/src/background/messaging/rpc-methods/sign-stacks-message.ts b/src/background/messaging/rpc-methods/sign-stacks-message.ts
-index 7ffa5956d..297c6a985 100644
+index 7ffa5956d..d33f41909 100644
 --- a/src/background/messaging/rpc-methods/sign-stacks-message.ts
 +++ b/src/background/messaging/rpc-methods/sign-stacks-message.ts
-@@ -21,21 +21,19 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
+@@ -21,7 +21,6 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
  import {
    RequestParams,
    createConnectingAppSearchParamsWithLastKnownAccount,
 -  getTabIdFromPort,
--  sendErrorResponseOnUserPopupClose,
+   sendErrorResponseOnUserPopupClose,
    triggerRequestPopupWindowOpen,
  } from '../rpc-request-utils';
- 
+@@ -29,13 +28,13 @@ import {
  async function handleRpcSignStacksMessage(
    method: 'stx_signMessage' | 'stx_signStructuredMessage',
    request: RpcRequest<typeof stxSignMessage> | RpcRequest<typeof stxSignStructuredMessage>,
@@ -1154,7 +1169,7 @@ index 7ffa5956d..297c6a985 100644
        createRpcErrorResponse(method, {
          id: request.id,
          error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
-@@ -46,8 +44,7 @@ async function handleRpcSignStacksMessage(
+@@ -46,8 +45,7 @@ async function handleRpcSignStacksMessage(
  
    if (!validateRpcSignStacksMessageParams(request.params)) {
      void trackRpcRequestError({ endpoint: method, error: 'Invalid parameters' });
@@ -1164,21 +1179,16 @@ index 7ffa5956d..297c6a985 100644
        createRpcErrorResponse(method, {
          id: request.id,
          error: {
-@@ -61,17 +58,17 @@ async function handleRpcSignStacksMessage(
- 
+@@ -62,7 +60,7 @@ async function handleRpcSignStacksMessage(
    void trackRpcRequestSuccess({ endpoint: method });
  
--  const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
+   const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
 -    port,
-+  const { urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(
 +    sender,
      requestParams
    );
  
--  const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcStacksSignature, urlParams);
--  sendErrorResponseOnUserPopupClose({ tabId, id, request });
-+  await triggerRequestPopupWindowOpen(RouteUrls.RpcStacksSignature, urlParams);
-+  // sendErrorResponseOnUserPopupClose({ tabId, id, request });
+@@ -71,7 +69,7 @@ async function handleRpcSignStacksMessage(
  }
  export const stxSignMessageHandler = defineRpcRequestHandler(
    stxSignMessage.method,
@@ -1187,7 +1197,7 @@ index 7ffa5956d..297c6a985 100644
      const requestParams: RequestParams = [
        ['message', request.params.message],
        ['messageType', request.params.messageType ?? 'utf8'],
-@@ -89,13 +86,13 @@ export const stxSignMessageHandler = defineRpcRequestHandler(
+@@ -89,13 +87,13 @@ export const stxSignMessageHandler = defineRpcRequestHandler(
        ]);
      }
  
@@ -1203,7 +1213,7 @@ index 7ffa5956d..297c6a985 100644
      const requestParams: RequestParams = [
        ['requestId', request.id],
        ['messageType', 'structured'],
-@@ -113,6 +110,6 @@ export const stxSignStructuredMessageHandler = defineRpcRequestHandler(
+@@ -113,6 +111,6 @@ export const stxSignStructuredMessageHandler = defineRpcRequestHandler(
        ],
      ];
  
@@ -1389,7 +1399,7 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..e2a500580 100644
+index 31436c254..8d511019e 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
 @@ -7,6 +7,7 @@ import {
@@ -1443,20 +1453,17 @@ index 31436c254..e2a500580 100644
  //
  // Playwright does not currently support Chrome extension popup testing:
  // https://github.com/microsoft/playwright/issues/5593
-@@ -59,8 +73,11 @@ interface ListenForPopupCloseArgs {
+@@ -59,8 +73,7 @@ interface ListenForPopupCloseArgs {
  export function listenForPopupClose({ id, tabId, response }: ListenForPopupCloseArgs) {
    chrome.windows.onRemoved.addListener(winId => {
      if (winId !== id || !tabId) return;
-+    console.log('Listening for popup close:', new Date().valueOf());
-     const responseMessage = response;
+-    const responseMessage = response;
 -    chrome.tabs.sendMessage(tabId, responseMessage);
-+    setTimeout(() => {
-+      chrome.tabs.sendMessage(tabId, responseMessage);
-+    });
++    chrome.tabs.sendMessage(tabId, response);
    });
  }
  
-@@ -102,12 +119,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
+@@ -102,12 +115,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
  export type RequestParams = [string, string][];
  
  export function createConnectingAppMetadataSearchParams(
@@ -1472,7 +1479,7 @@ index 31436c254..e2a500580 100644
    urlParams.set('origin', origin ?? '');
    urlParams.set('tabId', tabId.toString());
    otherParams.forEach(([key, value]) => urlParams.append(key, value));
-@@ -115,12 +132,12 @@ export function createConnectingAppMetadataSearchParams(
+@@ -115,12 +128,12 @@ export function createConnectingAppMetadataSearchParams(
  }
  
  export async function createConnectingAppSearchParamsWithLastKnownAccount(
@@ -1488,7 +1495,7 @@ index 31436c254..e2a500580 100644
      if (appPermissions) {
        urlParams.set('accountIndex', appPermissions.accountIndex.toString());
      }
-@@ -146,20 +163,21 @@ interface ValidateRequestParamsArgs {
+@@ -146,20 +159,21 @@ interface ValidateRequestParamsArgs {
    id: string;
    method: RpcMethodNames;
    params: unknown;
@@ -1514,7 +1521,7 @@ index 31436c254..e2a500580 100644
        createRpcErrorResponse(method, {
          id,
          error: { code: RpcErrorCode.INVALID_REQUEST, message: RpcErrorMessage.UndefinedParams },
-@@ -171,8 +189,7 @@ export function validateRequestParams({
+@@ -171,8 +185,7 @@ export function validateRequestParams({
    if (!validateRpcParams(params, schema)) {
      void trackRpcRequestError({ endpoint: method, error: RpcErrorMessage.InvalidParams });
  
@@ -1524,7 +1531,7 @@ index 31436c254..e2a500580 100644
        createRpcErrorResponse(method, {
          id,
          error: {
-@@ -185,3 +202,23 @@ export function validateRequestParams({
+@@ -185,3 +198,23 @@ export function validateRequestParams({
    }
    return { status: 'success' };
  }

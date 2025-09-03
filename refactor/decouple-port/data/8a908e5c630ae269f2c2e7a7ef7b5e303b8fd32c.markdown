@@ -1,186 +1,633 @@
 # Test info
 
-- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
-- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
+- Name: Sign PSBT >> that only requested inputs are signed
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-sign-psbt/sign-psbt.spec.ts:152:3
 
 # Error details
 
 ```
-Error: locator.innerText: Target page, context or browser has been closed
-Call log:
-  - waiting for getByTestId('address-displayer')
+Error: expect(received).toEqual(expected) // deep equality
 
-    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
-    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
+- Expected  - 3
++ Received  + 4
+
+  Object {
++   "error": Object {
++     "code": 4001,
++     "message": "User rejected signing PSBT request",
++   },
+    "jsonrpc": "2.0",
+-   "result": Object {
+-     "hex": "70736274ff01007b02000000025f9f604745537f28f9ea6a963c35355dd60696a52d909c528b0212a062dc65290100000000fffffffffe690823a3d0fec1513ac8f40e3a3672208a08919fff13763ae01a38ef368d2f0100000000ffffffff01e803000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d000000000001011fc512000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d220203fe21e3444109e30ff7d19da0f530c344cad2e35fbee89afb2413858e4a9d7aa5483045022100d3019073de66ea52a3c93edc9a1b8bb1c9f64902ade9983c588abb45ee5db04d02201011e4b245b115c6f5a80c3ae540f4a9e8c0fa52ca0a459d461917907385cfa7010001011f7feff10000000000160014a8113965cee4d5ffa2d9996a204866a58200131d0000",
+-   },
+  }
+    at /home/runner/work/extension/extension/tests/specs/rpc-sign-psbt/sign-psbt.spec.ts:168:25
 ```
 
 # Test source
 
 ```ts
-   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
-   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
-   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
-   6 | import { createTestSelector } from '@tests/utils';
-   7 |
-   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
-   9 | import { delay } from '@leather.io/utils';
-   10 |
-   11 | export class HomePage {
-   12 |   readonly page: Page;
-   13 |   readonly headerActionButton: Locator;
-   14 |   readonly receiveButton: Locator;
-   15 |   readonly sendButton: Locator;
-   16 |   readonly swapButton: Locator;
-   17 |   readonly settingsButton: Locator;
-   18 |   readonly settingsViewSecretKey: Locator;
-   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
-   20 |   readonly signOutConfirmPasswordDisable: Locator;
-   21 |   readonly signOutDeleteWalletBtn: Locator;
-   22 |   readonly signOutSettingsListItem: Locator;
-   23 |   readonly lockSettingsListItem: Locator;
-   24 |   readonly fundAccountBtn: Locator;
-   25 |   readonly manageTokensBtn: Locator;
-   26 |   readonly assetList: Locator;
-   27 |   readonly manageTokensAssetsList: Locator;
-   28 |
-   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
-   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
-   31 |   );
-   32 |   $signOutConfirmPasswordDisable = createTestSelector(
-   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
-   34 |   );
-   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
-   36 |
-   37 |   constructor(page: Page) {
-   38 |     this.page = page;
-   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
-   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
-   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
-   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
-   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
-   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
-   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
-   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
-   47 |     );
-   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
-   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
-   50 |     );
-   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
-   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
-   53 |     );
-   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
-   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
-   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
-   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
-   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
-   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
-   60 |   }
-   61 |
-   62 |   async goToReceiveDialog() {
-   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
-   64 |   }
-   65 |
-   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
-   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
-   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
-   69 |   // https://github.com/microsoft/playwright/issues/12168
-   70 |   // Using the `Receive` route to get the account address for now.
-   71 |   async getReceiveNativeSegwitAddress() {
-   72 |     await this.goToReceiveDialog();
-   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
-   74 |     const displayerAddress = await this.page
-   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
-   76 |       .innerText();
-   77 |     return displayerAddress.replaceAll('\n', '');
-   78 |   }
-   79 |
-   80 |   // Currently under Ordinals receive flow
-   81 |   async getReceiveTaprootAddress() {
-   82 |     await this.goToReceiveDialog();
-   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
-   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
-   85 |     // FIXME - add better test for Copy action
-   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
-   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
-   88 |     // return address;
-   89 |     const displayerAddress = await this.page
-   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
-   91 |       .innerText();
-   92 |     return displayerAddress.replaceAll('\n', '');
-   93 |   }
-   94 |
-   95 |   async getReceiveStxAddress() {
-   96 |     await this.goToReceiveDialog();
-   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
-   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
-   99 |     await delay(1000);
-  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
-  101 |     const displayerAddress = await this.page
-  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
-> 103 |       .innerText();
-      |        ^ Error: locator.innerText: Target page, context or browser has been closed
-  104 |     return displayerAddress.replaceAll('\n', '');
-  105 |   }
-  106 |
-  107 |   async selectTestnet() {
-  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
-  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
-  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
-  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet4).click();
-  112 |   }
-  113 |
-  114 |   async clickActivityTab() {
-  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
-  116 |   }
-  117 |
-  118 |   async clickSettingsButton() {
-  119 |     await this.settingsButton.click({ force: true });
-  120 |   }
+   68 |       await btn.click();
+   69 |     };
+   70 |   }
+   71 |
+   72 |   async function clickErrorCloseWindowButton(context: BrowserContext) {
+   73 |     const popup = await context.waitForEvent('page');
+   74 |     await popup.waitForTimeout(1000);
+   75 |     const errorMsg = popup.locator('text="Failed to sign"');
+   76 |     const btn = popup.locator('text="Close window"');
+   77 |     test.expect(errorMsg).toBeTruthy();
+   78 |     await btn.click();
+   79 |   }
+   80 |
+   81 |   async function interceptBroadcastRequest(
+   82 |     context: BrowserContext,
+   83 |     callback: (route: Route) => Promise<void>
+   84 |   ) {
+   85 |     const popup = await context.waitForEvent('page');
+   86 |     const requestPromise = popup.waitForRequest('**/api/tx');
+   87 |     await popup.route('**/api/tx', async route => await callback(route));
+   88 |     return requestPromise;
+   89 |   }
+   90 |
+   91 |   function initiatePsbtSigning(page: Page) {
+   92 |     return async (params: RpcParams<typeof signPsbt> & { broadcast?: boolean }) =>
+   93 |       page.evaluate(
+   94 |         async params =>
+   95 |           (window as any).LeatherProvider.request('signPsbt', {
+   96 |             ...params,
+   97 |           }).catch((e: unknown) => e),
+   98 |         { ...params }
+   99 |       );
+  100 |   }
+  101 |
+  102 |   function createExpectedResult(hex: string, txid?: string) {
+  103 |     return {
+  104 |       jsonrpc: '2.0',
+  105 |       result: txid ? { hex, txid } : { hex },
+  106 |     };
+  107 |   }
+  108 |
+  109 |   function createExpectedError(code: number, message: string) {
+  110 |     return {
+  111 |       jsonrpc: '2.0',
+  112 |       error: { code, message },
+  113 |     };
+  114 |   }
+  115 |
+  116 |   // Hard coded result of tx above
+  117 |   const unsignedPsbtHexWithTwoInputs =
+  118 |     '70736274ff01007b02000000025f9f604745537f28f9ea6a963c35355dd60696a52d909c528b0212a062dc65290100000000fffffffffe690823a3d0fec1513ac8f40e3a3672208a08919fff13763ae01a38ef368d2f0100000000ffffffff01e803000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d000000000001011fc512000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d0001011f7feff10000000000160014a8113965cee4d5ffa2d9996a204866a58200131d0000';
+  119 |
+  120 |   test.expect(bytesToHex(createTestPsbt().toPSBT())).toEqual(unsignedPsbtHexWithTwoInputs);
   121 |
-  122 |   async goToSecretKey() {
-  123 |     await this.clickSettingsButton();
-  124 |     await this.settingsViewSecretKey.click();
-  125 |   }
-  126 |
-  127 |   async signOut() {
-  128 |     await this.clickSettingsButton();
-  129 |     await this.signOutSettingsListItem.click();
-  130 |     await this.signOutConfirmHasBackupCheckbox.click();
-  131 |     await this.signOutConfirmPasswordDisable.click();
-  132 |     await this.signOutDeleteWalletBtn.click();
-  133 |   }
-  134 |
-  135 |   async lock() {
-  136 |     await this.clickSettingsButton();
-  137 |     await this.lockSettingsListItem.click();
-  138 |   }
-  139 |
-  140 |   async goToFundChooseCurrencyPage() {
-  141 |     await this.fundAccountBtn.click();
-  142 |   }
-  143 |
-  144 |   async waitForHomePageReady() {
-  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
-  146 |       state: 'attached',
-  147 |     });
-  148 |   }
-  149 |
-  150 |   async switchAccount(accountIndex: number) {
-  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
-  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
-  153 |   }
-  154 | }
-  155 |
+  122 |   test('that all inputs are signed even if the number of inputs is greater than vout index', async ({
+  123 |     page,
+  124 |     context,
+  125 |   }) => {
+  126 |     const psbt = createTestPsbt();
+  127 |     const reqPromise = interceptBroadcastRequest(context, route =>
+  128 |       route.fulfill({
+  129 |         body: 'not-a-real-txid-response',
+  130 |       })
+  131 |     );
+  132 |     const [result] = await Promise.all([
+  133 |       initiatePsbtSigning(page)({
+  134 |         network: 'testnet',
+  135 |         hex: bytesToHex(psbt.toPSBT()),
+  136 |         broadcast: true,
+  137 |       }),
+  138 |       clickActionButton(context)('Confirm'),
+  139 |     ]);
+  140 |
+  141 |     await reqPromise;
+  142 |
+  143 |     delete result.id;
+  144 |
+  145 |     psbt.sign(addressKeychain.privateKey!);
+  146 |
+  147 |     test
+  148 |       .expect(result)
+  149 |       .toEqual(createExpectedResult(bytesToHex(psbt.toPSBT()), 'not-a-real-txid-response'));
+  150 |   });
+  151 |
+  152 |   test('that only requested inputs are signed', async ({ page, context }) => {
+  153 |     const psbt = createTestPsbt();
+  154 |     const [result] = await Promise.all([
+  155 |       initiatePsbtSigning(page)({
+  156 |         network: 'testnet',
+  157 |         hex: bytesToHex(psbt.toPSBT()),
+  158 |         signAtIndex: 0,
+  159 |         broadcast: false,
+  160 |       }),
+  161 |       clickActionButton(context)('Confirm'),
+  162 |     ]);
+  163 |
+  164 |     delete result.id;
+  165 |
+  166 |     psbt.signIdx(addressKeychain.privateKey!, 0);
+  167 |
+> 168 |     test.expect(result).toEqual(createExpectedResult(bytesToHex(psbt.toPSBT())));
+      |                         ^ Error: expect(received).toEqual(expected) // deep equality
+  169 |   });
+  170 |
+  171 |   test('that the request can be signed and broadcast', async ({ page, context }) => {
+  172 |     const psbt = createTestPsbt();
+  173 |     const requestPromise = interceptBroadcastRequest(context, route =>
+  174 |       route.fulfill({
+  175 |         body: 'not-a-real-txid-response',
+  176 |       })
+  177 |     );
+  178 |
+  179 |     const [result] = await Promise.all([
+  180 |       initiatePsbtSigning(page)({
+  181 |         network: 'testnet',
+  182 |         hex: bytesToHex(psbt.toPSBT()),
+  183 |         broadcast: true,
+  184 |       }),
+  185 |       clickActionButton(context)('Confirm'),
+  186 |     ]);
+  187 |
+  188 |     await requestPromise;
+  189 |
+  190 |     delete result.id;
+  191 |
+  192 |     psbt.signIdx(addressKeychain.privateKey!, 0);
+  193 |
+  194 |     test
+  195 |       .expect(result)
+  196 |       .toEqual(
+  197 |         createExpectedResult(
+  198 |           '70736274ff01007b02000000025f9f604745537f28f9ea6a963c35355dd60696a52d909c528b0212a062dc65290100000000fffffffffe690823a3d0fec1513ac8f40e3a3672208a08919fff13763ae01a38ef368d2f0100000000ffffffff01e803000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d000000000001011fc512000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d220203fe21e3444109e30ff7d19da0f530c344cad2e35fbee89afb2413858e4a9d7aa5483045022100d3019073de66ea52a3c93edc9a1b8bb1c9f64902ade9983c588abb45ee5db04d02201011e4b245b115c6f5a80c3ae540f4a9e8c0fa52ca0a459d461917907385cfa7010001011f7feff10000000000160014a8113965cee4d5ffa2d9996a204866a58200131d220203fe21e3444109e30ff7d19da0f530c344cad2e35fbee89afb2413858e4a9d7aa54730440220092a70ffba140cf72576969b22e7da9b510ece28365f558724aab1b80daf952c0220524f8dff67bc5661f5c95043e02ffd926bc9ee53042195fcbd7cd6aad37848dc010000',
+  199 |           'not-a-real-txid-response'
+  200 |         )
+  201 |       );
+  202 |
+  203 |     psbt.sign(addressKeychain.privateKey!);
+  204 |
+  205 |     test
+  206 |       .expect(result)
+  207 |       .toEqual(createExpectedResult(bytesToHex(psbt.toPSBT()), 'not-a-real-txid-response'));
+  208 |
+  209 |     const request = await requestPromise;
+  210 |     const requestBody = request.postDataBuffer();
+  211 |     test.expect(requestBody).toBeDefined();
+  212 |   });
+  213 |
+  214 |   test('that the request to sign can be canceled', async ({ page, context }) => {
+  215 |     const psbt = createTestPsbt();
+  216 |     const [result] = await Promise.all([
+  217 |       initiatePsbtSigning(page)({
+  218 |         network: 'testnet',
+  219 |         hex: bytesToHex(psbt.toPSBT()),
+  220 |         broadcast: false,
+  221 |       }),
+  222 |       clickActionButton(context)('Cancel'),
+  223 |     ]);
+  224 |
+  225 |     delete result.id;
+  226 |
+  227 |     test.expect(result).toEqual(createExpectedError(4001, 'User rejected signing PSBT request'));
+  228 |   });
+  229 |
+  230 |   test('that a failed request occurs if an invalid index is provided', async ({
+  231 |     page,
+  232 |     context,
+  233 |   }) => {
+  234 |     const psbt = createTestPsbt();
+  235 |
+  236 |     const [result] = await Promise.all([
+  237 |       initiatePsbtSigning(page)({
+  238 |         network: 'testnet',
+  239 |         hex: bytesToHex(psbt.toPSBT()),
+  240 |         signAtIndex: 4,
+  241 |         broadcast: false,
+  242 |       }),
+  243 |       clickActionButton(context)('Confirm'),
+  244 |       clickErrorCloseWindowButton(context),
+  245 |     ]);
+  246 |
+  247 |     delete result.id;
+  248 |
+  249 |     test.expect(result).toEqual(createExpectedError(4001, 'User rejected signing PSBT request'));
+  250 |   });
+  251 |
+  252 |   test('that failed broadcasts return an error to the app', async ({ page, context }) => {
+  253 |     const psbt = createTestPsbt();
+  254 |     const requestPromise = interceptBroadcastRequest(context, route =>
+  255 |       route.fulfill({ status: 500 })
+  256 |     );
+  257 |
+  258 |     const [result] = await Promise.all([
+  259 |       initiatePsbtSigning(page)({
+  260 |         network: 'testnet',
+  261 |         hex: bytesToHex(psbt.toPSBT()),
+  262 |         broadcast: true,
+  263 |       }),
+  264 |       clickActionButton(context)('Confirm'),
+  265 |     ]);
+  266 |
+  267 |     await requestPromise;
+  268 |
 ```
 
 # Local changes
 
 ```diff
+diff --git a/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+index 97de8b895..e4887cc01 100644
+--- a/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
++++ b/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+@@ -26,7 +26,7 @@ import { useRpcTransactionRequest } from '../use-rpc-transaction-request';
+ 
+ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+   const { onSetTransactionStatus } = useRpcTransactionRequest();
+-  const { tabId, requestId } = useRpcRequestParams();
++  const { requestId } = useRpcRequestParams();
+   const signStacksTransaction = useSignStacksTransaction();
+   const network = useCurrentStacksNetworkState();
+   const navigate = useNavigate();
+@@ -37,8 +37,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       const signedTx = await signStacksTransaction(unsignedTx);
+ 
+       if (!signedTx) {
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcErrorResponse(method, {
+             id: requestId,
+             error: {
+@@ -56,8 +55,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       // If the transaction is sponsored, we do not broadcast it
+       const isSponsored = signedTx.auth?.authType === AuthType.Sponsored;
+       if (isSponsored) {
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcSuccessResponse(method, {
+             id: requestId,
+             result: {
+@@ -80,8 +78,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       async function onSuccess(txid: string, transaction: StacksTransactionWire) {
+         onSetTransactionStatus('submitted');
+ 
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcSuccessResponse(method, {
+             id: requestId,
+             result: {
+@@ -105,7 +102,6 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       onSetTransactionStatus,
+       requestId,
+       signStacksTransaction,
+-      tabId,
+       trackIfNonceError,
+     ]
+   );
+diff --git a/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
+index bafca6457..ab9bcec6d 100644
+--- a/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
++++ b/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
+@@ -25,8 +25,7 @@ export function useUnsignedStacksTransactionForFeeEstimation({
+     [txOptions]
+   );
+   if (unsignedTx.error) {
+-    chrome.tabs.sendMessage(
+-      request.tabId,
++    chrome.runtime.sendMessage(
+       createRpcErrorResponse(method, {
+         id: request.requestId,
+         error: {
+diff --git a/src/app/pages/home/home.tsx b/src/app/pages/home/home.tsx
+index b2af97e0f..cfc27c497 100644
+--- a/src/app/pages/home/home.tsx
++++ b/src/app/pages/home/home.tsx
+@@ -3,6 +3,14 @@ import { Route, useNavigate } from 'react-router';
+ import { HomePageSelectors } from '@tests/selectors/home.selectors';
+ import { Box, Stack } from 'leather-styles/jsx';
+ 
++import type {
++  LeatherRpcMethodMap,
++  RpcMethodNames,
++  RpcParameter,
++  RpcRequests,
++} from '@leather.io/rpc';
++import { Button } from '@leather.io/ui';
++
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { useAccountDisplayName } from '@app/common/hooks/account/use-account-names';
+@@ -31,6 +39,32 @@ import { AccountCard } from '@app/ui/components/account/account.card';
+ import { AccountActions } from './components/account-actions';
+ import { HomeTabs } from './components/home-tabs';
+ 
++function request(
++  method: RpcMethodNames,
++  params?: RpcParameter
++): Promise<LeatherRpcMethodMap[RpcMethodNames]['response']> {
++  const id: string = crypto.randomUUID();
++  const rpcRequest: RpcRequests = {
++    jsonrpc: '2.0',
++    id,
++    method,
++    params: params ?? ({} as any),
++  };
++
++  chrome.runtime.sendMessage(rpcRequest);
++
++  return new Promise((resolve, reject) => {
++    function handleMessage(response: any) {
++      if (response.id !== id) return;
++      chrome.runtime.onMessage.removeListener(handleMessage);
++      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
++      if ('error' in response) return reject(response);
++      return resolve(response);
++    }
++    chrome.runtime.onMessage.addListener(handleMessage);
++  });
++}
++
+ export function Home() {
+   const { decodedAuthRequest } = useOnboardingState();
+   const { toggleSwitchAccount } = useSwitchAccountSheet();
+@@ -85,6 +119,24 @@ export function Home() {
+         </AccountCard>
+         <PromoBanner />
+       </Box>
++      <Button
++        onClick={async () => {
++          // eslint-disable-next-line no-console
++          const resp = await request('getAddresses').catch(console.error);
++          console.log(resp);
++        }}
++      >
++        getAddresses
++      </Button>
++      <Button
++        onClick={async () => {
++          // eslint-disable-next-line no-console
++          const resp = await request('supportedMethods').catch(console.error);
++          console.log(resp);
++        }}
++      >
++        supportedMethods
++      </Button>
+       {whenPageMode({ full: <FeedbackButton />, popup: null })}
+       <HomeTabs>
+         <ModalBackgroundWrapper>
+diff --git a/src/app/pages/rpc-get-addresses/use-get-addresses.ts b/src/app/pages/rpc-get-addresses/use-get-addresses.ts
+index 54cd441b0..fefd73965 100644
+--- a/src/app/pages/rpc-get-addresses/use-get-addresses.ts
++++ b/src/app/pages/rpc-get-addresses/use-get-addresses.ts
+@@ -98,8 +98,7 @@ export function useGetAddresses() {
+         keysToIncludeInResponse.push(stacksAddressResponse);
+       }
+ 
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcSuccessResponse(request.method, {
+           id: request.id,
+           result: { addresses: keysToIncludeInResponse },
+diff --git a/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx b/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx
+index 085caf627..3946a8a5d 100644
+--- a/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx
++++ b/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx
+@@ -20,8 +20,7 @@ import { useRpcSendTransferContext } from './rpc-send-transfer.context';
+ 
+ export function useRpcSendTransferActions() {
+   const { availableBalance, selectedFee } = useFeeEditorContext();
+-  const { amount, isLoadingBalance, recipients, requestId, tabId, utxos } =
+-    useRpcSendTransferContext();
++  const { amount, isLoadingBalance, recipients, requestId, utxos } = useRpcSendTransferContext();
+   const [isSubmitted, setIsSubmitted] = useState(false);
+   const [isBroadcasting, setIsBroadcasting] = useState(false);
+   const generateTx = useGenerateUnsignedNativeSegwitTx({ throwError: true });
+@@ -71,8 +70,7 @@ export function useRpcSendTransferActions() {
+               amount: amount.amount.toNumber(),
+             });
+ 
+-            chrome.tabs.sendMessage(
+-              tabId ?? 0,
++            chrome.runtime.sendMessage(
+               createRpcSuccessResponse('sendTransfer', {
+                 id: requestId,
+                 result: { txid },
+@@ -114,7 +112,6 @@ export function useRpcSendTransferActions() {
+     signTransaction,
+     broadcastTx,
+     utxosOfSpendableInscriptions,
+-    tabId,
+     requestId,
+   ]);
+ 
+diff --git a/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts b/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts
+index 693c03af0..c5bef841b 100644
+--- a/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts
++++ b/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts
+@@ -59,7 +59,7 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+   const [isLoading, setIsLoading] = useState(false);
+   const toast = useToast();
+ 
+-  const { tabId, origin, requestId, message } = useRpcSignBitcoinMessage();
++  const { origin, requestId, message } = useRpcSignBitcoinMessage();
+ 
+   return {
+     origin,
+@@ -68,9 +68,7 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+     formattedOrigin: new URL(origin ?? '').host,
+     address,
+     onUserRejectBip322MessageSigningRequest() {
+-      if (!tabId) return;
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcErrorResponse('signMessage', {
+           id: requestId,
+           error: {
+@@ -84,8 +82,8 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+     async onUserApproveBip322MessageSigningRequest() {
+       setIsLoading(true);
+ 
+-      if (!tabId || !origin) {
+-        logger.error('Cannot give app accounts: missing tabId, origin');
++      if (!origin) {
++        logger.error('Cannot give app accounts: missing, origin');
+         return;
+       }
+ 
+@@ -99,8 +97,7 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+       await shortPauseBeforeToast();
+       toast.success('Message signed successfully');
+ 
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcSuccessResponse('signMessage', {
+           id: requestId,
+           result: { signature, address, message },
+diff --git a/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx b/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx
+index 6b16dcf63..adc2455dd 100644
+--- a/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx
++++ b/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx
+@@ -32,7 +32,7 @@ interface BroadcastSignedPsbtTxArgs {
+ }
+ export function useRpcSignPsbt() {
+   const navigate = useNavigate();
+-  const { broadcast, origin, psbtHex, requestId, signAtIndex, tabId } = useRpcSignPsbtParams();
++  const { broadcast, origin, psbtHex, requestId, signAtIndex } = useRpcSignPsbtParams();
+   const { signPsbt, getPsbtAsTransaction } = usePsbtSigner();
+   const { broadcastTx, isBroadcasting } = useBitcoinBroadcastTransaction();
+   const { filteredUtxosQuery } = useCurrentNativeSegwitUtxos();
+@@ -62,8 +62,7 @@ export function useRpcSignPsbt() {
+       async onSuccess(txid) {
+         if (!requestId) throw new Error('Invalid request id');
+ 
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcSuccessResponse('signPsbt', {
+             id: requestId,
+             result: { hex: psbt, txid },
+@@ -86,19 +85,18 @@ export function useRpcSignPsbt() {
+           txValue: formatCurrency(transferTotalAsMoney),
+         };
+ 
+-        navigate(RouteUrls.RpcSignPsbtSummary, { state: psbtTxSummaryState });
++        void navigate(RouteUrls.RpcSignPsbtSummary, { state: psbtTxSummaryState });
+       },
+       onError(e) {
+         if (!requestId) throw new Error('Invalid request id');
+ 
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcErrorResponse('signPsbt', {
+             id: requestId,
+             error: { code: 4002, message: 'Failed to broadcast transaction' },
+           })
+         );
+-        navigate(RouteUrls.RequestError, {
++        void navigate(RouteUrls.RequestError, {
+           state: { message: isError(e) ? e.message : '', title: 'Failed to broadcast' },
+         });
+       },
+@@ -122,8 +120,7 @@ export function useRpcSignPsbt() {
+         const psbt = signedTx.toPSBT();
+ 
+         if (!broadcast) {
+-          chrome.tabs.sendMessage(
+-            tabId,
++          chrome.runtime.sendMessage(
+             createRpcSuccessResponse('signPsbt', {
+               id: requestId,
+               result: { hex: bytesToHex(psbt) },
+@@ -164,8 +161,7 @@ export function useRpcSignPsbt() {
+       }
+     },
+     onCancel() {
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcErrorResponse('signPsbt', {
+           id: requestId,
+           error: {
+diff --git a/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts b/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
+index ff1d91318..637b0b44e 100644
+--- a/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
++++ b/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
+@@ -87,13 +87,11 @@ export function useRpcSignStacksMessageParams() {
+ }
+ 
+ export function useRpcSignStacksMessage() {
+-  const { tabId, requestId } = useRpcSignStacksMessageParams();
+-  if (!tabId) throw new Error('Requests can only be made with corresponding tab');
++  const { requestId } = useRpcSignStacksMessageParams();
+ 
+   const { isLoading, signMessage } = useSignStacksMessage({
+     onSignMessageCompleted(messageSignature) {
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcSuccessResponse('stx_signMessage', {
+           id: requestId,
+           result: {
+@@ -108,10 +106,9 @@ export function useRpcSignStacksMessage() {
+   });
+ 
+   function onCancelMessageSigning() {
+-    if (!requestId || !tabId) return;
++    if (!requestId) return;
+     void analytics.track('request_signature_cancel');
+-    chrome.tabs.sendMessage(
+-      tabId,
++    chrome.runtime.sendMessage(
+       createRpcErrorResponse('stx_signMessage', {
+         id: requestId,
+         error: {
+diff --git a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+index 19bdcf8f8..e6e4ff423 100644
+--- a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
++++ b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+@@ -45,7 +45,7 @@ import {
+ } from './rpc-stx-sign-transaction.utils';
+ 
+ export function RpcStxSignTransaction() {
+-  const { address, isLoadingBalance, requestId, tabId } = useStacksRpcTransactionRequestContext();
++  const { address, isLoadingBalance, requestId } = useStacksRpcTransactionRequestContext();
+   const {
+     availableBalance,
+     isLoadingFees,
+@@ -81,8 +81,7 @@ export function RpcStxSignTransaction() {
+     const signedTransaction = await signStacksTx(unsignedTxForBroadcast);
+ 
+     if (!signedTransaction) {
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcErrorResponse('stx_signTransaction', {
+           id: requestId,
+           error: {
+@@ -94,8 +93,7 @@ export function RpcStxSignTransaction() {
+       throw new Error('Error signing stacks transaction');
+     }
+ 
+-    chrome.tabs.sendMessage(
+-      tabId,
++    chrome.runtime.sendMessage(
+       createRpcSuccessResponse('stx_signTransaction', {
+         id: requestId,
+         result: {
 diff --git a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
-index 39d70a5fa..97db56538 100644
+index 39d70a5fa..49c44a73d 100644
 --- a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
 +++ b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
-@@ -86,7 +86,7 @@ export function useStxSendForm() {
+@@ -81,12 +81,31 @@ export function useStxSendForm() {
+         fee: Number(values.fee),
+       });
+ 
++      // const port = chrome.runtime.connect(chrome.runtime.id);
++      // port.postMessage({
++      //   jsonrpc: '2.0',
++      //   method: 'stx_transferStx',
++      //   params: {
++      //     recipient: values.recipient,
++      //     amount: values.amount,
++      //   },
++      // });
++
++      // chrome.runtime.sendMessage({
++      //   jsonrpc: '2.0',
++      //   method: 'stx_transferStx',
++      //   params: {
++      //     recipient: values.recipient,
++      //     amount: values.amount,
++      //   },
++      // });
++
+       // if fee has changed, show info message
+       const showFeeChangeWarning = initialFee !== values.fee;
  
        const tx = await generateTx(values);
        if (!tx) return logger.error('Attempted to generate unsigned tx, but tx is undefined');
@@ -190,7 +637,7 @@ index 39d70a5fa..97db56538 100644
    };
  }
 diff --git a/src/background/background.ts b/src/background/background.ts
-index 535ae1a77..322dd8d0c 100755
+index 535ae1a77..5d0dffcaa 100755
 --- a/src/background/background.ts
 +++ b/src/background/background.ts
 @@ -21,6 +21,16 @@ import { initAddressMonitor } from './monitors/address-monitor';
@@ -219,7 +666,7 @@ index 535ae1a77..322dd8d0c 100755
        return logger.error('Message reached background script without a corresponding tab');
  
      // Chromium/Firefox discrepancy
-@@ -52,7 +62,7 @@ chrome.runtime.onConnect.addListener(port => {
+@@ -52,24 +62,18 @@ chrome.runtime.onConnect.addListener(port => {
      // TODO:
      // Here we'll handle all messages using the rpc style comm method
      // For now all messages are handled as legacy format
@@ -228,9 +675,12 @@ index 535ae1a77..322dd8d0c 100755
    });
  });
  
-@@ -60,16 +70,7 @@ chrome.runtime.onConnect.addListener(port => {
+ //
  // Events from the extension frames script
  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
++  if (message.jsonrpc === '2.0') {
++    void rpcMessageHandler(message, sender);
++  }
    void internalBackgroundMessageHandler(message, sender, sendResponse);
 +
    // Listener fn must return `true` to indicate the response will be async
@@ -361,19 +811,23 @@ index a44f4fa01..6d94c4d7c 100644
        const { id } = await triggerRequestPopupWindowOpen(RouteUrls.PsbtRequest, urlParams);
        listenForPopupClose({
 diff --git a/src/background/messaging/rpc-message-handler.ts b/src/background/messaging/rpc-message-handler.ts
-index b55300e7a..ac4e47aec 100644
+index b55300e7a..e4e84af12 100644
 --- a/src/background/messaging/rpc-message-handler.ts
 +++ b/src/background/messaging/rpc-message-handler.ts
-@@ -24,9 +24,15 @@ import { stxTransferSip9NftHandler } from './rpc-methods/stx-transfer-sip9-nft';
+@@ -24,9 +24,19 @@ import { stxTransferSip9NftHandler } from './rpc-methods/stx-transfer-sip9-nft';
  import { stxTransferSip10FtHandler } from './rpc-methods/stx-transfer-sip10-ft';
  import { stxTransferStxHandler } from './rpc-methods/stx-transfer-stx';
  import { supportedMethodsHandler } from './rpc-methods/supported-methods';
 -import { getTabIdFromPort, listenForOriginTabClose } from './rpc-request-utils';
-+import { listenForOriginTabClose, sendRpcResponse } from './rpc-request-utils';
++import {
++  createRpcResponder,
++  listenAndForwardRpcRequest,
++  listenForOriginTabClose,
++} from './rpc-request-utils';
++
++type RpcResponseSender = (response: any) => void;
  
 -type RpcHandler<T> = (request: T, port: chrome.runtime.Port) => Promise<void> | void;
-+type RpcResponseSender = (response: any) => void;
-+
 +type RpcHandler<T> = (
 +  request: T,
 +  sender: chrome.runtime.MessageSender,
@@ -382,7 +836,7 @@ index b55300e7a..ac4e47aec 100644
  
  type RpcHandlers = {
    [Method in keyof RpcEndpointMap]: RpcHandler<RpcEndpointMap[Method]['request']>;
-@@ -48,20 +54,27 @@ export function defineRpcRequestHandler<M extends RpcRequests['method']>(
+@@ -48,8 +58,11 @@ export function defineRpcRequestHandler<M extends RpcRequests['method']>(
    return [method, handler] as const;
  }
  
@@ -390,33 +844,33 @@ index b55300e7a..ac4e47aec 100644
 -  listenForOriginTabClose({ tabId: port.sender?.tab?.id });
 +export async function rpcMessageHandler(
 +  request: RpcRequests,
-+  sender: chrome.runtime.MessageSender,
-+  sendResponse?: (response: any) => void
++  sender: chrome.runtime.MessageSender
 +) {
 +  listenForOriginTabClose({ tabId: sender?.tab?.id });
  
    logger.info(`Received RPC request ${request.method}`, request);
  
-+  const responseSender: RpcResponseSender = (response: any) => {
-+    sendRpcResponse(sender, response, sendResponse);
-+  };
-+
-   // This typecast safely bypasses the compiler since it cannot infer or narrow
-   // the type to know the `request` being passed to `handler` is the correct
+@@ -58,10 +71,15 @@ export async function rpcMessageHandler(request: RpcRequests, port: chrome.runti
    // one. Type safety is guaranteed by `registerRpcRequestHandler`
    const handler = rpcHandlers[request.method] as RpcHandler<any>;
  
 -  if (handler) return await handler(request, port);
-+  if (handler) return await handler(request, sender, responseSender);
++  const sendMessage = createRpcResponder(sender);
++
++  if (handler) {
++    listenAndForwardRpcRequest(request.id, sendMessage);
++
++    return await handler(request, sender, sendMessage);
++  }
  
 -  chrome.tabs.sendMessage(
 -    getTabIdFromPort(port),
-+  responseSender(
++  sendMessage(
      createRpcErrorResponse(request.method, {
        id: request.id,
        error: {
 diff --git a/src/background/messaging/rpc-methods/get-addresses.ts b/src/background/messaging/rpc-methods/get-addresses.ts
-index 941932743..0047abdfe 100644
+index 941932743..015c559d1 100644
 --- a/src/background/messaging/rpc-methods/get-addresses.ts
 +++ b/src/background/messaging/rpc-methods/get-addresses.ts
 @@ -12,9 +12,9 @@ import {
@@ -431,6 +885,16 @@ index 941932743..0047abdfe 100644
      ['requestId', request.id],
      ['rpcRequest', encodeBase64Json(request)],
    ]);
+@@ -27,6 +27,9 @@ const sharedGetAddressesHandler = async (
+   void trackRpcRequestSuccess({ endpoint: request.method });
+ 
+   sendErrorResponseOnUserPopupClose({ tabId, id, request });
++
++  // I want a function that listens to chrome.runtime.onMessage for a response
++  // that contains the same id as the request id
+ };
+ 
+ export const getAddressesHandler = defineRpcRequestHandler(
 diff --git a/src/background/messaging/rpc-methods/open.ts b/src/background/messaging/rpc-methods/open.ts
 index 9160f41bd..1d0bd52b7 100644
 --- a/src/background/messaging/rpc-methods/open.ts
@@ -963,56 +1427,75 @@ index 24d464a2a..8fa58783b 100644
        ['requestId', request.id],
        ['rpcRequest', encodeBase64Json(request)],
      ]);
+diff --git a/src/background/messaging/rpc-methods/supported-methods.ts b/src/background/messaging/rpc-methods/supported-methods.ts
+index 6ccb1a1a4..bc1c3718c 100644
+--- a/src/background/messaging/rpc-methods/supported-methods.ts
++++ b/src/background/messaging/rpc-methods/supported-methods.ts
+@@ -1,14 +1,11 @@
+ import { createRpcSuccessResponse, supportedMethods } from '@leather.io/rpc';
+ 
+ import { defineRpcRequestHandler } from '../rpc-message-handler';
+-import { createConnectingAppSearchParamsWithLastKnownAccount } from '../rpc-request-utils';
+ 
+ export const supportedMethodsHandler = defineRpcRequestHandler(
+   supportedMethods.method,
+-  async (request, port) => {
+-    const { tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port);
+-    chrome.tabs.sendMessage(
+-      tabId,
++  async (request, _sender, sendMessage) => {
++    sendMessage(
+       createRpcSuccessResponse(supportedMethods.method, {
+         id: request.id,
+         result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..77f07421e 100644
+index 31436c254..62370b1b5 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
-@@ -25,21 +25,36 @@ import { popup } from '@background/popup';
+@@ -25,21 +25,34 @@ import { popup } from '@background/popup';
  
  import { trackRpcRequestError } from './rpc-helpers';
  
 -export function getTabIdFromPort(port: chrome.runtime.Port) {
 -  return port.sender?.tab?.id ?? 0;
-+function getTabIdFromSender(sender: chrome.runtime.MessageSender) {
-+  return sender?.tab?.id ?? 0;
++function isOriginLeatherExtension(urlOrigin: string) {
++  const extensionOrigin = new URL(chrome.runtime.getURL('')).origin;
++  return urlOrigin === extensionOrigin;
  }
  
 -function getOriginFromPort(port: chrome.runtime.Port) {
 -  if (port.sender?.url) return new URL(port.sender.url).origin;
 -  return port.sender?.origin;
-+function getOriginFromSender(sender: chrome.runtime.MessageSender) {
-+  if (sender?.url) return new URL(sender.url).origin;
-+  return sender?.origin;
++function getTabIdFromSender(sender: chrome.runtime.MessageSender) {
++  return sender?.tab?.id ?? 0;
  }
  
 -export function getHostnameFromPort(port: chrome.runtime.Port) {
 -  const origin = getOriginFromPort(port);
 -  if (!origin) throw new Error('No URL found in port sender');
++function getOriginFromSender(sender: chrome.runtime.MessageSender) {
++  if (sender?.url) return new URL(sender.url).origin;
++  return sender?.origin;
++}
++
 +export function getHostnameFromSender(sender: chrome.runtime.MessageSender) {
 +  const origin = getOriginFromSender(sender);
 +  if (!origin) throw new Error('No URL found in sender');
    return getHostnameFromUrl(origin);
  }
  
-+export function sendRpcResponse(
-+  sender: chrome.runtime.MessageSender,
-+  response: any,
-+  sendResponse?: (response: any) => void
-+) {
-+  if (sendResponse) {
-+    // Internal extension call - use sendResponse callback
-+    sendResponse(response);
-+  } else {
-+    // External call - use chrome.tabs.sendMessage
-+    const tabId = getTabIdFromSender(sender);
-+    chrome.tabs.sendMessage(tabId, response);
-+  }
++export function createRpcResponder(sender: chrome.runtime.MessageSender) {
++  const origin = getOriginFromSender(sender) ?? '';
++  return (response: any) =>
++    isOriginLeatherExtension(origin)
++      ? chrome.runtime.sendMessage(response)
++      : chrome.runtime.sendMessage(sender.tab?.id ?? 0, response);
 +}
 +
  //
  // Playwright does not currently support Chrome extension popup testing:
  // https://github.com/microsoft/playwright/issues/5593
-@@ -102,12 +117,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
+@@ -102,12 +115,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
  export type RequestParams = [string, string][];
  
  export function createConnectingAppMetadataSearchParams(
@@ -1028,7 +1511,7 @@ index 31436c254..77f07421e 100644
    urlParams.set('origin', origin ?? '');
    urlParams.set('tabId', tabId.toString());
    otherParams.forEach(([key, value]) => urlParams.append(key, value));
-@@ -115,12 +130,12 @@ export function createConnectingAppMetadataSearchParams(
+@@ -115,12 +128,12 @@ export function createConnectingAppMetadataSearchParams(
  }
  
  export async function createConnectingAppSearchParamsWithLastKnownAccount(
@@ -1044,7 +1527,7 @@ index 31436c254..77f07421e 100644
      if (appPermissions) {
        urlParams.set('accountIndex', appPermissions.accountIndex.toString());
      }
-@@ -146,20 +161,21 @@ interface ValidateRequestParamsArgs {
+@@ -146,20 +159,21 @@ interface ValidateRequestParamsArgs {
    id: string;
    method: RpcMethodNames;
    params: unknown;
@@ -1070,7 +1553,7 @@ index 31436c254..77f07421e 100644
        createRpcErrorResponse(method, {
          id,
          error: { code: RpcErrorCode.INVALID_REQUEST, message: RpcErrorMessage.UndefinedParams },
-@@ -171,8 +187,7 @@ export function validateRequestParams({
+@@ -171,8 +185,7 @@ export function validateRequestParams({
    if (!validateRpcParams(params, schema)) {
      void trackRpcRequestError({ endpoint: method, error: RpcErrorMessage.InvalidParams });
  
@@ -1080,4 +1563,21 @@ index 31436c254..77f07421e 100644
        createRpcErrorResponse(method, {
          id,
          error: {
+@@ -185,3 +198,16 @@ export function validateRequestParams({
+   }
+   return { status: 'success' };
+ }
++
++export function listenAndForwardRpcRequest(requestId: string, sendMessage: (resp: any) => void) {
++  return chrome.runtime.onMessage.addListener(message => {
++    if (
++      'jsonrpc' in message &&
++      message.jsonrpc === '2.0' &&
++      'id' in message &&
++      message.id === requestId
++    ) {
++      sendMessage(message);
++    }
++  });
++}
 ```

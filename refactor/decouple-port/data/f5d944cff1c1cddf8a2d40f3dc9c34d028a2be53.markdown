@@ -1,176 +1,67 @@
 # Test info
 
-- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
-- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
 
 # Error details
 
 ```
-Error: locator.innerText: Target page, context or browser has been closed
+Error: page.click: Target crashed 
 Call log:
-  - waiting for getByTestId('address-displayer')
+  - waiting for locator('[data-testid="btn-confirm-transaction"]')
+    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-pos_relative leather-textStyle_label.02 leather-ta_center leather-bdr_round leather-d_inline-flex leather-ai_center leather-jc_center leather-gap_space.02 leather-white-space_nowrap loading:after:leather-anim_spin loading:after:leather-bd_2px_solid loading:after:leather-bd-c_currentColor loading:after:leather-bd-b-c_transparent loading:after:leather-bx-s_border-box loading:after:leather-content_"" loading:afte…>…</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
 
-    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
-    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
+    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
 ```
 
 # Test source
 
 ```ts
-   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
-   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
-   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
-   6 | import { createTestSelector } from '@tests/utils';
-   7 |
-   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
-   9 | import { delay } from '@leather.io/utils';
-   10 |
-   11 | export class HomePage {
-   12 |   readonly page: Page;
-   13 |   readonly headerActionButton: Locator;
-   14 |   readonly receiveButton: Locator;
-   15 |   readonly sendButton: Locator;
-   16 |   readonly swapButton: Locator;
-   17 |   readonly settingsButton: Locator;
-   18 |   readonly settingsViewSecretKey: Locator;
-   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
-   20 |   readonly signOutConfirmPasswordDisable: Locator;
-   21 |   readonly signOutDeleteWalletBtn: Locator;
-   22 |   readonly signOutSettingsListItem: Locator;
-   23 |   readonly lockSettingsListItem: Locator;
-   24 |   readonly fundAccountBtn: Locator;
-   25 |   readonly manageTokensBtn: Locator;
-   26 |   readonly assetList: Locator;
-   27 |   readonly manageTokensAssetsList: Locator;
-   28 |
-   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
-   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
-   31 |   );
-   32 |   $signOutConfirmPasswordDisable = createTestSelector(
-   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
-   34 |   );
-   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
-   36 |
-   37 |   constructor(page: Page) {
-   38 |     this.page = page;
-   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
-   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
-   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
-   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
-   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
-   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
-   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
-   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
-   47 |     );
-   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
-   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
-   50 |     );
-   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
-   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
-   53 |     );
-   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
-   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
-   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
-   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
-   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
-   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
-   60 |   }
-   61 |
-   62 |   async goToReceiveDialog() {
-   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
-   64 |   }
-   65 |
-   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
-   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
-   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
-   69 |   // https://github.com/microsoft/playwright/issues/12168
-   70 |   // Using the `Receive` route to get the account address for now.
-   71 |   async getReceiveNativeSegwitAddress() {
-   72 |     await this.goToReceiveDialog();
-   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
-   74 |     const displayerAddress = await this.page
-   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
-   76 |       .innerText();
-   77 |     return displayerAddress.replaceAll('\n', '');
-   78 |   }
-   79 |
-   80 |   // Currently under Ordinals receive flow
-   81 |   async getReceiveTaprootAddress() {
-   82 |     await this.goToReceiveDialog();
-   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
-   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
-   85 |     // FIXME - add better test for Copy action
-   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
-   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
-   88 |     // return address;
-   89 |     const displayerAddress = await this.page
-   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
-   91 |       .innerText();
-   92 |     return displayerAddress.replaceAll('\n', '');
-   93 |   }
-   94 |
-   95 |   async getReceiveStxAddress() {
-   96 |     await this.goToReceiveDialog();
-   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
-   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
-   99 |     await delay(1000);
-  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
-  101 |     const displayerAddress = await this.page
-  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
-> 103 |       .innerText();
-      |        ^ Error: locator.innerText: Target page, context or browser has been closed
-  104 |     return displayerAddress.replaceAll('\n', '');
-  105 |   }
-  106 |
-  107 |   async selectTestnet() {
-  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
-  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
-  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
-  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet4).click();
-  112 |   }
-  113 |
-  114 |   async clickActivityTab() {
-  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
-  116 |   }
-  117 |
-  118 |   async clickSettingsButton() {
-  119 |     await this.settingsButton.click({ force: true });
-  120 |   }
-  121 |
-  122 |   async goToSecretKey() {
-  123 |     await this.clickSettingsButton();
-  124 |     await this.settingsViewSecretKey.click();
-  125 |   }
-  126 |
-  127 |   async signOut() {
-  128 |     await this.clickSettingsButton();
-  129 |     await this.signOutSettingsListItem.click();
-  130 |     await this.signOutConfirmHasBackupCheckbox.click();
-  131 |     await this.signOutConfirmPasswordDisable.click();
-  132 |     await this.signOutDeleteWalletBtn.click();
-  133 |   }
-  134 |
-  135 |   async lock() {
-  136 |     await this.clickSettingsButton();
-  137 |     await this.lockSettingsListItem.click();
-  138 |   }
-  139 |
-  140 |   async goToFundChooseCurrencyPage() {
-  141 |     await this.fundAccountBtn.click();
-  142 |   }
-  143 |
-  144 |   async waitForHomePageReady() {
-  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
-  146 |       state: 'attached',
-  147 |     });
-  148 |   }
-  149 |
-  150 |   async switchAccount(accountIndex: number) {
-  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
-  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
-  153 |   }
-  154 | }
-  155 |
+   1 | import { Page } from '@playwright/test';
+   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
+   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   4 | import { createTestSelector } from '@tests/utils';
+   5 |
+   6 | export class TransactionRequestPage {
+   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
+   8 |     TransactionRequestSelectors.BtnConfirmTransaction
+   9 |   );
+  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
+  11 |   readonly transactionRequestPage = createTestSelector(
+  12 |     TransactionRequestSelectors.TransactionRequestPage
+  13 |   );
+  14 |
+  15 |   constructor(readonly page: Page) {}
+  16 |
+  17 |   async clickConfirmTransactionButton() {
+> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
+     |                      ^ Error: page.click: Target crashed 
+  19 |   }
+  20 |
+  21 |   async getDisplayedFeeValue() {
+  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
+  23 |   }
+  24 |
+  25 |   async waitForTransactionRequestError(msg: string) {
+  26 |     return this.page.waitForSelector(`text=${msg}`);
+  27 |   }
+  28 |
+  29 |   async waitForFee() {
+  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
+  31 |   }
+  32 |
+  33 |   async waitForTransactionRequestPage() {
+  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
+  35 |   }
+  36 | }
+  37 |
 ```
 
 # Local changes
@@ -214,10 +105,36 @@ index 39d70a5fa..49c44a73d 100644
    };
  }
 diff --git a/src/background/background.ts b/src/background/background.ts
-index 535ae1a77..542814591 100755
+index 535ae1a77..322dd8d0c 100755
 --- a/src/background/background.ts
 +++ b/src/background/background.ts
-@@ -52,13 +52,19 @@ chrome.runtime.onConnect.addListener(port => {
+@@ -21,6 +21,16 @@ import { initAddressMonitor } from './monitors/address-monitor';
+ initContextMenuActions();
+ warnUsersAboutDevToolsDangers();
+ 
++initAddressMonitor().catch(e => {
++  logger.error('Unable to Initialise Address Monitor: ', e);
++});
++
++listenForSessionDurationPort({
++  onSessionEnd(sessionMetadata) {
++    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
++  },
++});
++
+ chrome.runtime.onInstalled.addListener(async details => {
+   if (details.reason === 'install' && process.env.WALLET_ENVIRONMENT !== 'testing') {
+     await chrome.tabs.create({
+@@ -34,7 +44,7 @@ chrome.runtime.onConnect.addListener(port => {
+   if (port.name !== CONTENT_SCRIPT_PORT) return;
+ 
+   port.onMessage.addListener((message: LegacyMessageFromContentScript | RpcRequests, port) => {
+-    if (!port.sender?.tab?.id)
++    if (!port.sender || !port.sender?.tab?.id)
+       return logger.error('Message reached background script without a corresponding tab');
+ 
+     // Chromium/Firefox discrepancy
+@@ -52,7 +62,7 @@ chrome.runtime.onConnect.addListener(port => {
      // TODO:
      // Here we'll handle all messages using the rpc style comm method
      // For now all messages are handled as legacy format
@@ -226,76 +143,138 @@ index 535ae1a77..542814591 100755
    });
  });
  
- //
+@@ -60,16 +70,7 @@ chrome.runtime.onConnect.addListener(port => {
  // Events from the extension frames script
  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-+  // // Handle internal RPC messages from extension pages
-+  // if (message.jsonrpc === '2.0') {
-+  //   void rpcMessageHandler(message, sender, sendResponse);
-+  //   return true;
-+  // }
-+
    void internalBackgroundMessageHandler(message, sender, sendResponse);
++
    // Listener fn must return `true` to indicate the response will be async
    return true;
+ });
+-
+-initAddressMonitor().catch(e => {
+-  logger.error('Unable to Initialise Address Monitor: ', e);
+-});
+-
+-listenForSessionDurationPort({
+-  onSessionEnd(sessionMetadata) {
+-    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
+-  },
+-});
 diff --git a/src/background/messaging/legacy/legacy-external-message-handler.ts b/src/background/messaging/legacy/legacy-external-message-handler.ts
-index a44f4fa01..4dda6d1f0 100644
+index a44f4fa01..6d94c4d7c 100644
 --- a/src/background/messaging/legacy/legacy-external-message-handler.ts
 +++ b/src/background/messaging/legacy/legacy-external-message-handler.ts
-@@ -66,7 +66,7 @@ export async function handleLegacyExternalMethodFormat(
+@@ -66,10 +66,13 @@ export async function handleLegacyExternalMethodFormat(
      case ExternalMethods.authenticationRequest: {
        void trackLegacyRequestInitiated({ method: ExternalMethods.authenticationRequest });
  
 -      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
-+      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port.sender!, [
-         ['authRequest', payload],
-         ['flow', ExternalMethods.authenticationRequest],
-       ]);
-@@ -84,7 +84,7 @@ export async function handleLegacyExternalMethodFormat(
+-        ['authRequest', payload],
+-        ['flow', ExternalMethods.authenticationRequest],
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['authRequest', payload],
++          ['flow', ExternalMethods.authenticationRequest],
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.ChooseAccount, urlParams);
+       listenForPopupClose({
+@@ -84,11 +87,14 @@ export async function handleLegacyExternalMethodFormat(
      case ExternalMethods.transactionRequest: {
        void trackLegacyRequestInitiated({ method: ExternalMethods.transactionRequest });
  
 -      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
-+      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port.sender!, [
-         ['request', payload],
-         ['flow', ExternalMethods.transactionRequest],
-         ...getNetworkParamsFromPayload(payload),
-@@ -103,7 +103,7 @@ export async function handleLegacyExternalMethodFormat(
+-        ['request', payload],
+-        ['flow', ExternalMethods.transactionRequest],
+-        ...getNetworkParamsFromPayload(payload),
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['request', payload],
++          ['flow', ExternalMethods.transactionRequest],
++          ...getNetworkParamsFromPayload(payload),
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.TransactionRequest, urlParams);
+       listenForPopupClose({
+@@ -103,12 +109,15 @@ export async function handleLegacyExternalMethodFormat(
      case ExternalMethods.signatureRequest: {
        void trackLegacyRequestInitiated({ method: ExternalMethods.signatureRequest });
  
 -      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
-+      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port.sender!, [
-         ['request', payload],
-         ['messageType', 'utf8'],
-         ['flow', ExternalMethods.signatureRequest],
-@@ -123,7 +123,7 @@ export async function handleLegacyExternalMethodFormat(
+-        ['request', payload],
+-        ['messageType', 'utf8'],
+-        ['flow', ExternalMethods.signatureRequest],
+-        ...getNetworkParamsFromPayload(payload),
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['request', payload],
++          ['messageType', 'utf8'],
++          ['flow', ExternalMethods.signatureRequest],
++          ...getNetworkParamsFromPayload(payload),
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.SignatureRequest, urlParams);
+       listenForPopupClose({
+@@ -123,12 +132,15 @@ export async function handleLegacyExternalMethodFormat(
      case ExternalMethods.structuredDataSignatureRequest: {
        void trackLegacyRequestInitiated({ method: ExternalMethods.structuredDataSignatureRequest });
  
 -      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
-+      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port.sender!, [
-         ['request', payload],
-         ['messageType', 'structured'],
-         ['flow', ExternalMethods.structuredDataSignatureRequest],
-@@ -143,7 +143,7 @@ export async function handleLegacyExternalMethodFormat(
+-        ['request', payload],
+-        ['messageType', 'structured'],
+-        ['flow', ExternalMethods.structuredDataSignatureRequest],
+-        ...getNetworkParamsFromPayload(payload),
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['request', payload],
++          ['messageType', 'structured'],
++          ['flow', ExternalMethods.structuredDataSignatureRequest],
++          ...getNetworkParamsFromPayload(payload),
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.SignatureRequest, urlParams);
+       listenForPopupClose({
+@@ -143,9 +155,10 @@ export async function handleLegacyExternalMethodFormat(
      case ExternalMethods.profileUpdateRequest: {
        void trackLegacyRequestInitiated({ method: ExternalMethods.profileUpdateRequest });
  
 -      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
-+      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port.sender!, [
-         ['request', payload],
-       ]);
+-        ['request', payload],
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [['request', payload]]
++      );
  
-@@ -160,7 +160,7 @@ export async function handleLegacyExternalMethodFormat(
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.ProfileUpdateRequest, urlParams);
+       listenForPopupClose({
+@@ -160,9 +173,10 @@ export async function handleLegacyExternalMethodFormat(
      case ExternalMethods.psbtRequest: {
        void trackLegacyRequestInitiated({ method: ExternalMethods.psbtRequest });
  
 -      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
-+      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port.sender!, [
-         ['request', payload],
-       ]);
+-        ['request', payload],
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [['request', payload]]
++      );
  
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.PsbtRequest, urlParams);
+       listenForPopupClose({
 diff --git a/src/background/messaging/rpc-message-handler.ts b/src/background/messaging/rpc-message-handler.ts
 index b55300e7a..ac4e47aec 100644
 --- a/src/background/messaging/rpc-message-handler.ts
@@ -493,7 +472,7 @@ index b8aa9b9c5..69d2f24fe 100644
      );
      const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcSignBip322Message, urlParams);
 diff --git a/src/background/messaging/rpc-methods/sign-psbt.ts b/src/background/messaging/rpc-methods/sign-psbt.ts
-index 6f64eec19..c14225e55 100644
+index 6f64eec19..62b0d0bad 100644
 --- a/src/background/messaging/rpc-methods/sign-psbt.ts
 +++ b/src/background/messaging/rpc-methods/sign-psbt.ts
 @@ -16,7 +16,6 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
@@ -504,49 +483,164 @@ index 6f64eec19..c14225e55 100644
    sendErrorResponseOnUserPopupClose,
    triggerRequestPopupWindowOpen,
  } from '../rpc-request-utils';
-@@ -37,11 +36,10 @@ function validateRpcSignPsbtParams(obj: unknown) {
+@@ -37,82 +36,82 @@ function validateRpcSignPsbtParams(obj: unknown) {
  function getRpcSignPsbtParamErrors(obj: unknown) {
    return formatValidationErrors(getRpcParamErrors(obj, signPsbt.params));
  }
 -export const signPsbtHandler = defineRpcRequestHandler(signPsbt.method, async (request, port) => {
-+export const signPsbtHandler = defineRpcRequestHandler(signPsbt.method, async (request, sender, sendResponse) => {
-   if (isUndefined(request.params)) {
-     void trackRpcRequestError({ endpoint: request.method, error: 'Undefined parameters' });
+-  if (isUndefined(request.params)) {
+-    void trackRpcRequestError({ endpoint: request.method, error: 'Undefined parameters' });
 -    chrome.tabs.sendMessage(
 -      getTabIdFromPort(port),
-+    sendResponse(
-       createRpcErrorResponse(request.method, {
-         id: request.id,
-         error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
-@@ -52,8 +50,7 @@ export const signPsbtHandler = defineRpcRequestHandler(signPsbt.method, async (r
- 
-   if (!validateRpcSignPsbtParams(request.params)) {
-     void trackRpcRequestError({ endpoint: request.method, error: 'Invalid parameters' });
+-      createRpcErrorResponse(request.method, {
+-        id: request.id,
+-        error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
+-      })
++export const signPsbtHandler = defineRpcRequestHandler(
++  signPsbt.method,
++  async (request, sender, sendResponse) => {
++    if (isUndefined(request.params)) {
++      void trackRpcRequestError({ endpoint: request.method, error: 'Undefined parameters' });
++      sendResponse(
++        createRpcErrorResponse(request.method, {
++          id: request.id,
++          error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
++        })
++      );
++      return;
++    }
++
++    if (!validateRpcSignPsbtParams(request.params)) {
++      void trackRpcRequestError({ endpoint: request.method, error: 'Invalid parameters' });
++      sendResponse(
++        createRpcErrorResponse(request.method, {
++          id: request.id,
++          error: {
++            code: RpcErrorCode.INVALID_PARAMS,
++            message: getRpcSignPsbtParamErrors(request.params),
++          },
++        })
++      );
++      return;
++    }
++
++    if (!validatePsbt(request.params.hex)) {
++      void trackRpcRequestError({ endpoint: request.method, error: 'Invalid PSBT' });
++
++      sendResponse(
++        createRpcErrorResponse('signPsbt', {
++          id: request.id,
++          error: { code: RpcErrorCode.INVALID_PARAMS, message: 'Invalid PSBT hex' },
++        })
++      );
++      return;
++    }
++
++    const requestParams: RequestParams = [
++      ['hex', request.params.hex],
++      ['requestId', request.id],
++    ];
++
++    if (isDefined(request.params.account)) {
++      requestParams.push(['accountIndex', request.params.account.toString()]);
++    }
++
++    if (isDefined(request.params.broadcast)) {
++      requestParams.push(['broadcast', request.params.broadcast.toString()]);
++    }
++
++    if (isDefined(request.params.network)) {
++      requestParams.push(['network', request.params.network.toString()]);
++    }
++
++    if (isDefined(request.params.signAtIndex))
++      ensureArray(request.params.signAtIndex).forEach(index =>
++        requestParams.push(['signAtIndex', index.toString()])
++      );
++
++    void trackRpcRequestSuccess({ endpoint: request.method });
++
++    const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++      sender,
++      requestParams
+     );
+-    return;
+-  }
+-
+-  if (!validateRpcSignPsbtParams(request.params)) {
+-    void trackRpcRequestError({ endpoint: request.method, error: 'Invalid parameters' });
 -    chrome.tabs.sendMessage(
 -      getTabIdFromPort(port),
-+    sendResponse(
-       createRpcErrorResponse(request.method, {
-         id: request.id,
-         error: {
-@@ -68,8 +65,7 @@ export const signPsbtHandler = defineRpcRequestHandler(signPsbt.method, async (r
-   if (!validatePsbt(request.params.hex)) {
-     void trackRpcRequestError({ endpoint: request.method, error: 'Invalid PSBT' });
- 
+-      createRpcErrorResponse(request.method, {
+-        id: request.id,
+-        error: {
+-          code: RpcErrorCode.INVALID_PARAMS,
+-          message: getRpcSignPsbtParamErrors(request.params),
+-        },
+-      })
+-    );
+-    return;
+-  }
+-
+-  if (!validatePsbt(request.params.hex)) {
+-    void trackRpcRequestError({ endpoint: request.method, error: 'Invalid PSBT' });
+-
 -    chrome.tabs.sendMessage(
 -      getTabIdFromPort(port),
-+    sendResponse(
-       createRpcErrorResponse('signPsbt', {
-         id: request.id,
-         error: { code: RpcErrorCode.INVALID_PARAMS, message: 'Invalid PSBT hex' },
-@@ -103,7 +99,7 @@ export const signPsbtHandler = defineRpcRequestHandler(signPsbt.method, async (r
-   void trackRpcRequestSuccess({ endpoint: request.method });
+-      createRpcErrorResponse('signPsbt', {
+-        id: request.id,
+-        error: { code: RpcErrorCode.INVALID_PARAMS, message: 'Invalid PSBT hex' },
+-      })
+-    );
+-    return;
+-  }
+-
+-  const requestParams: RequestParams = [
+-    ['hex', request.params.hex],
+-    ['requestId', request.id],
+-  ];
  
-   const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
+-  if (isDefined(request.params.account)) {
+-    requestParams.push(['accountIndex', request.params.account.toString()]);
+-  }
+-
+-  if (isDefined(request.params.broadcast)) {
+-    requestParams.push(['broadcast', request.params.broadcast.toString()]);
+-  }
++    const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcSignPsbt, urlParams);
+ 
+-  if (isDefined(request.params.network)) {
+-    requestParams.push(['network', request.params.network.toString()]);
++    sendErrorResponseOnUserPopupClose({
++      tabId,
++      id,
++      request,
++      message: 'User rejected signing PSBT request',
++    });
+   }
+-
+-  if (isDefined(request.params.signAtIndex))
+-    ensureArray(request.params.signAtIndex).forEach(index =>
+-      requestParams.push(['signAtIndex', index.toString()])
+-    );
+-
+-  void trackRpcRequestSuccess({ endpoint: request.method });
+-
+-  const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
 -    port,
-+    sender,
-     requestParams
-   );
- 
+-    requestParams
+-  );
+-
+-  const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcSignPsbt, urlParams);
+-
+-  sendErrorResponseOnUserPopupClose({
+-    tabId,
+-    id,
+-    request,
+-    message: 'User rejected signing PSBT request',
+-  });
+-});
++);
 diff --git a/src/background/messaging/rpc-methods/sign-stacks-message.ts b/src/background/messaging/rpc-methods/sign-stacks-message.ts
 index 7ffa5956d..d33f41909 100644
 --- a/src/background/messaging/rpc-methods/sign-stacks-message.ts
@@ -785,7 +879,7 @@ index 24d464a2a..8fa58783b 100644
        ['rpcRequest', encodeBase64Json(request)],
      ]);
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..c19e19136 100644
+index 31436c254..77f07421e 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
 @@ -25,21 +25,36 @@ import { popup } from '@background/popup';
@@ -794,7 +888,7 @@ index 31436c254..c19e19136 100644
  
 -export function getTabIdFromPort(port: chrome.runtime.Port) {
 -  return port.sender?.tab?.id ?? 0;
-+export function getTabIdFromSender(sender: chrome.runtime.MessageSender) {
++function getTabIdFromSender(sender: chrome.runtime.MessageSender) {
 +  return sender?.tab?.id ?? 0;
  }
  

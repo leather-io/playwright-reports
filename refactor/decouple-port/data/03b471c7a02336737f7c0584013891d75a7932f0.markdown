@@ -1,155 +1,139 @@
 # Test info
 
-- Name: stx_signMessage >> MessageType: structured >> Signature approved
-- Location: /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:81:5
+- Name: Rpc: getAddresses >> softwareWallet  >> it returns the second accounts data after changing account
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:165:11
 
 # Error details
 
 ```
-Error: expect(received).toEqual(expected) // deep equality
+Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+    1) <span aria-busy="false" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka locator('#app').getByTestId('switch-account-item-1')
+    2) <span aria-busy="false" data-testid="switch-account-sheet-account-name-1" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka getByTestId('virtuoso-item-list').getByTestId('switch-account-item-1')
 
-- Expected  - 4
-+ Received  + 4
+Call log:
+  - expect.toBeVisible with timeout 5000ms
+  - waiting for getByText('Account 2')
 
-  Object {
--   "jsonrpc": "2.0",
--   "result": Object {
--     "publicKey": "0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af",
--     "signature": "9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01",
-+   "error": Object {
-+     "code": 4001,
-+     "message": "User rejected request",
-    },
-+   "jsonrpc": "2.0",
-  }
-    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:93:27
+    at /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:176:61
 ```
 
 # Test source
 
 ```ts
-   1 | import { BrowserContext, Page } from '@playwright/test';
-   2 | import {
-   3 |   intCV,
-   4 |   serializeCV,
-   5 |   stringAsciiCV,
-   6 |   stringUtf8CV,
-   7 |   tupleCV,
-   8 |   uintCV,
-   9 | } from '@stacks/transactions';
-   10 |
-   11 | import { test } from '../../fixtures/fixtures';
-   12 |
-   13 | test.describe('stx_signMessage', () => {
-   14 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
-   15 |     await globalPage.setupAndUseApiCalls(extensionId);
-   16 |     await onboardingPage.signInWithTestAccount(extensionId);
-   17 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
-   18 |   });
-   19 |
-   20 |   function clickActionButton(context: BrowserContext) {
-   21 |     return async (buttonToPress: 'Cancel' | 'Sign') => {
-   22 |       const popup = await context.waitForEvent('page');
-   23 |       const btn = popup.locator(`text="${buttonToPress}"`);
-   24 |       await btn.click();
-   25 |     };
-   26 |   }
-   27 |
-   28 |   function initiateUtf8MessageSigning(page: Page) {
-   29 |     return async (message: string) =>
-   30 |       page.evaluate(
-   31 |         async ({ message }) =>
-   32 |           (window as any).LeatherProvider.request('stx_signMessage', {
-   33 |             message,
-   34 |             messageType: 'utf8',
-   35 |           }).catch((e: unknown) => e),
-   36 |         { message }
-   37 |       );
-   38 |   }
-   39 |
-   40 |   test.describe('MessageType: utf8', () => {
-   41 |     test('Signature approved', async ({ page, context }) => {
-   42 |       const [result] = await Promise.all([
-   43 |         initiateUtf8MessageSigning(page)('test'),
-   44 |         clickActionButton(context)('Sign'),
-   45 |       ]);
-   46 |
-   47 |       // ID is random, removed so we can test known values
-   48 |       delete result.id;
-   49 |
-   50 |       test.expect(result).toEqual({
-   51 |         jsonrpc: '2.0',
-   52 |         result: {
-   53 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
-   54 |           signature:
-   55 |             '6d9040912574f9a8128ada79968e9b09e9d469fe84cda063701be0fefb8c3bdc21a309456a78929347a095a4a856271bde9cb327132edad7730d29404dba5e9300',
-   56 |         },
-   57 |       });
-   58 |     });
-   59 |   });
-   60 |
-   61 |   test.describe('MessageType: structured', () => {
-   62 |     const domain = tupleCV({
-   63 |       name: stringAsciiCV('leather.io'),
-   64 |       version: stringAsciiCV('1.0.0'),
-   65 |       'chain-id': uintCV(1),
-   66 |     });
-   67 |
-   68 |     function initiateStxStructuredMessageSigning(page: Page) {
-   69 |       return async (message: string, domain: string) =>
-   70 |         page.evaluate(
-   71 |           async ({ message, domain }) =>
-   72 |             (window as any).LeatherProvider.request('stx_signMessage', {
-   73 |               message,
-   74 |               domain,
-   75 |               messageType: 'structured',
-   76 |             }).catch((e: unknown) => e),
-   77 |           { message, domain }
-   78 |         );
-   79 |     }
+   76 |   const button = popup.getByTestId('get-addresses-approve-button');
+   77 |   await test.expect(button).toBeVisible();
+   78 |   await button.click();
+   79 | }
    80 |
-   81 |     test('Signature approved', async ({ page, context }) => {
-   82 |       const [result] = await Promise.all([
-   83 |         initiateStxStructuredMessageSigning(page)(
-   84 |           serializeCV(tupleCV({ a: intCV(-1), b: stringUtf8CV('this is a structured message') })),
-   85 |           serializeCV(domain)
-   86 |         ),
-   87 |         clickActionButton(context)('Sign'),
-   88 |       ]);
-   89 |
-   90 |       // ID is random, removed so we can test known values
-   91 |       delete result.id;
-   92 |
->  93 |       test.expect(result).toEqual({
-      |                           ^ Error: expect(received).toEqual(expected) // deep equality
-   94 |         jsonrpc: '2.0',
-   95 |         result: {
-   96 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
-   97 |           signature:
-   98 |             '9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01',
-   99 |         },
-  100 |       });
-  101 |     });
-  102 |   });
-  103 |
-  104 |   test('Signature rejected', async ({ page, context }) => {
-  105 |     const [result] = await Promise.all([
-  106 |       initiateUtf8MessageSigning(page)('test'),
-  107 |       clickActionButton(context)('Cancel'),
-  108 |     ]);
+   81 | getAddressesMethods.forEach(method => {
+   82 |   test.describe(`Rpc: ${method}`, () => {
+   83 |     test.beforeEach(
+   84 |       async ({ extensionId, globalPage }) => await globalPage.setupAndUseApiCalls(extensionId)
+   85 |     );
+   86 |
+   87 |     const specs = {
+   88 |       softwareWallet: {
+   89 |         beforeEach: softwareBeforeEach(),
+   90 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   91 |       },
+   92 |       ledgerWithBitcoinAndStacksKey: {
+   93 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin', 'stacks'])),
+   94 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   95 |       },
+   96 |       ledgerWithStacksKeysOnly: {
+   97 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['stacks'])),
+   98 |         expectedResult: getExpectedResponseForKeys(['stacks']),
+   99 |       },
+  100 |       ledgerWithBitcoinKeysOnly: {
+  101 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin'])),
+  102 |         expectedResult: getExpectedResponseForKeys(['bitcoin']),
+  103 |       },
+  104 |     } as const;
+  105 |
+  106 |     Object.entries(specs).forEach(([walletPreset, { beforeEach, expectedResult }]) => {
+  107 |       test.describe(`${walletPreset} `, () => {
+  108 |         beforeEach();
   109 |
-  110 |     delete result.id;
-  111 |
-  112 |     test.expect(result).toEqual({
-  113 |       jsonrpc: '2.0',
-  114 |       error: {
-  115 |         code: 4001,
-  116 |         message: 'User denied signing',
-  117 |       },
-  118 |     });
-  119 |   });
-  120 | });
-  121 |
+  110 |         test('the promise resolves with addresses successfully', async ({ page, context }) => {
+  111 |           await page.goto('localhost:3000');
+  112 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  113 |
+  114 |           const popup = await interceptRequestPopup(context);
+  115 |           await clickConnectLeatherButton(popup);
+  116 |
+  117 |           const result = await getAddressesPromise;
+  118 |           if (!result) throw new Error('Expected result');
+  119 |           const { id, ...payloadWithoutId } = result;
+  120 |
+  121 |           test.expect(payloadWithoutId).toEqual(expectedResult);
+  122 |         });
+  123 |
+  124 |         test('the promise rejects when user closes popup window', async ({ page, context }) => {
+  125 |           await page.goto('localhost:3000');
+  126 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  127 |           const popup = await interceptRequestPopup(context);
+  128 |           await popup.close();
+  129 |           await test.expect(getAddressesPromise).rejects.toThrow();
+  130 |         });
+  131 |
+  132 |         if (walletPreset === 'softwareWallet') {
+  133 |           test('it redirects back to get addresses flow when wallet is locked', async ({
+  134 |             homePage,
+  135 |             page,
+  136 |             context,
+  137 |           }) => {
+  138 |             await homePage.lock();
+  139 |             await page.goto('localhost:3000');
+  140 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  141 |             const popup = await interceptRequestPopup(context);
+  142 |             await popup.getByRole('textbox').fill(TEST_PASSWORD);
+  143 |             await popup.getByRole('button', { name: 'Continue' }).click();
+  144 |             await popup.getByText('Connect').isVisible();
+  145 |             await test.expect(popup.getByTestId('get-addresses-approve-button')).toBeVisible();
+  146 |             await clickConnectLeatherButton(popup);
+  147 |             await test.expect(getAddressesPromise).resolves.toMatchObject(expectedResult);
+  148 |           });
+  149 |
+  150 |           test('it returns testnet addresses with the network param set', async ({
+  151 |             page,
+  152 |             context,
+  153 |           }) => {
+  154 |             await page.goto('localhost:3000');
+  155 |             const getAddressesPromise = initiateGetAddresses(page, method, { network: 'testnet' });
+  156 |             const popup = await interceptRequestPopup(context);
+  157 |             await clickConnectLeatherButton(popup);
+  158 |
+  159 |             const result = await getAddressesPromise;
+  160 |             test
+  161 |               .expect(result.result.addresses[0].address)
+  162 |               .toEqual('tb1q4qgnjewwun2llgken94zqjrx5kpqqycaz5522d');
+  163 |           });
+  164 |
+  165 |           test('it returns the second accounts data after changing account', async ({
+  166 |             page,
+  167 |             context,
+  168 |           }) => {
+  169 |             await page.goto('localhost:3000');
+  170 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  171 |             const popup = await interceptRequestPopup(context);
+  172 |             const switchAccountButton = popup.getByTestId('switch-account-item-0');
+  173 |             await switchAccountButton.click();
+  174 |             const secondAccountInListButton = popup.getByTestId('switch-account-item-1');
+  175 |             await secondAccountInListButton.click();
+> 176 |             await test.expect(popup.getByText('Account 2')).toBeVisible();
+      |                                                             ^ Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+  177 |             await clickConnectLeatherButton(popup);
+  178 |             const result = await getAddressesPromise;
+  179 |             test
+  180 |               .expect(result.result.addresses[0].address)
+  181 |               .toEqual('bc1qr9wmz342txkcmxxq5ysmfqrd5rvmxtu6nldjgp');
+  182 |           });
+  183 |         }
+  184 |       });
+  185 |     });
+  186 |   });
+  187 | });
+  188 |
 ```
 
 # Local changes
@@ -1142,18 +1126,18 @@ index 6f64eec19..62b0d0bad 100644
 -});
 +);
 diff --git a/src/background/messaging/rpc-methods/sign-stacks-message.ts b/src/background/messaging/rpc-methods/sign-stacks-message.ts
-index 7ffa5956d..d33f41909 100644
+index 7ffa5956d..297c6a985 100644
 --- a/src/background/messaging/rpc-methods/sign-stacks-message.ts
 +++ b/src/background/messaging/rpc-methods/sign-stacks-message.ts
-@@ -21,7 +21,6 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
+@@ -21,21 +21,19 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
  import {
    RequestParams,
    createConnectingAppSearchParamsWithLastKnownAccount,
 -  getTabIdFromPort,
-   sendErrorResponseOnUserPopupClose,
+-  sendErrorResponseOnUserPopupClose,
    triggerRequestPopupWindowOpen,
  } from '../rpc-request-utils';
-@@ -29,13 +28,13 @@ import {
+ 
  async function handleRpcSignStacksMessage(
    method: 'stx_signMessage' | 'stx_signStructuredMessage',
    request: RpcRequest<typeof stxSignMessage> | RpcRequest<typeof stxSignStructuredMessage>,
@@ -1170,7 +1154,7 @@ index 7ffa5956d..d33f41909 100644
        createRpcErrorResponse(method, {
          id: request.id,
          error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
-@@ -46,8 +45,7 @@ async function handleRpcSignStacksMessage(
+@@ -46,8 +44,7 @@ async function handleRpcSignStacksMessage(
  
    if (!validateRpcSignStacksMessageParams(request.params)) {
      void trackRpcRequestError({ endpoint: method, error: 'Invalid parameters' });
@@ -1180,16 +1164,21 @@ index 7ffa5956d..d33f41909 100644
        createRpcErrorResponse(method, {
          id: request.id,
          error: {
-@@ -62,7 +60,7 @@ async function handleRpcSignStacksMessage(
+@@ -61,17 +58,17 @@ async function handleRpcSignStacksMessage(
+ 
    void trackRpcRequestSuccess({ endpoint: method });
  
-   const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
+-  const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
 -    port,
++  const { urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(
 +    sender,
      requestParams
    );
  
-@@ -71,7 +69,7 @@ async function handleRpcSignStacksMessage(
+-  const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcStacksSignature, urlParams);
+-  sendErrorResponseOnUserPopupClose({ tabId, id, request });
++  await triggerRequestPopupWindowOpen(RouteUrls.RpcStacksSignature, urlParams);
++  // sendErrorResponseOnUserPopupClose({ tabId, id, request });
  }
  export const stxSignMessageHandler = defineRpcRequestHandler(
    stxSignMessage.method,
@@ -1198,7 +1187,7 @@ index 7ffa5956d..d33f41909 100644
      const requestParams: RequestParams = [
        ['message', request.params.message],
        ['messageType', request.params.messageType ?? 'utf8'],
-@@ -89,13 +87,13 @@ export const stxSignMessageHandler = defineRpcRequestHandler(
+@@ -89,13 +86,13 @@ export const stxSignMessageHandler = defineRpcRequestHandler(
        ]);
      }
  
@@ -1214,7 +1203,7 @@ index 7ffa5956d..d33f41909 100644
      const requestParams: RequestParams = [
        ['requestId', request.id],
        ['messageType', 'structured'],
-@@ -113,6 +111,6 @@ export const stxSignStructuredMessageHandler = defineRpcRequestHandler(
+@@ -113,6 +110,6 @@ export const stxSignStructuredMessageHandler = defineRpcRequestHandler(
        ],
      ];
  
@@ -1400,7 +1389,7 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..a8e94748d 100644
+index 31436c254..e2a500580 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
 @@ -7,6 +7,7 @@ import {
@@ -1454,9 +1443,11 @@ index 31436c254..a8e94748d 100644
  //
  // Playwright does not currently support Chrome extension popup testing:
  // https://github.com/microsoft/playwright/issues/5593
-@@ -60,7 +74,9 @@ export function listenForPopupClose({ id, tabId, response }: ListenForPopupClose
+@@ -59,8 +73,11 @@ interface ListenForPopupCloseArgs {
+ export function listenForPopupClose({ id, tabId, response }: ListenForPopupCloseArgs) {
    chrome.windows.onRemoved.addListener(winId => {
      if (winId !== id || !tabId) return;
++    console.log('Listening for popup close:', new Date().valueOf());
      const responseMessage = response;
 -    chrome.tabs.sendMessage(tabId, responseMessage);
 +    setTimeout(() => {
@@ -1465,7 +1456,7 @@ index 31436c254..a8e94748d 100644
    });
  }
  
-@@ -102,12 +118,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
+@@ -102,12 +119,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
  export type RequestParams = [string, string][];
  
  export function createConnectingAppMetadataSearchParams(
@@ -1481,7 +1472,7 @@ index 31436c254..a8e94748d 100644
    urlParams.set('origin', origin ?? '');
    urlParams.set('tabId', tabId.toString());
    otherParams.forEach(([key, value]) => urlParams.append(key, value));
-@@ -115,12 +131,12 @@ export function createConnectingAppMetadataSearchParams(
+@@ -115,12 +132,12 @@ export function createConnectingAppMetadataSearchParams(
  }
  
  export async function createConnectingAppSearchParamsWithLastKnownAccount(
@@ -1497,7 +1488,7 @@ index 31436c254..a8e94748d 100644
      if (appPermissions) {
        urlParams.set('accountIndex', appPermissions.accountIndex.toString());
      }
-@@ -146,20 +162,21 @@ interface ValidateRequestParamsArgs {
+@@ -146,20 +163,21 @@ interface ValidateRequestParamsArgs {
    id: string;
    method: RpcMethodNames;
    params: unknown;
@@ -1523,7 +1514,7 @@ index 31436c254..a8e94748d 100644
        createRpcErrorResponse(method, {
          id,
          error: { code: RpcErrorCode.INVALID_REQUEST, message: RpcErrorMessage.UndefinedParams },
-@@ -171,8 +188,7 @@ export function validateRequestParams({
+@@ -171,8 +189,7 @@ export function validateRequestParams({
    if (!validateRpcParams(params, schema)) {
      void trackRpcRequestError({ endpoint: method, error: RpcErrorMessage.InvalidParams });
  
@@ -1533,7 +1524,7 @@ index 31436c254..a8e94748d 100644
        createRpcErrorResponse(method, {
          id,
          error: {
-@@ -185,3 +201,23 @@ export function validateRequestParams({
+@@ -185,3 +202,23 @@ export function validateRequestParams({
    }
    return { status: 'success' };
  }

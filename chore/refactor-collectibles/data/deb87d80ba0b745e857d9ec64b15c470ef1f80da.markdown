@@ -1,0 +1,336 @@
+# Test info
+
+- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
+- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
+
+# Error details
+
+```
+Error: locator.innerText: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('address-displayer')
+
+    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
+    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
+```
+
+# Test source
+
+```ts
+   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
+   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   6 | import { createTestSelector } from '@tests/utils';
+   7 |
+   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   9 | import { delay } from '@leather.io/utils';
+   10 |
+   11 | export class HomePage {
+   12 |   readonly page: Page;
+   13 |   readonly headerActionButton: Locator;
+   14 |   readonly receiveButton: Locator;
+   15 |   readonly sendButton: Locator;
+   16 |   readonly swapButton: Locator;
+   17 |   readonly settingsButton: Locator;
+   18 |   readonly settingsViewSecretKey: Locator;
+   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
+   20 |   readonly signOutConfirmPasswordDisable: Locator;
+   21 |   readonly signOutDeleteWalletBtn: Locator;
+   22 |   readonly signOutSettingsListItem: Locator;
+   23 |   readonly lockSettingsListItem: Locator;
+   24 |   readonly fundAccountBtn: Locator;
+   25 |   readonly manageTokensBtn: Locator;
+   26 |   readonly assetList: Locator;
+   27 |   readonly manageTokensAssetsList: Locator;
+   28 |
+   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
+   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   31 |   );
+   32 |   $signOutConfirmPasswordDisable = createTestSelector(
+   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
+   34 |   );
+   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
+   36 |
+   37 |   constructor(page: Page) {
+   38 |     this.page = page;
+   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
+   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
+   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
+   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
+   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
+   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
+   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
+   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   47 |     );
+   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
+   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
+   50 |     );
+   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
+   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
+   53 |     );
+   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
+   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
+   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
+   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
+   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
+   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
+   60 |   }
+   61 |
+   62 |   async goToReceiveDialog() {
+   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
+   64 |   }
+   65 |
+   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
+   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
+   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
+   69 |   // https://github.com/microsoft/playwright/issues/12168
+   70 |   // Using the `Receive` route to get the account address for now.
+   71 |   async getReceiveNativeSegwitAddress() {
+   72 |     await this.goToReceiveDialog();
+   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
+   74 |     const displayerAddress = await this.page
+   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   76 |       .innerText();
+   77 |     return displayerAddress.replaceAll('\n', '');
+   78 |   }
+   79 |
+   80 |   // Currently under Ordinals receive flow
+   81 |   async getReceiveTaprootAddress() {
+   82 |     await this.goToReceiveDialog();
+   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
+   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
+   85 |     // FIXME - add better test for Copy action
+   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
+   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
+   88 |     // return address;
+   89 |     const displayerAddress = await this.page
+   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   91 |       .innerText();
+   92 |     return displayerAddress.replaceAll('\n', '');
+   93 |   }
+   94 |
+   95 |   async getReceiveStxAddress() {
+   96 |     await this.goToReceiveDialog();
+   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
+   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
+   99 |     await delay(1000);
+  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
+  101 |     const displayerAddress = await this.page
+  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+> 103 |       .innerText();
+      |        ^ Error: locator.innerText: Target page, context or browser has been closed
+  104 |     return displayerAddress.replaceAll('\n', '');
+  105 |   }
+  106 |
+  107 |   async selectTestnet() {
+  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
+  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet4).click();
+  112 |   }
+  113 |
+  114 |   async clickActivityTab() {
+  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
+  116 |   }
+  117 |
+  118 |   async clickSettingsButton() {
+  119 |     await this.settingsButton.click({ force: true });
+  120 |   }
+  121 |
+  122 |   async goToSecretKey() {
+  123 |     await this.clickSettingsButton();
+  124 |     await this.settingsViewSecretKey.click();
+  125 |   }
+  126 |
+  127 |   async signOut() {
+  128 |     await this.clickSettingsButton();
+  129 |     await this.signOutSettingsListItem.click();
+  130 |     await this.signOutConfirmHasBackupCheckbox.click();
+  131 |     await this.signOutConfirmPasswordDisable.click();
+  132 |     await this.signOutDeleteWalletBtn.click();
+  133 |   }
+  134 |
+  135 |   async lock() {
+  136 |     await this.clickSettingsButton();
+  137 |     await this.lockSettingsListItem.click();
+  138 |   }
+  139 |
+  140 |   async goToFundChooseCurrencyPage() {
+  141 |     await this.fundAccountBtn.click();
+  142 |   }
+  143 |
+  144 |   async waitForHomePageReady() {
+  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
+  146 |       state: 'attached',
+  147 |     });
+  148 |   }
+  149 |
+  150 |   async switchAccount(accountIndex: number) {
+  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
+  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
+  153 |   }
+  154 | }
+  155 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/inscription-preview-card/components/inscription-preview.tsx b/src/app/components/inscription-preview-card/components/inscription-preview.tsx
+index e8e651b91..1b9becddf 100644
+--- a/src/app/components/inscription-preview-card/components/inscription-preview.tsx
++++ b/src/app/components/inscription-preview-card/components/inscription-preview.tsx
+@@ -19,6 +19,7 @@ export function InscriptionPreview({ inscription, ...props }: InscriptionPreview
+         </InscriptionPreviewContainer>
+       );
+     }
++    // check this is correct
+     case 'text': {
+       return (
+         <InscriptionPreviewContainer {...props}>
+diff --git a/src/app/features/collectibles/components/stacks/stacks-crypto-assets.tsx b/src/app/features/collectibles/components/stacks/stacks-crypto-assets.tsx
+index fb010c739..1ed46dbf9 100644
+--- a/src/app/features/collectibles/components/stacks/stacks-crypto-assets.tsx
++++ b/src/app/features/collectibles/components/stacks/stacks-crypto-assets.tsx
+@@ -3,6 +3,7 @@ import { useEffect } from 'react';
+ import { analytics } from '@shared/utils/analytics';
+ 
+ import { parseIfValidPunycode } from '@app/common/utils';
++// FIXME  - Alexs query to be used here
+ import { useGetBnsNamesOwnedByAddressQuery } from '@app/query/stacks/bns/bns.query';
+ import { useStacksNonFungibleTokensMetadata } from '@app/query/stacks/token-metadata/non-fungible-tokens/non-fungible-token-metadata.hooks';
+ 
+@@ -25,7 +26,8 @@ export function StacksCryptoAssets({ address }: StacksCryptoAssetsProps) {
+       void analytics.client.identify({ stacks_nfts_count: stacksNftsMetadataResp.length });
+     }
+   }, [stacksNftsMetadataResp.length]);
+-
++  // need to figure out what this is all about
++  // maybe this is the code to stop repeating BNS collectibles?
+   function hideBnsCollectible(name: string) {
+     return bnsNames?.includes(name) || name === 'BNS - Archive';
+   }
+diff --git a/src/app/features/psbt-signer/hooks/find-outputs-receiving-inscriptions.spec.ts b/src/app/features/psbt-signer/hooks/find-outputs-receiving-inscriptions.spec.ts
+index 73c089ea3..9b32ab6a1 100644
+--- a/src/app/features/psbt-signer/hooks/find-outputs-receiving-inscriptions.spec.ts
++++ b/src/app/features/psbt-signer/hooks/find-outputs-receiving-inscriptions.spec.ts
+@@ -1,4 +1,3 @@
+-import { mockInscription1, mockInscription2 } from '@tests/mocks/mock-inscriptions';
+ import {
+   mockPsbtInputs1,
+   mockPsbtInputs2,
+@@ -6,6 +5,8 @@ import {
+   mockPsbtOutputs2,
+ } from '@tests/mocks/mock-psbts';
+ 
++import { mockInscription1, mockInscription2 } from '@leather.io/query';
++
+ import { findOutputsReceivingInscriptions } from './find-outputs-receiving-inscriptions';
+ 
+ describe('find outputs receiving inscriptions', () => {
+diff --git a/tests/mocks/mock-inscriptions.ts b/tests/mocks/mock-inscriptions.ts
+deleted file mode 100644
+index fed641e7a..000000000
+--- a/tests/mocks/mock-inscriptions.ts
++++ /dev/null
+@@ -1,89 +0,0 @@
+-import { type InscriptionResponseHiro, createHiroInscription } from '@leather.io/query';
+-
+-export const mockInscriptionResponse1: InscriptionResponseHiro = {
+-  address: 'bc1pwrmewwprc8k8l2k63x4advg0nx0jk50xzqnee996lm87mcuza7kq6drg2k',
+-  content_length: 55,
+-  content_type: 'image/png',
+-  curse_type: '',
+-  genesis_address: '',
+-  genesis_block_hash: '',
+-  genesis_block_height: 0,
+-  genesis_fee: '11130',
+-  genesis_timestamp: 0,
+-  genesis_tx_id: '',
+-  id: 'ba39f922074c0d338a13ac10e770a5da47ce09df8310c8d3cfaec13a347e8202i0',
+-  location: 'ba39f922074c0d338a13ac10e770a5da47ce09df8310c8d3cfaec13a347e8202:0:0',
+-  mime_type: '',
+-  number: 10875335,
+-  offset: '200',
+-  output: '/output/ba39f922074c0d338a13ac10e770a5da47ce09df8310c8d3cfaec13a347e8202:0',
+-  recursive: false,
+-  recursion_refs: '',
+-  sat_coinbase_height: 0,
+-  sat_ordinal: '',
+-  sat_rarity: '',
+-  timestamp: 1696185309000,
+-  tx_id: '5c3206e2d7655758e4db05a251571bbc902db7e5c1a1e6f99ca7d6e71bde450b',
+-  value: '10000',
+-};
+-
+-export const mockInscription1 = createHiroInscription(mockInscriptionResponse1);
+-
+-export const mockInscriptionResponse2: InscriptionResponseHiro = {
+-  address: 'bc1pwrmewwprc8k8l2k63x4advg0nx0jk50xzqnee996lm87mcuza7kq6drg2k',
+-  content_length: 55,
+-  content_type: 'image/png',
+-  curse_type: '',
+-  genesis_address: '',
+-  genesis_block_hash: '',
+-  genesis_block_height: 0,
+-  genesis_fee: '11130',
+-  genesis_timestamp: 0,
+-  genesis_tx_id: '',
+-  id: 'ba39f922074c0d338a13ac10e770a5da47ce09df8310c8d3cfaec13a347e8202i0',
+-  location: 'ba39f922074c0d338a13ac10e770a5da47ce09df8310c8d3cfaec13a347e8202:0:0',
+-  mime_type: '',
+-  number: 10875335,
+-  offset: '200',
+-  output: '/output/ba39f922074c0d338a13ac10e770a5da47ce09df8310c8d3cfaec13a347e8202:0',
+-  recursive: false,
+-  recursion_refs: '',
+-  sat_coinbase_height: 0,
+-  sat_ordinal: '',
+-  sat_rarity: '',
+-  timestamp: 1696185309000,
+-  tx_id: '42e90f6c10331d9409225015875decd1793406b3b7ee8f9d17b0abc8c4080c98',
+-  value: '10000',
+-};
+-
+-export const mockInscription2 = createHiroInscription(mockInscriptionResponse2);
+-
+-export const mockInscriptionResponsesList = [
+-  {
+-    address: 'bc1q530dz4h80kwlzywlhx2qn0k6vdtftd93c499yq',
+-    id: 'a5ab63799f0bbd2571d1b90de9ebff815f7526787e27263d2f604e22f9118d0ci0',
+-    content_length: 55,
+-    content_type: 'text/plain;charset=utf-8',
+-    curse_type: null,
+-    genesis_address: 'bc1p9pnzvq52956jht5deha82qp96pxw0a0tvey6fhdea7vwhf33tarskqq3nr',
+-    genesis_block_hash: '00000000000000000003fb85f8ae82f194786416cf699961b04d2953fbbd63d4',
+-    genesis_block_height: 792337,
+-    genesis_fee: '5738',
+-    genesis_timestamp: 1685595657000,
+-    genesis_tx_id: 'a5ab63799f0bbd2571d1b90de9ebff815f7526787e27263d2f604e22f9118d0c',
+-    location: '58d44000884f0ba4cdcbeb1ac082e6c802d300c16b0d3251738e8cf6a57397ce:0:0',
+-    mime_type: 'text/plain',
+-    number: 10371348,
+-    offset: '0',
+-    output: '58d44000884f0ba4cdcbeb1ac082e6c802d300c16b0d3251738e8cf6a57397ce:0',
+-    recursive: false,
+-    recursion_refs: null,
+-    sat_coinbase_height: 287150,
+-    sat_ordinal: '1242877032342951',
+-    sat_rarity: 'common',
+-    timestamp: 1696185309000,
+-    tx_id: '58d44000884f0ba4cdcbeb1ac082e6c802d300c16b0d3251738e8cf6a57397ce',
+-    value: '546',
+-  },
+-];
+-export const mockInscriptionsList = mockInscriptionResponsesList.map(createHiroInscription);
+diff --git a/tests/mocks/mock-psbts.ts b/tests/mocks/mock-psbts.ts
+index 45c6048dd..5df0c8944 100644
+--- a/tests/mocks/mock-psbts.ts
++++ b/tests/mocks/mock-psbts.ts
+@@ -1,4 +1,4 @@
+-import { mockInscription1, mockInscription2 } from './mock-inscriptions';
++import { mockInscription1, mockInscription2 } from '@leather.io/query';
+ 
+ export const mockPsbtInputs1 = [
+   {
+```

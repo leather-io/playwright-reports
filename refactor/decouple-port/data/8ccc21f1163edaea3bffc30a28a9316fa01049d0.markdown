@@ -1,158 +1,186 @@
 # Test info
 
-- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
-- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
+- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
+- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
 
 # Error details
 
 ```
-Error: page.waitForRequest: Page crashed
-=========================== logs ===========================
-waiting for request "*/**/v2/transactions"
-============================================================
-    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:79:58
+Error: locator.innerText: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('address-displayer')
+
+    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
+    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
 ```
 
 # Test source
 
 ```ts
-   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
-   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
-   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
-   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
-   5 |
-   6 | import { stxToMicroStx } from '@leather.io/utils';
+   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
+   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   6 | import { createTestSelector } from '@tests/utils';
    7 |
-   8 | import { createDelay } from '@shared/utils';
-   9 |
-   10 | import { test } from '../../fixtures/fixtures';
-   11 |
-   12 | const delayAnimationDuration = createDelay(2000);
-   13 |
-   14 | test.describe('Transaction signing', () => {
-   15 |   let testAppPage: TestAppPage;
-   16 |
-   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
-   18 |     await globalPage.setupAndUseApiCalls(extensionId);
-   19 |     await onboardingPage.signInWithTestAccount(extensionId);
-   20 |     testAppPage = await TestAppPage.openDemoPage(context);
-   21 |   });
-   22 |
-   23 |   // These tests often break if ran in parallel
-   24 |   test.describe.configure({ mode: 'serial' });
-   25 |
-   26 |   test.describe('Contract calls', () => {
-   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
-   28 |       context,
-   29 |     }) => {
-   30 |       const newPagePromise = context.waitForEvent('page');
-   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   32 |       const accountsPage = await newPagePromise;
-   33 |       await delayAnimationDuration();
-   34 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
-   35 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
-   36 |       await delayAnimationDuration();
-   37 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   38 |       await delayAnimationDuration();
-   39 |       await testAppPage.page.bringToFront();
-   40 |       await testAppPage.page.click('text=Debugger', {
-   41 |         timeout: 30000,
-   42 |       });
-   43 |       await accountsPage.close();
-   44 |
-   45 |       await testAppPage.clickContractCallButton();
-   46 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
-   47 |       await transactionRequestPage.waitForTransactionRequestPage();
-   48 |       const error =
-   49 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
-   50 |
-   51 |       test.expect(error).toBeTruthy();
-   52 |     });
-   53 |   });
-   54 |
-   55 |   test.describe('App initiated STX transfer', () => {
-   56 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
-   57 |       const newPagePromise = context.waitForEvent('page');
-   58 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   59 |       const accountsPage = await newPagePromise;
-   60 |       await delayAnimationDuration();
-   61 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   62 |       await delayAnimationDuration();
-   63 |       await testAppPage.page.bringToFront();
-   64 |       await testAppPage.page.click('text=Debugger', {
-   65 |         timeout: 30000,
-   66 |       });
-   67 |       await accountsPage.close();
-   68 |
-   69 |       await testAppPage.clickStxTransferButton();
-   70 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
-   71 |
-   72 |       await transactionRequestPage.waitForTransactionRequestPage();
-   73 |       await transactionRequestPage.waitForFee();
-   74 |
-   75 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
-   76 |
-   77 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
-   78 |
->  79 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
-      |                                                          ^ Error: page.waitForRequest: Page crashed
-   80 |
-   81 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
-   82 |         await route.abort();
-   83 |       });
-   84 |
-   85 |       await transactionRequestPage.clickConfirmTransactionButton();
-   86 |
-   87 |       const request = await requestPromise;
-   88 |       const requestBody = request.postData();
-   89 |       if (!requestBody) return;
-   90 |
-   91 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
-   92 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
-   93 |       const amount = Number(payload.amount);
-   94 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
-   95 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
-   96 |
-   97 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
-   98 |       test.expect(amount).toEqual(102);
-   99 |     });
-  100 |   });
-  101 | });
-  102 |
+   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   9 | import { delay } from '@leather.io/utils';
+   10 |
+   11 | export class HomePage {
+   12 |   readonly page: Page;
+   13 |   readonly headerActionButton: Locator;
+   14 |   readonly receiveButton: Locator;
+   15 |   readonly sendButton: Locator;
+   16 |   readonly swapButton: Locator;
+   17 |   readonly settingsButton: Locator;
+   18 |   readonly settingsViewSecretKey: Locator;
+   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
+   20 |   readonly signOutConfirmPasswordDisable: Locator;
+   21 |   readonly signOutDeleteWalletBtn: Locator;
+   22 |   readonly signOutSettingsListItem: Locator;
+   23 |   readonly lockSettingsListItem: Locator;
+   24 |   readonly fundAccountBtn: Locator;
+   25 |   readonly manageTokensBtn: Locator;
+   26 |   readonly assetList: Locator;
+   27 |   readonly manageTokensAssetsList: Locator;
+   28 |
+   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
+   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   31 |   );
+   32 |   $signOutConfirmPasswordDisable = createTestSelector(
+   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
+   34 |   );
+   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
+   36 |
+   37 |   constructor(page: Page) {
+   38 |     this.page = page;
+   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
+   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
+   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
+   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
+   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
+   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
+   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
+   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   47 |     );
+   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
+   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
+   50 |     );
+   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
+   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
+   53 |     );
+   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
+   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
+   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
+   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
+   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
+   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
+   60 |   }
+   61 |
+   62 |   async goToReceiveDialog() {
+   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
+   64 |   }
+   65 |
+   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
+   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
+   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
+   69 |   // https://github.com/microsoft/playwright/issues/12168
+   70 |   // Using the `Receive` route to get the account address for now.
+   71 |   async getReceiveNativeSegwitAddress() {
+   72 |     await this.goToReceiveDialog();
+   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
+   74 |     const displayerAddress = await this.page
+   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   76 |       .innerText();
+   77 |     return displayerAddress.replaceAll('\n', '');
+   78 |   }
+   79 |
+   80 |   // Currently under Ordinals receive flow
+   81 |   async getReceiveTaprootAddress() {
+   82 |     await this.goToReceiveDialog();
+   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
+   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
+   85 |     // FIXME - add better test for Copy action
+   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
+   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
+   88 |     // return address;
+   89 |     const displayerAddress = await this.page
+   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   91 |       .innerText();
+   92 |     return displayerAddress.replaceAll('\n', '');
+   93 |   }
+   94 |
+   95 |   async getReceiveStxAddress() {
+   96 |     await this.goToReceiveDialog();
+   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
+   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
+   99 |     await delay(1000);
+  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
+  101 |     const displayerAddress = await this.page
+  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+> 103 |       .innerText();
+      |        ^ Error: locator.innerText: Target page, context or browser has been closed
+  104 |     return displayerAddress.replaceAll('\n', '');
+  105 |   }
+  106 |
+  107 |   async selectTestnet() {
+  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
+  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet4).click();
+  112 |   }
+  113 |
+  114 |   async clickActivityTab() {
+  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
+  116 |   }
+  117 |
+  118 |   async clickSettingsButton() {
+  119 |     await this.settingsButton.click({ force: true });
+  120 |   }
+  121 |
+  122 |   async goToSecretKey() {
+  123 |     await this.clickSettingsButton();
+  124 |     await this.settingsViewSecretKey.click();
+  125 |   }
+  126 |
+  127 |   async signOut() {
+  128 |     await this.clickSettingsButton();
+  129 |     await this.signOutSettingsListItem.click();
+  130 |     await this.signOutConfirmHasBackupCheckbox.click();
+  131 |     await this.signOutConfirmPasswordDisable.click();
+  132 |     await this.signOutDeleteWalletBtn.click();
+  133 |   }
+  134 |
+  135 |   async lock() {
+  136 |     await this.clickSettingsButton();
+  137 |     await this.lockSettingsListItem.click();
+  138 |   }
+  139 |
+  140 |   async goToFundChooseCurrencyPage() {
+  141 |     await this.fundAccountBtn.click();
+  142 |   }
+  143 |
+  144 |   async waitForHomePageReady() {
+  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
+  146 |       state: 'attached',
+  147 |     });
+  148 |   }
+  149 |
+  150 |   async switchAccount(accountIndex: number) {
+  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
+  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
+  153 |   }
+  154 | }
+  155 |
 ```
 
 # Local changes
 
 ```diff
 diff --git a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
-index 39d70a5fa..49c44a73d 100644
+index 39d70a5fa..97db56538 100644
 --- a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
 +++ b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
-@@ -81,12 +81,31 @@ export function useStxSendForm() {
-         fee: Number(values.fee),
-       });
- 
-+      // const port = chrome.runtime.connect(chrome.runtime.id);
-+      // port.postMessage({
-+      //   jsonrpc: '2.0',
-+      //   method: 'stx_transferStx',
-+      //   params: {
-+      //     recipient: values.recipient,
-+      //     amount: values.amount,
-+      //   },
-+      // });
-+
-+      // chrome.runtime.sendMessage({
-+      //   jsonrpc: '2.0',
-+      //   method: 'stx_transferStx',
-+      //   params: {
-+      //     recipient: values.recipient,
-+      //     amount: values.amount,
-+      //   },
-+      // });
-+
-       // if fee has changed, show info message
-       const showFeeChangeWarning = initialFee !== values.fee;
+@@ -86,7 +86,7 @@ export function useStxSendForm() {
  
        const tx = await generateTx(values);
        if (!tx) return logger.error('Attempted to generate unsigned tx, but tx is undefined');

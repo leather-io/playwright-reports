@@ -6,96 +6,129 @@
 # Error details
 
 ```
-Error: page.click: Target crashed 
-Call log:
-  - waiting for locator('[data-testid="btn-confirm-transaction"]')
-    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-pos_relative leather-textStyle_label.02 leather-ta_center leather-bdr_round leather-d_inline-flex leather-ai_center leather-jc_center leather-gap_space.02 leather-white-space_nowrap loading:after:leather-anim_spin loading:after:leather-bd_2px_solid loading:after:leather-bd-c_currentColor loading:after:leather-bd-b-c_transparent loading:after:leather-bx-s_border-box loading:after:leather-content_"" loading:afte…>…</button>
-  - attempting click action
-    - waiting for element to be visible, enabled and stable
-    - element is visible, enabled and stable
-    - scrolling into view if needed
-    - done scrolling
-    - performing click action
-
-    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
-    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
+Error: page.waitForRequest: Page crashed
+=========================== logs ===========================
+waiting for request "*/**/v2/transactions"
+============================================================
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:79:58
 ```
 
 # Test source
 
 ```ts
-   1 | import { Page } from '@playwright/test';
-   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
-   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
-   4 | import { createTestSelector } from '@tests/utils';
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
    5 |
-   6 | export class TransactionRequestPage {
-   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
-   8 |     TransactionRequestSelectors.BtnConfirmTransaction
-   9 |   );
-  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
-  11 |   readonly transactionRequestPage = createTestSelector(
-  12 |     TransactionRequestSelectors.TransactionRequestPage
-  13 |   );
-  14 |
-  15 |   constructor(readonly page: Page) {}
-  16 |
-  17 |   async clickConfirmTransactionButton() {
-> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
-     |                      ^ Error: page.click: Target crashed 
-  19 |   }
-  20 |
-  21 |   async getDisplayedFeeValue() {
-  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
-  23 |   }
-  24 |
-  25 |   async waitForTransactionRequestError(msg: string) {
-  26 |     return this.page.waitForSelector(`text=${msg}`);
-  27 |   }
-  28 |
-  29 |   async waitForFee() {
-  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
-  31 |   }
-  32 |
-  33 |   async waitForTransactionRequestPage() {
-  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
-  35 |   }
-  36 | }
-  37 |
+   6 | import { stxToMicroStx } from '@leather.io/utils';
+   7 |
+   8 | import { createDelay } from '@shared/utils';
+   9 |
+   10 | import { test } from '../../fixtures/fixtures';
+   11 |
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await delayAnimationDuration();
+   34 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+   35 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   36 |       await delayAnimationDuration();
+   37 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   38 |       await delayAnimationDuration();
+   39 |       await testAppPage.page.bringToFront();
+   40 |       await testAppPage.page.click('text=Debugger', {
+   41 |         timeout: 30000,
+   42 |       });
+   43 |       await accountsPage.close();
+   44 |
+   45 |       await testAppPage.clickContractCallButton();
+   46 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   47 |       await transactionRequestPage.waitForTransactionRequestPage();
+   48 |       const error =
+   49 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   50 |
+   51 |       test.expect(error).toBeTruthy();
+   52 |     });
+   53 |   });
+   54 |
+   55 |   test.describe('App initiated STX transfer', () => {
+   56 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   57 |       const newPagePromise = context.waitForEvent('page');
+   58 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   59 |       const accountsPage = await newPagePromise;
+   60 |       await delayAnimationDuration();
+   61 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   62 |       await delayAnimationDuration();
+   63 |       await testAppPage.page.bringToFront();
+   64 |       await testAppPage.page.click('text=Debugger', {
+   65 |         timeout: 30000,
+   66 |       });
+   67 |       await accountsPage.close();
+   68 |
+   69 |       await testAppPage.clickStxTransferButton();
+   70 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   71 |
+   72 |       await transactionRequestPage.waitForTransactionRequestPage();
+   73 |       await transactionRequestPage.waitForFee();
+   74 |
+   75 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   76 |
+   77 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
+   78 |
+>  79 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+      |                                                          ^ Error: page.waitForRequest: Page crashed
+   80 |
+   81 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   82 |         await route.abort();
+   83 |       });
+   84 |
+   85 |       await transactionRequestPage.clickConfirmTransactionButton();
+   86 |
+   87 |       const request = await requestPromise;
+   88 |       const requestBody = request.postData();
+   89 |       if (!requestBody) return;
+   90 |
+   91 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   92 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   93 |       const amount = Number(payload.amount);
+   94 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   95 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   96 |
+   97 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   98 |       test.expect(amount).toEqual(102);
+   99 |     });
+  100 |   });
+  101 | });
+  102 |
 ```
 
 # Local changes
 
 ```diff
 diff --git a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
-index 39d70a5fa..49c44a73d 100644
+index 39d70a5fa..97db56538 100644
 --- a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
 +++ b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
-@@ -81,12 +81,31 @@ export function useStxSendForm() {
-         fee: Number(values.fee),
-       });
- 
-+      // const port = chrome.runtime.connect(chrome.runtime.id);
-+      // port.postMessage({
-+      //   jsonrpc: '2.0',
-+      //   method: 'stx_transferStx',
-+      //   params: {
-+      //     recipient: values.recipient,
-+      //     amount: values.amount,
-+      //   },
-+      // });
-+
-+      // chrome.runtime.sendMessage({
-+      //   jsonrpc: '2.0',
-+      //   method: 'stx_transferStx',
-+      //   params: {
-+      //     recipient: values.recipient,
-+      //     amount: values.amount,
-+      //   },
-+      // });
-+
-       // if fee has changed, show info message
-       const showFeeChangeWarning = initialFee !== values.fee;
+@@ -86,7 +86,7 @@ export function useStxSendForm() {
  
        const tx = await generateTx(values);
        if (!tx) return logger.error('Attempted to generate unsigned tx, but tx is undefined');

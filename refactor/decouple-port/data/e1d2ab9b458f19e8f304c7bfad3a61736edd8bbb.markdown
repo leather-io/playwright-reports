@@ -1,0 +1,1581 @@
+# Test info
+
+- Name: Onboarding an existing user >> Address generation >> Stacks >> that restoring a wallet generates the correct stacks address
+- Location: /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:134:7
+
+# Error details
+
+```
+Error: locator.innerText: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('address-displayer')
+
+    at HomePage.getReceiveStxAddress (/home/runner/work/extension/extension/tests/page-object-models/home.page.ts:103:8)
+    at /home/runner/work/extension/extension/tests/specs/onboarding/onboarding.spec.ts:135:31
+```
+
+# Test source
+
+```ts
+   3 | import { NetworkSelectors } from '@tests/selectors/network.selectors';
+   4 | import { SettingsSelectors } from '@tests/selectors/settings.selectors';
+   5 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   6 | import { createTestSelector } from '@tests/utils';
+   7 |
+   8 | import { WalletDefaultNetworkConfigurationIds } from '@leather.io/models';
+   9 | import { delay } from '@leather.io/utils';
+   10 |
+   11 | export class HomePage {
+   12 |   readonly page: Page;
+   13 |   readonly headerActionButton: Locator;
+   14 |   readonly receiveButton: Locator;
+   15 |   readonly sendButton: Locator;
+   16 |   readonly swapButton: Locator;
+   17 |   readonly settingsButton: Locator;
+   18 |   readonly settingsViewSecretKey: Locator;
+   19 |   readonly signOutConfirmHasBackupCheckbox: Locator;
+   20 |   readonly signOutConfirmPasswordDisable: Locator;
+   21 |   readonly signOutDeleteWalletBtn: Locator;
+   22 |   readonly signOutSettingsListItem: Locator;
+   23 |   readonly lockSettingsListItem: Locator;
+   24 |   readonly fundAccountBtn: Locator;
+   25 |   readonly manageTokensBtn: Locator;
+   26 |   readonly assetList: Locator;
+   27 |   readonly manageTokensAssetsList: Locator;
+   28 |
+   29 |   $signOutConfirmHasBackupCheckbox = createTestSelector(
+   30 |     SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   31 |   );
+   32 |   $signOutConfirmPasswordDisable = createTestSelector(
+   33 |     SettingsSelectors.SignOutConfirmPasswordDisable
+   34 |   );
+   35 |   $signOutDeleteWalletBtn = createTestSelector(SettingsSelectors.BtnSignOutActuallyDeleteWallet);
+   36 |
+   37 |   constructor(page: Page) {
+   38 |     this.page = page;
+   39 |     this.headerActionButton = page.getByTestId(SharedComponentsSelectors.HeaderBackBtn);
+   40 |     this.receiveButton = page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn);
+   41 |     this.sendButton = page.getByTestId(HomePageSelectors.SendCryptoAssetBtn);
+   42 |     this.swapButton = page.getByTestId(HomePageSelectors.SwapBtn);
+   43 |     this.settingsButton = page.getByTestId(SettingsSelectors.SettingsMenuBtn);
+   44 |     this.settingsViewSecretKey = page.getByTestId(SettingsSelectors.ViewSecretKeyListItem);
+   45 |     this.signOutConfirmHasBackupCheckbox = page.getByTestId(
+   46 |       SettingsSelectors.SignOutConfirmHasBackupCheckbox
+   47 |     );
+   48 |     this.signOutConfirmPasswordDisable = page.getByTestId(
+   49 |       SettingsSelectors.SignOutConfirmPasswordDisable
+   50 |     );
+   51 |     this.signOutDeleteWalletBtn = page.getByTestId(
+   52 |       SettingsSelectors.BtnSignOutActuallyDeleteWallet
+   53 |     );
+   54 |     this.signOutSettingsListItem = page.getByTestId(SettingsSelectors.SignOutListItem);
+   55 |     this.lockSettingsListItem = page.getByTestId(SettingsSelectors.LockListItem);
+   56 |     this.fundAccountBtn = page.getByTestId(HomePageSelectors.FundAccountBtn);
+   57 |     this.manageTokensBtn = page.getByTestId(HomePageSelectors.ManageTokensBtn);
+   58 |     this.assetList = page.getByTestId(HomePageSelectors.AssetList);
+   59 |     this.manageTokensAssetsList = page.getByTestId(HomePageSelectors.ManageTokensAssetsList);
+   60 |   }
+   61 |
+   62 |   async goToReceiveDialog() {
+   63 |     await this.page.getByTestId(HomePageSelectors.ReceiveCryptoAssetBtn).click();
+   64 |   }
+   65 |
+   66 |   // Open issue with Playwright's ability to copyToClipboard from legacy tests:
+   67 |   // https://github.com/microsoft/playwright/issues/8114#issuecomment-1103317576
+   68 |   // Also, an open issue to consistently determine `isMac` in the workaround:
+   69 |   // https://github.com/microsoft/playwright/issues/12168
+   70 |   // Using the `Receive` route to get the account address for now.
+   71 |   async getReceiveNativeSegwitAddress() {
+   72 |     await this.goToReceiveDialog();
+   73 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcNativeSegwitQrCodeBtn).click();
+   74 |     const displayerAddress = await this.page
+   75 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   76 |       .innerText();
+   77 |     return displayerAddress.replaceAll('\n', '');
+   78 |   }
+   79 |
+   80 |   // Currently under Ordinals receive flow
+   81 |   async getReceiveTaprootAddress() {
+   82 |     await this.goToReceiveDialog();
+   83 |     await this.page.getByTestId(HomePageSelectors.ReceiveCollectiblesTab).click();
+   84 |     await this.page.getByTestId(HomePageSelectors.ReceiveBtcTaprootQrCodeBtn).click();
+   85 |     // FIXME - add better test for Copy action
+   86 |     // await this.page.getByRole('button', { name: 'Copy address' }).click();
+   87 |     // const address = await this.page.evaluate('navigator.clipboard.readText()');
+   88 |     // return address;
+   89 |     const displayerAddress = await this.page
+   90 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   91 |       .innerText();
+   92 |     return displayerAddress.replaceAll('\n', '');
+   93 |   }
+   94 |
+   95 |   async getReceiveStxAddress() {
+   96 |     await this.goToReceiveDialog();
+   97 |     // In Ledger mode, this element isn't visible, so clicking is conditional
+   98 |     const qrCodeBtn = this.page.getByTestId(HomePageSelectors.ReceiveStxQrCodeBtn);
+   99 |     await delay(1000);
+  100 |     if (await qrCodeBtn.isVisible()) await qrCodeBtn.click({ force: true });
+  101 |     const displayerAddress = await this.page
+  102 |       .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+> 103 |       .innerText();
+      |        ^ Error: locator.innerText: Target page, context or browser has been closed
+  104 |     return displayerAddress.replaceAll('\n', '');
+  105 |   }
+  106 |
+  107 |   async selectTestnet() {
+  108 |     await this.page.getByTestId(SettingsSelectors.SettingsMenuBtn).click();
+  109 |     await this.page.getByTestId(SettingsSelectors.ChangeNetworkAction).click();
+  110 |     await this.page.getByTestId(NetworkSelectors.NetworkListActiveNetwork).isVisible();
+  111 |     await this.page.getByTestId(WalletDefaultNetworkConfigurationIds.testnet4).click();
+  112 |   }
+  113 |
+  114 |   async clickActivityTab() {
+  115 |     await this.page.getByTestId(HomePageSelectors.ActivityTabBtn).click();
+  116 |   }
+  117 |
+  118 |   async clickSettingsButton() {
+  119 |     await this.settingsButton.click({ force: true });
+  120 |   }
+  121 |
+  122 |   async goToSecretKey() {
+  123 |     await this.clickSettingsButton();
+  124 |     await this.settingsViewSecretKey.click();
+  125 |   }
+  126 |
+  127 |   async signOut() {
+  128 |     await this.clickSettingsButton();
+  129 |     await this.signOutSettingsListItem.click();
+  130 |     await this.signOutConfirmHasBackupCheckbox.click();
+  131 |     await this.signOutConfirmPasswordDisable.click();
+  132 |     await this.signOutDeleteWalletBtn.click();
+  133 |   }
+  134 |
+  135 |   async lock() {
+  136 |     await this.clickSettingsButton();
+  137 |     await this.lockSettingsListItem.click();
+  138 |   }
+  139 |
+  140 |   async goToFundChooseCurrencyPage() {
+  141 |     await this.fundAccountBtn.click();
+  142 |   }
+  143 |
+  144 |   async waitForHomePageReady() {
+  145 |     await this.page.waitForSelector(createTestSelector(HomePageSelectors.HomePageContainer), {
+  146 |       state: 'attached',
+  147 |     });
+  148 |   }
+  149 |
+  150 |   async switchAccount(accountIndex: number) {
+  151 |     await this.page.getByTestId(SettingsSelectors.SigningAccountCard).click();
+  152 |     await this.page.getByTestId(`switch-account-item-${accountIndex}`).click();
+  153 |   }
+  154 | }
+  155 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts b/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+index 97de8b895..e4887cc01 100644
+--- a/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
++++ b/src/app/features/rpc-stacks-transaction-request/stacks/use-sign-and-broadcast-stacks-transaction.ts
+@@ -26,7 +26,7 @@ import { useRpcTransactionRequest } from '../use-rpc-transaction-request';
+ 
+ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+   const { onSetTransactionStatus } = useRpcTransactionRequest();
+-  const { tabId, requestId } = useRpcRequestParams();
++  const { requestId } = useRpcRequestParams();
+   const signStacksTransaction = useSignStacksTransaction();
+   const network = useCurrentStacksNetworkState();
+   const navigate = useNavigate();
+@@ -37,8 +37,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       const signedTx = await signStacksTransaction(unsignedTx);
+ 
+       if (!signedTx) {
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcErrorResponse(method, {
+             id: requestId,
+             error: {
+@@ -56,8 +55,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       // If the transaction is sponsored, we do not broadcast it
+       const isSponsored = signedTx.auth?.authType === AuthType.Sponsored;
+       if (isSponsored) {
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcSuccessResponse(method, {
+             id: requestId,
+             result: {
+@@ -80,8 +78,7 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       async function onSuccess(txid: string, transaction: StacksTransactionWire) {
+         onSetTransactionStatus('submitted');
+ 
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcSuccessResponse(method, {
+             id: requestId,
+             result: {
+@@ -105,7 +102,6 @@ export function useSignAndBroadcastStacksTransaction(method: RpcMethodNames) {
+       onSetTransactionStatus,
+       requestId,
+       signStacksTransaction,
+-      tabId,
+       trackIfNonceError,
+     ]
+   );
+diff --git a/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx b/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
+index bafca6457..ab9bcec6d 100644
+--- a/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
++++ b/src/app/features/rpc-stacks-transaction-request/stacks/use-unsigned-transaction-for-fee-estimation.tsx
+@@ -25,8 +25,7 @@ export function useUnsignedStacksTransactionForFeeEstimation({
+     [txOptions]
+   );
+   if (unsignedTx.error) {
+-    chrome.tabs.sendMessage(
+-      request.tabId,
++    chrome.runtime.sendMessage(
+       createRpcErrorResponse(method, {
+         id: request.requestId,
+         error: {
+diff --git a/src/app/pages/home/home.tsx b/src/app/pages/home/home.tsx
+index b2af97e0f..e28267791 100644
+--- a/src/app/pages/home/home.tsx
++++ b/src/app/pages/home/home.tsx
+@@ -3,6 +3,15 @@ import { Route, useNavigate } from 'react-router';
+ import { HomePageSelectors } from '@tests/selectors/home.selectors';
+ import { Box, Stack } from 'leather-styles/jsx';
+ 
++import type {
++  LeatherRpcMethodMap,
++  RpcMethodNames,
++  RpcParameter,
++  RpcRequests,
++} from '@leather.io/rpc';
++import { Button } from '@leather.io/ui';
++
++import { logger } from '@shared/logger';
+ import { RouteUrls } from '@shared/route-urls';
+ 
+ import { useAccountDisplayName } from '@app/common/hooks/account/use-account-names';
+@@ -31,6 +40,32 @@ import { AccountCard } from '@app/ui/components/account/account.card';
+ import { AccountActions } from './components/account-actions';
+ import { HomeTabs } from './components/home-tabs';
+ 
++function request(
++  method: RpcMethodNames,
++  params?: RpcParameter
++): Promise<LeatherRpcMethodMap[RpcMethodNames]['response']> {
++  const id: string = crypto.randomUUID();
++  const rpcRequest: RpcRequests = {
++    jsonrpc: '2.0',
++    id,
++    method,
++    params: params ?? ({} as any),
++  };
++
++  chrome.runtime.sendMessage(rpcRequest);
++
++  return new Promise((resolve, reject) => {
++    function handleMessage(response: any) {
++      if (response.id !== id) return;
++      chrome.runtime.onMessage.removeListener(handleMessage);
++      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
++      if ('error' in response) return reject(response);
++      return resolve(response);
++    }
++    chrome.runtime.onMessage.addListener(handleMessage);
++  });
++}
++
+ export function Home() {
+   const { decodedAuthRequest } = useOnboardingState();
+   const { toggleSwitchAccount } = useSwitchAccountSheet();
+@@ -85,6 +120,24 @@ export function Home() {
+         </AccountCard>
+         <PromoBanner />
+       </Box>
++      <Button
++        onClick={async () => {
++          const resp = await request('getAddresses').catch(logger.error);
++          // eslint-disable-next-line no-console
++          console.log(resp);
++        }}
++      >
++        getAddresses
++      </Button>
++      <Button
++        onClick={async () => {
++          const resp = await request('supportedMethods').catch(logger.error);
++          // eslint-disable-next-line no-console
++          console.log(resp);
++        }}
++      >
++        supportedMethods
++      </Button>
+       {whenPageMode({ full: <FeedbackButton />, popup: null })}
+       <HomeTabs>
+         <ModalBackgroundWrapper>
+diff --git a/src/app/pages/rpc-get-addresses/use-get-addresses.ts b/src/app/pages/rpc-get-addresses/use-get-addresses.ts
+index 54cd441b0..fefd73965 100644
+--- a/src/app/pages/rpc-get-addresses/use-get-addresses.ts
++++ b/src/app/pages/rpc-get-addresses/use-get-addresses.ts
+@@ -98,8 +98,7 @@ export function useGetAddresses() {
+         keysToIncludeInResponse.push(stacksAddressResponse);
+       }
+ 
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcSuccessResponse(request.method, {
+           id: request.id,
+           result: { addresses: keysToIncludeInResponse },
+diff --git a/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx b/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx
+index 085caf627..3946a8a5d 100644
+--- a/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx
++++ b/src/app/pages/rpc-send-transfer/use-rpc-send-transfer-actions.tsx
+@@ -20,8 +20,7 @@ import { useRpcSendTransferContext } from './rpc-send-transfer.context';
+ 
+ export function useRpcSendTransferActions() {
+   const { availableBalance, selectedFee } = useFeeEditorContext();
+-  const { amount, isLoadingBalance, recipients, requestId, tabId, utxos } =
+-    useRpcSendTransferContext();
++  const { amount, isLoadingBalance, recipients, requestId, utxos } = useRpcSendTransferContext();
+   const [isSubmitted, setIsSubmitted] = useState(false);
+   const [isBroadcasting, setIsBroadcasting] = useState(false);
+   const generateTx = useGenerateUnsignedNativeSegwitTx({ throwError: true });
+@@ -71,8 +70,7 @@ export function useRpcSendTransferActions() {
+               amount: amount.amount.toNumber(),
+             });
+ 
+-            chrome.tabs.sendMessage(
+-              tabId ?? 0,
++            chrome.runtime.sendMessage(
+               createRpcSuccessResponse('sendTransfer', {
+                 id: requestId,
+                 result: { txid },
+@@ -114,7 +112,6 @@ export function useRpcSendTransferActions() {
+     signTransaction,
+     broadcastTx,
+     utxosOfSpendableInscriptions,
+-    tabId,
+     requestId,
+   ]);
+ 
+diff --git a/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts b/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts
+index 693c03af0..c5bef841b 100644
+--- a/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts
++++ b/src/app/pages/rpc-sign-bip322-message/use-sign-bip322-message.ts
+@@ -59,7 +59,7 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+   const [isLoading, setIsLoading] = useState(false);
+   const toast = useToast();
+ 
+-  const { tabId, origin, requestId, message } = useRpcSignBitcoinMessage();
++  const { origin, requestId, message } = useRpcSignBitcoinMessage();
+ 
+   return {
+     origin,
+@@ -68,9 +68,7 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+     formattedOrigin: new URL(origin ?? '').host,
+     address,
+     onUserRejectBip322MessageSigningRequest() {
+-      if (!tabId) return;
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcErrorResponse('signMessage', {
+           id: requestId,
+           error: {
+@@ -84,8 +82,8 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+     async onUserApproveBip322MessageSigningRequest() {
+       setIsLoading(true);
+ 
+-      if (!tabId || !origin) {
+-        logger.error('Cannot give app accounts: missing tabId, origin');
++      if (!origin) {
++        logger.error('Cannot give app accounts: missing, origin');
+         return;
+       }
+ 
+@@ -99,8 +97,7 @@ function useSignBip322MessageFactory({ address, signPsbt }: SignBip322MessageFac
+       await shortPauseBeforeToast();
+       toast.success('Message signed successfully');
+ 
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcSuccessResponse('signMessage', {
+           id: requestId,
+           result: { signature, address, message },
+diff --git a/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx b/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx
+index 6b16dcf63..adc2455dd 100644
+--- a/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx
++++ b/src/app/pages/rpc-sign-psbt/use-rpc-sign-psbt.tsx
+@@ -32,7 +32,7 @@ interface BroadcastSignedPsbtTxArgs {
+ }
+ export function useRpcSignPsbt() {
+   const navigate = useNavigate();
+-  const { broadcast, origin, psbtHex, requestId, signAtIndex, tabId } = useRpcSignPsbtParams();
++  const { broadcast, origin, psbtHex, requestId, signAtIndex } = useRpcSignPsbtParams();
+   const { signPsbt, getPsbtAsTransaction } = usePsbtSigner();
+   const { broadcastTx, isBroadcasting } = useBitcoinBroadcastTransaction();
+   const { filteredUtxosQuery } = useCurrentNativeSegwitUtxos();
+@@ -62,8 +62,7 @@ export function useRpcSignPsbt() {
+       async onSuccess(txid) {
+         if (!requestId) throw new Error('Invalid request id');
+ 
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcSuccessResponse('signPsbt', {
+             id: requestId,
+             result: { hex: psbt, txid },
+@@ -86,19 +85,18 @@ export function useRpcSignPsbt() {
+           txValue: formatCurrency(transferTotalAsMoney),
+         };
+ 
+-        navigate(RouteUrls.RpcSignPsbtSummary, { state: psbtTxSummaryState });
++        void navigate(RouteUrls.RpcSignPsbtSummary, { state: psbtTxSummaryState });
+       },
+       onError(e) {
+         if (!requestId) throw new Error('Invalid request id');
+ 
+-        chrome.tabs.sendMessage(
+-          tabId,
++        chrome.runtime.sendMessage(
+           createRpcErrorResponse('signPsbt', {
+             id: requestId,
+             error: { code: 4002, message: 'Failed to broadcast transaction' },
+           })
+         );
+-        navigate(RouteUrls.RequestError, {
++        void navigate(RouteUrls.RequestError, {
+           state: { message: isError(e) ? e.message : '', title: 'Failed to broadcast' },
+         });
+       },
+@@ -122,8 +120,7 @@ export function useRpcSignPsbt() {
+         const psbt = signedTx.toPSBT();
+ 
+         if (!broadcast) {
+-          chrome.tabs.sendMessage(
+-            tabId,
++          chrome.runtime.sendMessage(
+             createRpcSuccessResponse('signPsbt', {
+               id: requestId,
+               result: { hex: bytesToHex(psbt) },
+@@ -164,8 +161,7 @@ export function useRpcSignPsbt() {
+       }
+     },
+     onCancel() {
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcErrorResponse('signPsbt', {
+           id: requestId,
+           error: {
+diff --git a/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts b/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
+index ff1d91318..637b0b44e 100644
+--- a/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
++++ b/src/app/pages/rpc-sign-stacks-message/use-rpc-sign-stacks-message.ts
+@@ -87,13 +87,11 @@ export function useRpcSignStacksMessageParams() {
+ }
+ 
+ export function useRpcSignStacksMessage() {
+-  const { tabId, requestId } = useRpcSignStacksMessageParams();
+-  if (!tabId) throw new Error('Requests can only be made with corresponding tab');
++  const { requestId } = useRpcSignStacksMessageParams();
+ 
+   const { isLoading, signMessage } = useSignStacksMessage({
+     onSignMessageCompleted(messageSignature) {
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcSuccessResponse('stx_signMessage', {
+           id: requestId,
+           result: {
+@@ -108,10 +106,9 @@ export function useRpcSignStacksMessage() {
+   });
+ 
+   function onCancelMessageSigning() {
+-    if (!requestId || !tabId) return;
++    if (!requestId) return;
+     void analytics.track('request_signature_cancel');
+-    chrome.tabs.sendMessage(
+-      tabId,
++    chrome.runtime.sendMessage(
+       createRpcErrorResponse('stx_signMessage', {
+         id: requestId,
+         error: {
+diff --git a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+index 19bdcf8f8..e6e4ff423 100644
+--- a/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
++++ b/src/app/pages/rpc-stx-sign-transaction/rpc-stx-sign-transaction.tsx
+@@ -45,7 +45,7 @@ import {
+ } from './rpc-stx-sign-transaction.utils';
+ 
+ export function RpcStxSignTransaction() {
+-  const { address, isLoadingBalance, requestId, tabId } = useStacksRpcTransactionRequestContext();
++  const { address, isLoadingBalance, requestId } = useStacksRpcTransactionRequestContext();
+   const {
+     availableBalance,
+     isLoadingFees,
+@@ -81,8 +81,7 @@ export function RpcStxSignTransaction() {
+     const signedTransaction = await signStacksTx(unsignedTxForBroadcast);
+ 
+     if (!signedTransaction) {
+-      chrome.tabs.sendMessage(
+-        tabId,
++      chrome.runtime.sendMessage(
+         createRpcErrorResponse('stx_signTransaction', {
+           id: requestId,
+           error: {
+@@ -94,8 +93,7 @@ export function RpcStxSignTransaction() {
+       throw new Error('Error signing stacks transaction');
+     }
+ 
+-    chrome.tabs.sendMessage(
+-      tabId,
++    chrome.runtime.sendMessage(
+       createRpcSuccessResponse('stx_signTransaction', {
+         id: requestId,
+         result: {
+diff --git a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
+index 39d70a5fa..49c44a73d 100644
+--- a/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
++++ b/src/app/pages/send/send-crypto-asset-form/form/stx/use-stx-send-form.tsx
+@@ -81,12 +81,31 @@ export function useStxSendForm() {
+         fee: Number(values.fee),
+       });
+ 
++      // const port = chrome.runtime.connect(chrome.runtime.id);
++      // port.postMessage({
++      //   jsonrpc: '2.0',
++      //   method: 'stx_transferStx',
++      //   params: {
++      //     recipient: values.recipient,
++      //     amount: values.amount,
++      //   },
++      // });
++
++      // chrome.runtime.sendMessage({
++      //   jsonrpc: '2.0',
++      //   method: 'stx_transferStx',
++      //   params: {
++      //     recipient: values.recipient,
++      //     amount: values.amount,
++      //   },
++      // });
++
+       // if fee has changed, show info message
+       const showFeeChangeWarning = initialFee !== values.fee;
+ 
+       const tx = await generateTx(values);
+       if (!tx) return logger.error('Attempted to generate unsigned tx, but tx is undefined');
+-      sendFormNavigate.toConfirmAndSignStxTransaction(tx, showFeeChangeWarning);
++      void sendFormNavigate.toConfirmAndSignStxTransaction(tx, showFeeChangeWarning);
+     },
+   };
+ }
+diff --git a/src/background/background.ts b/src/background/background.ts
+index 535ae1a77..2ae202816 100755
+--- a/src/background/background.ts
++++ b/src/background/background.ts
+@@ -16,11 +16,22 @@ import {
+   isLegacyMessage,
+ } from './messaging/legacy/legacy-external-message-handler';
+ import { rpcMessageHandler } from './messaging/rpc-message-handler';
++import { rpcRequestSchema } from './messaging/rpc-request-utils';
+ import { initAddressMonitor } from './monitors/address-monitor';
+ 
+ initContextMenuActions();
+ warnUsersAboutDevToolsDangers();
+ 
++initAddressMonitor().catch(e => {
++  logger.error('Unable to Initialise Address Monitor: ', e);
++});
++
++listenForSessionDurationPort({
++  onSessionEnd(sessionMetadata) {
++    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
++  },
++});
++
+ chrome.runtime.onInstalled.addListener(async details => {
+   if (details.reason === 'install' && process.env.WALLET_ENVIRONMENT !== 'testing') {
+     await chrome.tabs.create({
+@@ -34,7 +45,7 @@ chrome.runtime.onConnect.addListener(port => {
+   if (port.name !== CONTENT_SCRIPT_PORT) return;
+ 
+   port.onMessage.addListener((message: LegacyMessageFromContentScript | RpcRequests, port) => {
+-    if (!port.sender?.tab?.id)
++    if (!port.sender || !port.sender?.tab?.id)
+       return logger.error('Message reached background script without a corresponding tab');
+ 
+     // Chromium/Firefox discrepancy
+@@ -52,24 +63,20 @@ chrome.runtime.onConnect.addListener(port => {
+     // TODO:
+     // Here we'll handle all messages using the rpc style comm method
+     // For now all messages are handled as legacy format
+-    void rpcMessageHandler(message, port);
++    void rpcMessageHandler(message, port.sender);
+   });
+ });
+ 
+ //
+ // Events from the extension frames script
+ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
++  if (rpcRequestSchema.safeParse(message).success) {
++    void rpcMessageHandler(message, sender);
++    return true;
++  }
++
+   void internalBackgroundMessageHandler(message, sender, sendResponse);
++
+   // Listener fn must return `true` to indicate the response will be async
+   return true;
+ });
+-
+-initAddressMonitor().catch(e => {
+-  logger.error('Unable to Initialise Address Monitor: ', e);
+-});
+-
+-listenForSessionDurationPort({
+-  onSessionEnd(sessionMetadata) {
+-    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
+-  },
+-});
+diff --git a/src/background/messaging/internal-methods/message-handler.ts b/src/background/messaging/internal-methods/message-handler.ts
+index 101c2f911..cd8607681 100644
+--- a/src/background/messaging/internal-methods/message-handler.ts
++++ b/src/background/messaging/internal-methods/message-handler.ts
+@@ -1,6 +1,6 @@
+ import { logger } from '@shared/logger';
+ import { InternalMethods } from '@shared/message-types';
+-import { BackgroundMessages } from '@shared/messages';
++import type { BackgroundMessages } from '@shared/messages';
+ 
+ import { syncAddressMonitor } from '@background/monitors/address-monitor';
+ 
+@@ -44,7 +44,7 @@ export async function internalBackgroundMessageHandler(
+       break;
+   }
+ 
+-  if (message.method.includes('bitcoinKeys/signOut')) {
++  if ('method' in message && (message as any).method === 'bitcoinKeys/signOut') {
+     await syncAddressMonitor([]);
+   }
+ 
+diff --git a/src/background/messaging/legacy/legacy-external-message-handler.ts b/src/background/messaging/legacy/legacy-external-message-handler.ts
+index a44f4fa01..6d94c4d7c 100644
+--- a/src/background/messaging/legacy/legacy-external-message-handler.ts
++++ b/src/background/messaging/legacy/legacy-external-message-handler.ts
+@@ -66,10 +66,13 @@ export async function handleLegacyExternalMethodFormat(
+     case ExternalMethods.authenticationRequest: {
+       void trackLegacyRequestInitiated({ method: ExternalMethods.authenticationRequest });
+ 
+-      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
+-        ['authRequest', payload],
+-        ['flow', ExternalMethods.authenticationRequest],
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['authRequest', payload],
++          ['flow', ExternalMethods.authenticationRequest],
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.ChooseAccount, urlParams);
+       listenForPopupClose({
+@@ -84,11 +87,14 @@ export async function handleLegacyExternalMethodFormat(
+     case ExternalMethods.transactionRequest: {
+       void trackLegacyRequestInitiated({ method: ExternalMethods.transactionRequest });
+ 
+-      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
+-        ['request', payload],
+-        ['flow', ExternalMethods.transactionRequest],
+-        ...getNetworkParamsFromPayload(payload),
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['request', payload],
++          ['flow', ExternalMethods.transactionRequest],
++          ...getNetworkParamsFromPayload(payload),
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.TransactionRequest, urlParams);
+       listenForPopupClose({
+@@ -103,12 +109,15 @@ export async function handleLegacyExternalMethodFormat(
+     case ExternalMethods.signatureRequest: {
+       void trackLegacyRequestInitiated({ method: ExternalMethods.signatureRequest });
+ 
+-      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
+-        ['request', payload],
+-        ['messageType', 'utf8'],
+-        ['flow', ExternalMethods.signatureRequest],
+-        ...getNetworkParamsFromPayload(payload),
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['request', payload],
++          ['messageType', 'utf8'],
++          ['flow', ExternalMethods.signatureRequest],
++          ...getNetworkParamsFromPayload(payload),
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.SignatureRequest, urlParams);
+       listenForPopupClose({
+@@ -123,12 +132,15 @@ export async function handleLegacyExternalMethodFormat(
+     case ExternalMethods.structuredDataSignatureRequest: {
+       void trackLegacyRequestInitiated({ method: ExternalMethods.structuredDataSignatureRequest });
+ 
+-      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
+-        ['request', payload],
+-        ['messageType', 'structured'],
+-        ['flow', ExternalMethods.structuredDataSignatureRequest],
+-        ...getNetworkParamsFromPayload(payload),
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [
++          ['request', payload],
++          ['messageType', 'structured'],
++          ['flow', ExternalMethods.structuredDataSignatureRequest],
++          ...getNetworkParamsFromPayload(payload),
++        ]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.SignatureRequest, urlParams);
+       listenForPopupClose({
+@@ -143,9 +155,10 @@ export async function handleLegacyExternalMethodFormat(
+     case ExternalMethods.profileUpdateRequest: {
+       void trackLegacyRequestInitiated({ method: ExternalMethods.profileUpdateRequest });
+ 
+-      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
+-        ['request', payload],
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [['request', payload]]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.ProfileUpdateRequest, urlParams);
+       listenForPopupClose({
+@@ -160,9 +173,10 @@ export async function handleLegacyExternalMethodFormat(
+     case ExternalMethods.psbtRequest: {
+       void trackLegacyRequestInitiated({ method: ExternalMethods.psbtRequest });
+ 
+-      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
+-        ['request', payload],
+-      ]);
++      const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++        port.sender!,
++        [['request', payload]]
++      );
+ 
+       const { id } = await triggerRequestPopupWindowOpen(RouteUrls.PsbtRequest, urlParams);
+       listenForPopupClose({
+diff --git a/src/background/messaging/rpc-message-handler.ts b/src/background/messaging/rpc-message-handler.ts
+index b55300e7a..145158165 100644
+--- a/src/background/messaging/rpc-message-handler.ts
++++ b/src/background/messaging/rpc-message-handler.ts
+@@ -24,9 +24,19 @@ import { stxTransferSip9NftHandler } from './rpc-methods/stx-transfer-sip9-nft';
+ import { stxTransferSip10FtHandler } from './rpc-methods/stx-transfer-sip10-ft';
+ import { stxTransferStxHandler } from './rpc-methods/stx-transfer-stx';
+ import { supportedMethodsHandler } from './rpc-methods/supported-methods';
+-import { getTabIdFromPort, listenForOriginTabClose } from './rpc-request-utils';
++import {
++  createRpcResponder,
++  listenAndForwardRpcRequest,
++  listenForOriginTabClose,
++} from './rpc-request-utils';
++
++type RpcResponseSender = (response: any) => void;
+ 
+-type RpcHandler<T> = (request: T, port: chrome.runtime.Port) => Promise<void> | void;
++type RpcHandler<T> = (
++  request: T,
++  sender: chrome.runtime.MessageSender,
++  sendResponse: RpcResponseSender
++) => Promise<void> | void;
+ 
+ type RpcHandlers = {
+   [Method in keyof RpcEndpointMap]: RpcHandler<RpcEndpointMap[Method]['request']>;
+@@ -48,8 +58,11 @@ export function defineRpcRequestHandler<M extends RpcRequests['method']>(
+   return [method, handler] as const;
+ }
+ 
+-export async function rpcMessageHandler(request: RpcRequests, port: chrome.runtime.Port) {
+-  listenForOriginTabClose({ tabId: port.sender?.tab?.id });
++export async function rpcMessageHandler(
++  request: RpcRequests,
++  sender: chrome.runtime.MessageSender
++) {
++  listenForOriginTabClose({ tabId: sender?.tab?.id });
+ 
+   logger.info(`Received RPC request ${request.method}`, request);
+ 
+@@ -58,10 +71,15 @@ export async function rpcMessageHandler(request: RpcRequests, port: chrome.runti
+   // one. Type safety is guaranteed by `registerRpcRequestHandler`
+   const handler = rpcHandlers[request.method] as RpcHandler<any>;
+ 
+-  if (handler) return await handler(request, port);
++  const sendMessage = createRpcResponder(sender);
++
++  if (handler) {
++    await handler(request, sender, sendMessage);
++    listenAndForwardRpcRequest(request.id, sendMessage);
++    return;
++  }
+ 
+-  chrome.tabs.sendMessage(
+-    getTabIdFromPort(port),
++  sendMessage(
+     createRpcErrorResponse(request.method, {
+       id: request.id,
+       error: {
+diff --git a/src/background/messaging/rpc-methods/get-addresses.ts b/src/background/messaging/rpc-methods/get-addresses.ts
+index 941932743..015c559d1 100644
+--- a/src/background/messaging/rpc-methods/get-addresses.ts
++++ b/src/background/messaging/rpc-methods/get-addresses.ts
+@@ -12,9 +12,9 @@ import {
+ 
+ const sharedGetAddressesHandler = async (
+   request: RpcRequest<typeof getAddresses> | RpcRequest<typeof stxGetAddresses>,
+-  port: chrome.runtime.Port
++  sender: chrome.runtime.MessageSender
+ ) => {
+-  const { urlParams, tabId } = createConnectingAppMetadataSearchParams(port, [
++  const { urlParams, tabId } = createConnectingAppMetadataSearchParams(sender, [
+     ['requestId', request.id],
+     ['rpcRequest', encodeBase64Json(request)],
+   ]);
+@@ -27,6 +27,9 @@ const sharedGetAddressesHandler = async (
+   void trackRpcRequestSuccess({ endpoint: request.method });
+ 
+   sendErrorResponseOnUserPopupClose({ tabId, id, request });
++
++  // I want a function that listens to chrome.runtime.onMessage for a response
++  // that contains the same id as the request id
+ };
+ 
+ export const getAddressesHandler = defineRpcRequestHandler(
+diff --git a/src/background/messaging/rpc-methods/open.ts b/src/background/messaging/rpc-methods/open.ts
+index 9160f41bd..1d0bd52b7 100644
+--- a/src/background/messaging/rpc-methods/open.ts
++++ b/src/background/messaging/rpc-methods/open.ts
+@@ -13,17 +13,17 @@ import { openNewTabWithWallet, trackRpcRequestSuccess } from '../rpc-helpers';
+ import { defineRpcRequestHandler } from '../rpc-message-handler';
+ import {
+   createConnectingAppSearchParamsWithLastKnownAccount,
+-  getHostnameFromPort,
++  getHostnameFromSender,
+   triggerRequestPopupWindowOpen,
+ } from '../rpc-request-utils';
+ 
+-export const openHandler = defineRpcRequestHandler(open.method, async (request, port) => {
+-  const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++export const openHandler = defineRpcRequestHandler(open.method, async (request, sender) => {
++  const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(sender, [
+     ['requestId', request.id],
+   ]);
+ 
+   const state = await getRootState();
+-  const hostname = getHostnameFromPort(port);
++  const hostname = getHostnameFromSender(sender);
+ 
+   if (!state) {
+     sendMissingStateErrorToTab({ tabId, method: request.method, id: request.id });
+diff --git a/src/background/messaging/rpc-methods/send-transfer.ts b/src/background/messaging/rpc-methods/send-transfer.ts
+index 0cd0526cb..b77442fde 100644
+--- a/src/background/messaging/rpc-methods/send-transfer.ts
++++ b/src/background/messaging/rpc-methods/send-transfer.ts
+@@ -21,19 +21,17 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
+ import {
+   RequestParams,
+   createConnectingAppSearchParamsWithLastKnownAccount,
+-  getTabIdFromPort,
+   sendErrorResponseOnUserPopupClose,
+   triggerRequestPopupWindowOpen,
+ } from '../rpc-request-utils';
+ 
+ export const sendTransferHandler = defineRpcRequestHandler(
+   sendTransfer.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     if (isUndefined(request.params)) {
+       void trackRpcRequestError({ endpoint: 'sendTransfer', error: 'Undefined parameters' });
+ 
+-      chrome.tabs.sendMessage(
+-        getTabIdFromPort(port),
++      sendResponse(
+         createRpcErrorResponse('sendTransfer', {
+           id: request.id,
+           error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
+@@ -50,8 +48,7 @@ export const sendTransferHandler = defineRpcRequestHandler(
+     if (!validateRpcSendTransferParams(params)) {
+       void trackRpcRequestError({ endpoint: 'sendTransfer', error: 'Invalid parameters' });
+ 
+-      chrome.tabs.sendMessage(
+-        getTabIdFromPort(port),
++      sendResponse(
+         createRpcErrorResponse('sendTransfer', {
+           id: request.id,
+           error: {
+@@ -83,7 +80,7 @@ export const sendTransferHandler = defineRpcRequestHandler(
+     }
+ 
+     const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
+-      port,
++      sender,
+       requestParams
+     );
+ 
+diff --git a/src/background/messaging/rpc-methods/sign-message.ts b/src/background/messaging/rpc-methods/sign-message.ts
+index b8aa9b9c5..69d2f24fe 100644
+--- a/src/background/messaging/rpc-methods/sign-message.ts
++++ b/src/background/messaging/rpc-methods/sign-message.ts
+@@ -18,18 +18,16 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
+ import {
+   RequestParams,
+   createConnectingAppSearchParamsWithLastKnownAccount,
+-  getTabIdFromPort,
+   sendErrorResponseOnUserPopupClose,
+   triggerRequestPopupWindowOpen,
+ } from '../rpc-request-utils';
+ 
+ export const signMessageHandler = defineRpcRequestHandler(
+   signMessage.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     if (isUndefined(request.params)) {
+       void trackRpcRequestError({ endpoint: 'signMessage', error: 'Undefined parameters' });
+-      chrome.tabs.sendMessage(
+-        getTabIdFromPort(port),
++      sendResponse(
+         createRpcErrorResponse('signMessage', {
+           id: request.id,
+           error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
+@@ -41,8 +39,7 @@ export const signMessageHandler = defineRpcRequestHandler(
+     if (!validateRpcSignMessageParams(request.params)) {
+       void trackRpcRequestError({ endpoint: 'signMessage', error: 'Invalid parameters' });
+ 
+-      chrome.tabs.sendMessage(
+-        getTabIdFromPort(port),
++      sendResponse(
+         createRpcErrorResponse('signMessage', {
+           id: request.id,
+           error: {
+@@ -60,8 +57,7 @@ export const signMessageHandler = defineRpcRequestHandler(
+     if (!isSupportedMessageSigningPaymentType(paymentType)) {
+       void trackRpcRequestError({ endpoint: 'signMessage', error: 'Unsupported payment type' });
+ 
+-      chrome.tabs.sendMessage(
+-        getTabIdFromPort(port),
++      sendResponse(
+         createRpcErrorResponse('signMessage', {
+           id: request.id,
+           error: {
+@@ -88,7 +84,7 @@ export const signMessageHandler = defineRpcRequestHandler(
+     }
+ 
+     const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
+-      port,
++      sender,
+       requestParams
+     );
+     const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcSignBip322Message, urlParams);
+diff --git a/src/background/messaging/rpc-methods/sign-psbt.ts b/src/background/messaging/rpc-methods/sign-psbt.ts
+index 6f64eec19..62b0d0bad 100644
+--- a/src/background/messaging/rpc-methods/sign-psbt.ts
++++ b/src/background/messaging/rpc-methods/sign-psbt.ts
+@@ -16,7 +16,6 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
+ import {
+   RequestParams,
+   createConnectingAppSearchParamsWithLastKnownAccount,
+-  getTabIdFromPort,
+   sendErrorResponseOnUserPopupClose,
+   triggerRequestPopupWindowOpen,
+ } from '../rpc-request-utils';
+@@ -37,82 +36,82 @@ function validateRpcSignPsbtParams(obj: unknown) {
+ function getRpcSignPsbtParamErrors(obj: unknown) {
+   return formatValidationErrors(getRpcParamErrors(obj, signPsbt.params));
+ }
+-export const signPsbtHandler = defineRpcRequestHandler(signPsbt.method, async (request, port) => {
+-  if (isUndefined(request.params)) {
+-    void trackRpcRequestError({ endpoint: request.method, error: 'Undefined parameters' });
+-    chrome.tabs.sendMessage(
+-      getTabIdFromPort(port),
+-      createRpcErrorResponse(request.method, {
+-        id: request.id,
+-        error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
+-      })
++export const signPsbtHandler = defineRpcRequestHandler(
++  signPsbt.method,
++  async (request, sender, sendResponse) => {
++    if (isUndefined(request.params)) {
++      void trackRpcRequestError({ endpoint: request.method, error: 'Undefined parameters' });
++      sendResponse(
++        createRpcErrorResponse(request.method, {
++          id: request.id,
++          error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
++        })
++      );
++      return;
++    }
++
++    if (!validateRpcSignPsbtParams(request.params)) {
++      void trackRpcRequestError({ endpoint: request.method, error: 'Invalid parameters' });
++      sendResponse(
++        createRpcErrorResponse(request.method, {
++          id: request.id,
++          error: {
++            code: RpcErrorCode.INVALID_PARAMS,
++            message: getRpcSignPsbtParamErrors(request.params),
++          },
++        })
++      );
++      return;
++    }
++
++    if (!validatePsbt(request.params.hex)) {
++      void trackRpcRequestError({ endpoint: request.method, error: 'Invalid PSBT' });
++
++      sendResponse(
++        createRpcErrorResponse('signPsbt', {
++          id: request.id,
++          error: { code: RpcErrorCode.INVALID_PARAMS, message: 'Invalid PSBT hex' },
++        })
++      );
++      return;
++    }
++
++    const requestParams: RequestParams = [
++      ['hex', request.params.hex],
++      ['requestId', request.id],
++    ];
++
++    if (isDefined(request.params.account)) {
++      requestParams.push(['accountIndex', request.params.account.toString()]);
++    }
++
++    if (isDefined(request.params.broadcast)) {
++      requestParams.push(['broadcast', request.params.broadcast.toString()]);
++    }
++
++    if (isDefined(request.params.network)) {
++      requestParams.push(['network', request.params.network.toString()]);
++    }
++
++    if (isDefined(request.params.signAtIndex))
++      ensureArray(request.params.signAtIndex).forEach(index =>
++        requestParams.push(['signAtIndex', index.toString()])
++      );
++
++    void trackRpcRequestSuccess({ endpoint: request.method });
++
++    const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
++      sender,
++      requestParams
+     );
+-    return;
+-  }
+-
+-  if (!validateRpcSignPsbtParams(request.params)) {
+-    void trackRpcRequestError({ endpoint: request.method, error: 'Invalid parameters' });
+-    chrome.tabs.sendMessage(
+-      getTabIdFromPort(port),
+-      createRpcErrorResponse(request.method, {
+-        id: request.id,
+-        error: {
+-          code: RpcErrorCode.INVALID_PARAMS,
+-          message: getRpcSignPsbtParamErrors(request.params),
+-        },
+-      })
+-    );
+-    return;
+-  }
+-
+-  if (!validatePsbt(request.params.hex)) {
+-    void trackRpcRequestError({ endpoint: request.method, error: 'Invalid PSBT' });
+-
+-    chrome.tabs.sendMessage(
+-      getTabIdFromPort(port),
+-      createRpcErrorResponse('signPsbt', {
+-        id: request.id,
+-        error: { code: RpcErrorCode.INVALID_PARAMS, message: 'Invalid PSBT hex' },
+-      })
+-    );
+-    return;
+-  }
+-
+-  const requestParams: RequestParams = [
+-    ['hex', request.params.hex],
+-    ['requestId', request.id],
+-  ];
+ 
+-  if (isDefined(request.params.account)) {
+-    requestParams.push(['accountIndex', request.params.account.toString()]);
+-  }
+-
+-  if (isDefined(request.params.broadcast)) {
+-    requestParams.push(['broadcast', request.params.broadcast.toString()]);
+-  }
++    const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcSignPsbt, urlParams);
+ 
+-  if (isDefined(request.params.network)) {
+-    requestParams.push(['network', request.params.network.toString()]);
++    sendErrorResponseOnUserPopupClose({
++      tabId,
++      id,
++      request,
++      message: 'User rejected signing PSBT request',
++    });
+   }
+-
+-  if (isDefined(request.params.signAtIndex))
+-    ensureArray(request.params.signAtIndex).forEach(index =>
+-      requestParams.push(['signAtIndex', index.toString()])
+-    );
+-
+-  void trackRpcRequestSuccess({ endpoint: request.method });
+-
+-  const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
+-    port,
+-    requestParams
+-  );
+-
+-  const { id } = await triggerRequestPopupWindowOpen(RouteUrls.RpcSignPsbt, urlParams);
+-
+-  sendErrorResponseOnUserPopupClose({
+-    tabId,
+-    id,
+-    request,
+-    message: 'User rejected signing PSBT request',
+-  });
+-});
++);
+diff --git a/src/background/messaging/rpc-methods/sign-stacks-message.ts b/src/background/messaging/rpc-methods/sign-stacks-message.ts
+index 7ffa5956d..d33f41909 100644
+--- a/src/background/messaging/rpc-methods/sign-stacks-message.ts
++++ b/src/background/messaging/rpc-methods/sign-stacks-message.ts
+@@ -21,7 +21,6 @@ import { defineRpcRequestHandler } from '../rpc-message-handler';
+ import {
+   RequestParams,
+   createConnectingAppSearchParamsWithLastKnownAccount,
+-  getTabIdFromPort,
+   sendErrorResponseOnUserPopupClose,
+   triggerRequestPopupWindowOpen,
+ } from '../rpc-request-utils';
+@@ -29,13 +28,13 @@ import {
+ async function handleRpcSignStacksMessage(
+   method: 'stx_signMessage' | 'stx_signStructuredMessage',
+   request: RpcRequest<typeof stxSignMessage> | RpcRequest<typeof stxSignStructuredMessage>,
+-  port: chrome.runtime.Port,
++  sender: chrome.runtime.MessageSender,
++  sendResponse: (response: any) => void,
+   requestParams: RequestParams
+ ) {
+   if (isUndefined(request.params)) {
+     void trackRpcRequestError({ endpoint: method, error: 'Undefined parameters' });
+-    chrome.tabs.sendMessage(
+-      getTabIdFromPort(port),
++    sendResponse(
+       createRpcErrorResponse(method, {
+         id: request.id,
+         error: { code: RpcErrorCode.INVALID_REQUEST, message: 'Parameters undefined' },
+@@ -46,8 +45,7 @@ async function handleRpcSignStacksMessage(
+ 
+   if (!validateRpcSignStacksMessageParams(request.params)) {
+     void trackRpcRequestError({ endpoint: method, error: 'Invalid parameters' });
+-    chrome.tabs.sendMessage(
+-      getTabIdFromPort(port),
++    sendResponse(
+       createRpcErrorResponse(method, {
+         id: request.id,
+         error: {
+@@ -62,7 +60,7 @@ async function handleRpcSignStacksMessage(
+   void trackRpcRequestSuccess({ endpoint: method });
+ 
+   const { urlParams, tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(
+-    port,
++    sender,
+     requestParams
+   );
+ 
+@@ -71,7 +69,7 @@ async function handleRpcSignStacksMessage(
+ }
+ export const stxSignMessageHandler = defineRpcRequestHandler(
+   stxSignMessage.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const requestParams: RequestParams = [
+       ['message', request.params.message],
+       ['messageType', request.params.messageType ?? 'utf8'],
+@@ -89,13 +87,13 @@ export const stxSignMessageHandler = defineRpcRequestHandler(
+       ]);
+     }
+ 
+-    return handleRpcSignStacksMessage(request.method, request, port, requestParams);
++    return handleRpcSignStacksMessage(request.method, request, sender, sendResponse, requestParams);
+   }
+ );
+ 
+ export const stxSignStructuredMessageHandler = defineRpcRequestHandler(
+   stxSignStructuredMessage.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const requestParams: RequestParams = [
+       ['requestId', request.id],
+       ['messageType', 'structured'],
+@@ -113,6 +111,6 @@ export const stxSignStructuredMessageHandler = defineRpcRequestHandler(
+       ],
+     ];
+ 
+-    return handleRpcSignStacksMessage(request.method, request, port, requestParams);
++    return handleRpcSignStacksMessage(request.method, request, sender, sendResponse, requestParams);
+   }
+ );
+diff --git a/src/background/messaging/rpc-methods/stx-call-contract.ts b/src/background/messaging/rpc-methods/stx-call-contract.ts
+index 3730ad579..38ff11f41 100644
+--- a/src/background/messaging/rpc-methods/stx-call-contract.ts
++++ b/src/background/messaging/rpc-methods/stx-call-contract.ts
+@@ -19,17 +19,18 @@ import {
+ 
+ export const stxCallContractHandler = defineRpcRequestHandler(
+   stxCallContract.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const { id: requestId, method, params } = request;
+     const { status } = validateRequestParams({
+       id: requestId,
+       method,
+       params,
+-      port,
++      sender,
++      sendResponse,
+       schema: stxCallContract.params,
+     });
+     if (status === 'failure') return;
+-    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(sender, [
+       ['requestId', request.id],
+       ['rpcRequest', encodeBase64Json(request)],
+     ]);
+diff --git a/src/background/messaging/rpc-methods/stx-deploy-contract.ts b/src/background/messaging/rpc-methods/stx-deploy-contract.ts
+index c0f1615e9..7d459a706 100644
+--- a/src/background/messaging/rpc-methods/stx-deploy-contract.ts
++++ b/src/background/messaging/rpc-methods/stx-deploy-contract.ts
+@@ -19,17 +19,18 @@ import {
+ 
+ export const stxDeployContractHandler = defineRpcRequestHandler(
+   stxDeployContract.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const { id: requestId, method, params } = request;
+     const { status } = validateRequestParams({
+       id: requestId,
+       method,
+       params,
+-      port,
++      sender,
++      sendResponse,
+       schema: stxDeployContract.params,
+     });
+     if (status === 'failure') return;
+-    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(sender, [
+       ['requestId', request.id],
+       ['rpcRequest', encodeBase64Json(request)],
+     ]);
+diff --git a/src/background/messaging/rpc-methods/stx-sign-transaction.ts b/src/background/messaging/rpc-methods/stx-sign-transaction.ts
+index b8d6100a2..45d44e88c 100644
+--- a/src/background/messaging/rpc-methods/stx-sign-transaction.ts
++++ b/src/background/messaging/rpc-methods/stx-sign-transaction.ts
+@@ -19,17 +19,18 @@ import {
+ 
+ export const stxSignTransactionHandler = defineRpcRequestHandler(
+   stxSignTransaction.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const { id: requestId, method, params } = request;
+     const { status } = validateRequestParams({
+       id: requestId,
+       method,
+       params,
+-      port,
++      sender,
++      sendResponse,
+       schema: stxSignTransaction.params,
+     });
+     if (status === 'failure') return;
+-    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(sender, [
+       ['requestId', request.id],
+       ['rpcRequest', encodeBase64Json(request)],
+     ]);
+diff --git a/src/background/messaging/rpc-methods/stx-transfer-sip10-ft.ts b/src/background/messaging/rpc-methods/stx-transfer-sip10-ft.ts
+index 6dc8342bb..2c30f0217 100644
+--- a/src/background/messaging/rpc-methods/stx-transfer-sip10-ft.ts
++++ b/src/background/messaging/rpc-methods/stx-transfer-sip10-ft.ts
+@@ -19,17 +19,18 @@ import {
+ 
+ export const stxTransferSip10FtHandler = defineRpcRequestHandler(
+   stxTransferSip10Ft.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const { id: requestId, method, params } = request;
+     const { status } = validateRequestParams({
+       id: requestId,
+       method,
+       params,
+-      port,
++      sender,
++      sendResponse,
+       schema: stxTransferSip10Ft.params,
+     });
+     if (status === 'failure') return;
+-    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(sender, [
+       ['requestId', request.id],
+       ['rpcRequest', encodeBase64Json(request)],
+     ]);
+diff --git a/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts b/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts
+index 2dd1d2df8..15371077f 100644
+--- a/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts
++++ b/src/background/messaging/rpc-methods/stx-transfer-sip9-nft.ts
+@@ -19,17 +19,18 @@ import {
+ 
+ export const stxTransferSip9NftHandler = defineRpcRequestHandler(
+   stxTransferSip9Nft.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const { id: requestId, method, params } = request;
+     const { status } = validateRequestParams({
+       id: requestId,
+       method,
+       params,
+-      port,
++      sender,
++      sendResponse,
+       schema: stxTransferSip9Nft.params,
+     });
+     if (status === 'failure') return;
+-    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(sender, [
+       ['requestId', request.id],
+       ['rpcRequest', encodeBase64Json(request)],
+     ]);
+diff --git a/src/background/messaging/rpc-methods/stx-transfer-stx.ts b/src/background/messaging/rpc-methods/stx-transfer-stx.ts
+index 24d464a2a..8fa58783b 100644
+--- a/src/background/messaging/rpc-methods/stx-transfer-stx.ts
++++ b/src/background/messaging/rpc-methods/stx-transfer-stx.ts
+@@ -19,17 +19,18 @@ import {
+ 
+ export const stxTransferStxHandler = defineRpcRequestHandler(
+   stxTransferStx.method,
+-  async (request, port) => {
++  async (request, sender, sendResponse) => {
+     const { id: requestId, method, params } = request;
+     const { status } = validateRequestParams({
+       id: requestId,
+       method,
+       params,
+-      port,
++      sender,
++      sendResponse,
+       schema: stxTransferStx.params,
+     });
+     if (status === 'failure') return;
+-    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(port, [
++    const { tabId, urlParams } = await createConnectingAppSearchParamsWithLastKnownAccount(sender, [
+       ['requestId', request.id],
+       ['rpcRequest', encodeBase64Json(request)],
+     ]);
+diff --git a/src/background/messaging/rpc-methods/supported-methods.ts b/src/background/messaging/rpc-methods/supported-methods.ts
+index 6ccb1a1a4..bc1c3718c 100644
+--- a/src/background/messaging/rpc-methods/supported-methods.ts
++++ b/src/background/messaging/rpc-methods/supported-methods.ts
+@@ -1,14 +1,11 @@
+ import { createRpcSuccessResponse, supportedMethods } from '@leather.io/rpc';
+ 
+ import { defineRpcRequestHandler } from '../rpc-message-handler';
+-import { createConnectingAppSearchParamsWithLastKnownAccount } from '../rpc-request-utils';
+ 
+ export const supportedMethodsHandler = defineRpcRequestHandler(
+   supportedMethods.method,
+-  async (request, port) => {
+-    const { tabId } = await createConnectingAppSearchParamsWithLastKnownAccount(port);
+-    chrome.tabs.sendMessage(
+-      tabId,
++  async (request, _sender, sendMessage) => {
++    sendMessage(
+       createRpcSuccessResponse(supportedMethods.method, {
+         id: request.id,
+         result: {
+diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
+index 31436c254..a8e94748d 100644
+--- a/src/background/messaging/rpc-request-utils.ts
++++ b/src/background/messaging/rpc-request-utils.ts
+@@ -7,6 +7,7 @@ import {
+   type RpcMethodNames,
+   type RpcRequests,
+   createRpcErrorResponse,
++  rpcBasePropsSchema,
+ } from '@leather.io/rpc';
+ import { isUndefined } from '@leather.io/utils';
+ 
+@@ -25,21 +26,34 @@ import { popup } from '@background/popup';
+ 
+ import { trackRpcRequestError } from './rpc-helpers';
+ 
+-export function getTabIdFromPort(port: chrome.runtime.Port) {
+-  return port.sender?.tab?.id ?? 0;
++function isOriginLeatherExtension(urlOrigin: string) {
++  const extensionOrigin = new URL(chrome.runtime.getURL('')).origin;
++  return urlOrigin === extensionOrigin;
+ }
+ 
+-function getOriginFromPort(port: chrome.runtime.Port) {
+-  if (port.sender?.url) return new URL(port.sender.url).origin;
+-  return port.sender?.origin;
++function getTabIdFromSender(sender: chrome.runtime.MessageSender) {
++  return sender?.tab?.id ?? 0;
+ }
+ 
+-export function getHostnameFromPort(port: chrome.runtime.Port) {
+-  const origin = getOriginFromPort(port);
+-  if (!origin) throw new Error('No URL found in port sender');
++function getOriginFromSender(sender: chrome.runtime.MessageSender) {
++  if (sender?.url) return new URL(sender.url).origin;
++  return sender?.origin;
++}
++
++export function getHostnameFromSender(sender: chrome.runtime.MessageSender) {
++  const origin = getOriginFromSender(sender);
++  if (!origin) throw new Error('No URL found in sender');
+   return getHostnameFromUrl(origin);
+ }
+ 
++export function createRpcResponder(sender: chrome.runtime.MessageSender) {
++  const origin = getOriginFromSender(sender) ?? '';
++  return (response: any) =>
++    isOriginLeatherExtension(origin)
++      ? chrome.runtime.sendMessage(response)
++      : chrome.tabs.sendMessage(sender.tab?.id ?? 0, response);
++}
++
+ //
+ // Playwright does not currently support Chrome extension popup testing:
+ // https://github.com/microsoft/playwright/issues/5593
+@@ -60,7 +74,9 @@ export function listenForPopupClose({ id, tabId, response }: ListenForPopupClose
+   chrome.windows.onRemoved.addListener(winId => {
+     if (winId !== id || !tabId) return;
+     const responseMessage = response;
+-    chrome.tabs.sendMessage(tabId, responseMessage);
++    setTimeout(() => {
++      chrome.tabs.sendMessage(tabId, responseMessage);
++    });
+   });
+ }
+ 
+@@ -102,12 +118,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
+ export type RequestParams = [string, string][];
+ 
+ export function createConnectingAppMetadataSearchParams(
+-  port: chrome.runtime.Port,
++  sender: chrome.runtime.MessageSender,
+   otherParams: RequestParams = []
+ ) {
+   const urlParams = new URLSearchParams();
+-  const origin = getOriginFromPort(port);
+-  const tabId = getTabIdFromPort(port);
++  const origin = getOriginFromSender(sender);
++  const tabId = getTabIdFromSender(sender);
+   urlParams.set('origin', origin ?? '');
+   urlParams.set('tabId', tabId.toString());
+   otherParams.forEach(([key, value]) => urlParams.append(key, value));
+@@ -115,12 +131,12 @@ export function createConnectingAppMetadataSearchParams(
+ }
+ 
+ export async function createConnectingAppSearchParamsWithLastKnownAccount(
+-  port: chrome.runtime.Port,
++  sender: chrome.runtime.MessageSender,
+   otherParams: RequestParams = []
+ ) {
+-  const { urlParams, origin, tabId } = createConnectingAppMetadataSearchParams(port, otherParams);
++  const { urlParams, origin, tabId } = createConnectingAppMetadataSearchParams(sender, otherParams);
+   if (origin) {
+-    const appPermissions = await getPermissionsByOrigin(getHostnameFromPort(port));
++    const appPermissions = await getPermissionsByOrigin(getHostnameFromSender(sender));
+     if (appPermissions) {
+       urlParams.set('accountIndex', appPermissions.accountIndex.toString());
+     }
+@@ -146,20 +162,21 @@ interface ValidateRequestParamsArgs {
+   id: string;
+   method: RpcMethodNames;
+   params: unknown;
+-  port: chrome.runtime.Port;
++  sender: chrome.runtime.MessageSender;
++  sendResponse(response: any): void;
+   schema: z.Schema;
+ }
+ export function validateRequestParams({
+   id,
+   method,
+   params,
+-  port,
++  // sender,
++  sendResponse,
+   schema,
+ }: ValidateRequestParamsArgs): { status: ValidationResult } {
+   if (isUndefined(params)) {
+     void trackRpcRequestError({ endpoint: method, error: RpcErrorMessage.UndefinedParams });
+-    chrome.tabs.sendMessage(
+-      getTabIdFromPort(port),
++    sendResponse(
+       createRpcErrorResponse(method, {
+         id,
+         error: { code: RpcErrorCode.INVALID_REQUEST, message: RpcErrorMessage.UndefinedParams },
+@@ -171,8 +188,7 @@ export function validateRequestParams({
+   if (!validateRpcParams(params, schema)) {
+     void trackRpcRequestError({ endpoint: method, error: RpcErrorMessage.InvalidParams });
+ 
+-    chrome.tabs.sendMessage(
+-      getTabIdFromPort(port),
++    sendResponse(
+       createRpcErrorResponse(method, {
+         id,
+         error: {
+@@ -185,3 +201,23 @@ export function validateRequestParams({
+   }
+   return { status: 'success' };
+ }
++
++export const rpcRequestSchema = z.intersection(
++  rpcBasePropsSchema,
++  z.object({
++    method: z.string(),
++    params: z.any().optional(),
++  })
++);
++
++const rpcResponseSchema = z.intersection(
++  rpcBasePropsSchema,
++  z.union([z.object({ result: z.any() }), z.object({ error: z.any() })])
++);
++
++export function listenAndForwardRpcRequest(requestId: string, sendMessage: (resp: any) => void) {
++  return chrome.runtime.onMessage.addListener(message => {
++    const result = rpcResponseSchema.safeParse(message);
++    if (result.success && message.id === requestId) sendMessage(message);
++  });
++}
+```

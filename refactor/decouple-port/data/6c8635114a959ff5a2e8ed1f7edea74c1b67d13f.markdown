@@ -1,63 +1,155 @@
 # Test info
 
-- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
-- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
+- Name: stx_signMessage >> MessageType: utf8 >> Signature approved
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:41:5
 
 # Error details
 
 ```
-Error: page.click: Target crashed 
-Call log:
-  - waiting for locator('[data-testid="btn-confirm-transaction"]')
-    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-pos_relative leather-textStyle_label.02 leather-ta_center leather-bdr_round leather-d_inline-flex leather-ai_center leather-jc_center leather-gap_space.02 leather-white-space_nowrap loading:after:leather-anim_spin loading:after:leather-bd_2px_solid loading:after:leather-bd-c_currentColor loading:after:leather-bd-b-c_transparent loading:after:leather-bx-s_border-box loading:after:leather-content_"" loading:afte…>…</button>
-  - attempting click action
-    - waiting for element to be visible, enabled and stable
+Error: expect(received).toEqual(expected) // deep equality
 
-    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
-    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
+- Expected  - 4
++ Received  + 4
+
+  Object {
+-   "jsonrpc": "2.0",
+-   "result": Object {
+-     "publicKey": "0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af",
+-     "signature": "6d9040912574f9a8128ada79968e9b09e9d469fe84cda063701be0fefb8c3bdc21a309456a78929347a095a4a856271bde9cb327132edad7730d29404dba5e9300",
++   "error": Object {
++     "code": 4001,
++     "message": "User rejected request",
+    },
++   "jsonrpc": "2.0",
+  }
+    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:50:27
 ```
 
 # Test source
 
 ```ts
-   1 | import { Page } from '@playwright/test';
-   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
-   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
-   4 | import { createTestSelector } from '@tests/utils';
-   5 |
-   6 | export class TransactionRequestPage {
-   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
-   8 |     TransactionRequestSelectors.BtnConfirmTransaction
-   9 |   );
-  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
-  11 |   readonly transactionRequestPage = createTestSelector(
-  12 |     TransactionRequestSelectors.TransactionRequestPage
-  13 |   );
-  14 |
-  15 |   constructor(readonly page: Page) {}
-  16 |
-  17 |   async clickConfirmTransactionButton() {
-> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
-     |                      ^ Error: page.click: Target crashed 
-  19 |   }
-  20 |
-  21 |   async getDisplayedFeeValue() {
-  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
-  23 |   }
-  24 |
-  25 |   async waitForTransactionRequestError(msg: string) {
-  26 |     return this.page.waitForSelector(`text=${msg}`);
-  27 |   }
-  28 |
-  29 |   async waitForFee() {
-  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
-  31 |   }
-  32 |
-  33 |   async waitForTransactionRequestPage() {
-  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
-  35 |   }
-  36 | }
-  37 |
+   1 | import { BrowserContext, Page } from '@playwright/test';
+   2 | import {
+   3 |   intCV,
+   4 |   serializeCV,
+   5 |   stringAsciiCV,
+   6 |   stringUtf8CV,
+   7 |   tupleCV,
+   8 |   uintCV,
+   9 | } from '@stacks/transactions';
+   10 |
+   11 | import { test } from '../../fixtures/fixtures';
+   12 |
+   13 | test.describe('stx_signMessage', () => {
+   14 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
+   15 |     await globalPage.setupAndUseApiCalls(extensionId);
+   16 |     await onboardingPage.signInWithTestAccount(extensionId);
+   17 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
+   18 |   });
+   19 |
+   20 |   function clickActionButton(context: BrowserContext) {
+   21 |     return async (buttonToPress: 'Cancel' | 'Sign') => {
+   22 |       const popup = await context.waitForEvent('page');
+   23 |       const btn = popup.locator(`text="${buttonToPress}"`);
+   24 |       await btn.click();
+   25 |     };
+   26 |   }
+   27 |
+   28 |   function initiateUtf8MessageSigning(page: Page) {
+   29 |     return async (message: string) =>
+   30 |       page.evaluate(
+   31 |         async ({ message }) =>
+   32 |           (window as any).LeatherProvider.request('stx_signMessage', {
+   33 |             message,
+   34 |             messageType: 'utf8',
+   35 |           }).catch((e: unknown) => e),
+   36 |         { message }
+   37 |       );
+   38 |   }
+   39 |
+   40 |   test.describe('MessageType: utf8', () => {
+   41 |     test('Signature approved', async ({ page, context }) => {
+   42 |       const [result] = await Promise.all([
+   43 |         initiateUtf8MessageSigning(page)('test'),
+   44 |         clickActionButton(context)('Sign'),
+   45 |       ]);
+   46 |
+   47 |       // ID is random, removed so we can test known values
+   48 |       delete result.id;
+   49 |
+>  50 |       test.expect(result).toEqual({
+      |                           ^ Error: expect(received).toEqual(expected) // deep equality
+   51 |         jsonrpc: '2.0',
+   52 |         result: {
+   53 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
+   54 |           signature:
+   55 |             '6d9040912574f9a8128ada79968e9b09e9d469fe84cda063701be0fefb8c3bdc21a309456a78929347a095a4a856271bde9cb327132edad7730d29404dba5e9300',
+   56 |         },
+   57 |       });
+   58 |     });
+   59 |   });
+   60 |
+   61 |   test.describe('MessageType: structured', () => {
+   62 |     const domain = tupleCV({
+   63 |       name: stringAsciiCV('leather.io'),
+   64 |       version: stringAsciiCV('1.0.0'),
+   65 |       'chain-id': uintCV(1),
+   66 |     });
+   67 |
+   68 |     function initiateStxStructuredMessageSigning(page: Page) {
+   69 |       return async (message: string, domain: string) =>
+   70 |         page.evaluate(
+   71 |           async ({ message, domain }) =>
+   72 |             (window as any).LeatherProvider.request('stx_signMessage', {
+   73 |               message,
+   74 |               domain,
+   75 |               messageType: 'structured',
+   76 |             }).catch((e: unknown) => e),
+   77 |           { message, domain }
+   78 |         );
+   79 |     }
+   80 |
+   81 |     test('Signature approved', async ({ page, context }) => {
+   82 |       const [result] = await Promise.all([
+   83 |         initiateStxStructuredMessageSigning(page)(
+   84 |           serializeCV(tupleCV({ a: intCV(-1), b: stringUtf8CV('this is a structured message') })),
+   85 |           serializeCV(domain)
+   86 |         ),
+   87 |         clickActionButton(context)('Sign'),
+   88 |       ]);
+   89 |
+   90 |       // ID is random, removed so we can test known values
+   91 |       delete result.id;
+   92 |
+   93 |       test.expect(result).toEqual({
+   94 |         jsonrpc: '2.0',
+   95 |         result: {
+   96 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
+   97 |           signature:
+   98 |             '9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01',
+   99 |         },
+  100 |       });
+  101 |     });
+  102 |   });
+  103 |
+  104 |   test('Signature rejected', async ({ page, context }) => {
+  105 |     const [result] = await Promise.all([
+  106 |       initiateUtf8MessageSigning(page)('test'),
+  107 |       clickActionButton(context)('Cancel'),
+  108 |     ]);
+  109 |
+  110 |     delete result.id;
+  111 |
+  112 |     test.expect(result).toEqual({
+  113 |       jsonrpc: '2.0',
+  114 |       error: {
+  115 |         code: 4001,
+  116 |         message: 'User denied signing',
+  117 |       },
+  118 |     });
+  119 |   });
+  120 | });
+  121 |
 ```
 
 # Local changes
@@ -525,6 +617,35 @@ index 535ae1a77..5d0dffcaa 100755
 -    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
 -  },
 -});
+diff --git a/src/background/messaging/internal-methods/message-handler.ts b/src/background/messaging/internal-methods/message-handler.ts
+index 101c2f911..7b13dd587 100644
+--- a/src/background/messaging/internal-methods/message-handler.ts
++++ b/src/background/messaging/internal-methods/message-handler.ts
+@@ -1,6 +1,5 @@
+ import { logger } from '@shared/logger';
+ import { InternalMethods } from '@shared/message-types';
+-import { BackgroundMessages } from '@shared/messages';
+ 
+ import { syncAddressMonitor } from '@background/monitors/address-monitor';
+ 
+@@ -26,7 +25,7 @@ function logInternalMessage(message: { method: string }) {
+ }
+ 
+ export async function internalBackgroundMessageHandler(
+-  message: BackgroundMessages,
++  message: any,
+   sender: chrome.runtime.MessageSender,
+   sendResponse: (response?: any) => void
+ ) {
+@@ -44,7 +43,7 @@ export async function internalBackgroundMessageHandler(
+       break;
+   }
+ 
+-  if (message.method.includes('bitcoinKeys/signOut')) {
++  if ('method' in message && message.method === 'bitcoinKeys/signOut') {
+     await syncAddressMonitor([]);
+   }
+ 
 diff --git a/src/background/messaging/legacy/legacy-external-message-handler.ts b/src/background/messaging/legacy/legacy-external-message-handler.ts
 index a44f4fa01..6d94c4d7c 100644
 --- a/src/background/messaging/legacy/legacy-external-message-handler.ts
@@ -1278,7 +1399,7 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..62370b1b5 100644
+index 31436c254..3bc35bf62 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
 @@ -25,21 +25,34 @@ import { popup } from '@background/popup';
@@ -1318,7 +1439,7 @@ index 31436c254..62370b1b5 100644
 +  return (response: any) =>
 +    isOriginLeatherExtension(origin)
 +      ? chrome.runtime.sendMessage(response)
-+      : chrome.runtime.sendMessage(sender.tab?.id ?? 0, response);
++      : chrome.tabs.sendMessage(sender.tab?.id ?? 0, response);
 +}
 +
  //

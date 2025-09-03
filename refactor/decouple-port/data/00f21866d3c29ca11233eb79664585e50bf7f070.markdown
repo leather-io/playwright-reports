@@ -1,234 +1,124 @@
 # Test info
 
-- Name: Sign PSBT >> that only requested inputs are signed
-- Location: /home/runner/work/extension/extension/tests/specs/rpc-sign-psbt/sign-psbt.spec.ts:152:3
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
 
 # Error details
 
 ```
-Error: expect(received).toEqual(expected) // deep equality
-
-- Expected  - 3
-+ Received  + 4
-
-  Object {
-+   "error": Object {
-+     "code": 4001,
-+     "message": "User rejected signing PSBT request",
-+   },
-    "jsonrpc": "2.0",
--   "result": Object {
--     "hex": "70736274ff01007b02000000025f9f604745537f28f9ea6a963c35355dd60696a52d909c528b0212a062dc65290100000000fffffffffe690823a3d0fec1513ac8f40e3a3672208a08919fff13763ae01a38ef368d2f0100000000ffffffff01e803000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d000000000001011fc512000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d220203fe21e3444109e30ff7d19da0f530c344cad2e35fbee89afb2413858e4a9d7aa5483045022100d3019073de66ea52a3c93edc9a1b8bb1c9f64902ade9983c588abb45ee5db04d02201011e4b245b115c6f5a80c3ae540f4a9e8c0fa52ca0a459d461917907385cfa7010001011f7feff10000000000160014a8113965cee4d5ffa2d9996a204866a58200131d0000",
--   },
-  }
-    at /home/runner/work/extension/extension/tests/specs/rpc-sign-psbt/sign-psbt.spec.ts:168:25
+Error: page.waitForRequest: Page crashed
+=========================== logs ===========================
+waiting for request "*/**/v2/transactions"
+============================================================
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:79:58
 ```
 
 # Test source
 
 ```ts
-   68 |       await btn.click();
-   69 |     };
-   70 |   }
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { stxToMicroStx } from '@leather.io/utils';
+   7 |
+   8 | import { createDelay } from '@shared/utils';
+   9 |
+   10 | import { test } from '../../fixtures/fixtures';
+   11 |
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await delayAnimationDuration();
+   34 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+   35 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   36 |       await delayAnimationDuration();
+   37 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   38 |       await delayAnimationDuration();
+   39 |       await testAppPage.page.bringToFront();
+   40 |       await testAppPage.page.click('text=Debugger', {
+   41 |         timeout: 30000,
+   42 |       });
+   43 |       await accountsPage.close();
+   44 |
+   45 |       await testAppPage.clickContractCallButton();
+   46 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   47 |       await transactionRequestPage.waitForTransactionRequestPage();
+   48 |       const error =
+   49 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   50 |
+   51 |       test.expect(error).toBeTruthy();
+   52 |     });
+   53 |   });
+   54 |
+   55 |   test.describe('App initiated STX transfer', () => {
+   56 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   57 |       const newPagePromise = context.waitForEvent('page');
+   58 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   59 |       const accountsPage = await newPagePromise;
+   60 |       await delayAnimationDuration();
+   61 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   62 |       await delayAnimationDuration();
+   63 |       await testAppPage.page.bringToFront();
+   64 |       await testAppPage.page.click('text=Debugger', {
+   65 |         timeout: 30000,
+   66 |       });
+   67 |       await accountsPage.close();
+   68 |
+   69 |       await testAppPage.clickStxTransferButton();
+   70 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
    71 |
-   72 |   async function clickErrorCloseWindowButton(context: BrowserContext) {
-   73 |     const popup = await context.waitForEvent('page');
-   74 |     await popup.waitForTimeout(1000);
-   75 |     const errorMsg = popup.locator('text="Failed to sign"');
-   76 |     const btn = popup.locator('text="Close window"');
-   77 |     test.expect(errorMsg).toBeTruthy();
-   78 |     await btn.click();
-   79 |   }
+   72 |       await transactionRequestPage.waitForTransactionRequestPage();
+   73 |       await transactionRequestPage.waitForFee();
+   74 |
+   75 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   76 |
+   77 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
+   78 |
+>  79 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+      |                                                          ^ Error: page.waitForRequest: Page crashed
    80 |
-   81 |   async function interceptBroadcastRequest(
-   82 |     context: BrowserContext,
-   83 |     callback: (route: Route) => Promise<void>
-   84 |   ) {
-   85 |     const popup = await context.waitForEvent('page');
-   86 |     const requestPromise = popup.waitForRequest('**/api/tx');
-   87 |     await popup.route('**/api/tx', async route => await callback(route));
-   88 |     return requestPromise;
-   89 |   }
+   81 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   82 |         await route.abort();
+   83 |       });
+   84 |
+   85 |       await transactionRequestPage.clickConfirmTransactionButton();
+   86 |
+   87 |       const request = await requestPromise;
+   88 |       const requestBody = request.postData();
+   89 |       if (!requestBody) return;
    90 |
-   91 |   function initiatePsbtSigning(page: Page) {
-   92 |     return async (params: RpcParams<typeof signPsbt> & { broadcast?: boolean }) =>
-   93 |       page.evaluate(
-   94 |         async params =>
-   95 |           (window as any).LeatherProvider.request('signPsbt', {
-   96 |             ...params,
-   97 |           }).catch((e: unknown) => e),
-   98 |         { ...params }
-   99 |       );
-  100 |   }
-  101 |
-  102 |   function createExpectedResult(hex: string, txid?: string) {
-  103 |     return {
-  104 |       jsonrpc: '2.0',
-  105 |       result: txid ? { hex, txid } : { hex },
-  106 |     };
-  107 |   }
-  108 |
-  109 |   function createExpectedError(code: number, message: string) {
-  110 |     return {
-  111 |       jsonrpc: '2.0',
-  112 |       error: { code, message },
-  113 |     };
-  114 |   }
-  115 |
-  116 |   // Hard coded result of tx above
-  117 |   const unsignedPsbtHexWithTwoInputs =
-  118 |     '70736274ff01007b02000000025f9f604745537f28f9ea6a963c35355dd60696a52d909c528b0212a062dc65290100000000fffffffffe690823a3d0fec1513ac8f40e3a3672208a08919fff13763ae01a38ef368d2f0100000000ffffffff01e803000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d000000000001011fc512000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d0001011f7feff10000000000160014a8113965cee4d5ffa2d9996a204866a58200131d0000';
-  119 |
-  120 |   test.expect(bytesToHex(createTestPsbt().toPSBT())).toEqual(unsignedPsbtHexWithTwoInputs);
-  121 |
-  122 |   test('that all inputs are signed even if the number of inputs is greater than vout index', async ({
-  123 |     page,
-  124 |     context,
-  125 |   }) => {
-  126 |     const psbt = createTestPsbt();
-  127 |     const reqPromise = interceptBroadcastRequest(context, route =>
-  128 |       route.fulfill({
-  129 |         body: 'not-a-real-txid-response',
-  130 |       })
-  131 |     );
-  132 |     const [result] = await Promise.all([
-  133 |       initiatePsbtSigning(page)({
-  134 |         network: 'testnet',
-  135 |         hex: bytesToHex(psbt.toPSBT()),
-  136 |         broadcast: true,
-  137 |       }),
-  138 |       clickActionButton(context)('Confirm'),
-  139 |     ]);
-  140 |
-  141 |     await reqPromise;
-  142 |
-  143 |     delete result.id;
-  144 |
-  145 |     psbt.sign(addressKeychain.privateKey!);
-  146 |
-  147 |     test
-  148 |       .expect(result)
-  149 |       .toEqual(createExpectedResult(bytesToHex(psbt.toPSBT()), 'not-a-real-txid-response'));
-  150 |   });
-  151 |
-  152 |   test('that only requested inputs are signed', async ({ page, context }) => {
-  153 |     const psbt = createTestPsbt();
-  154 |     const [result] = await Promise.all([
-  155 |       initiatePsbtSigning(page)({
-  156 |         network: 'testnet',
-  157 |         hex: bytesToHex(psbt.toPSBT()),
-  158 |         signAtIndex: 0,
-  159 |         broadcast: false,
-  160 |       }),
-  161 |       clickActionButton(context)('Confirm'),
-  162 |     ]);
-  163 |
-  164 |     delete result.id;
-  165 |
-  166 |     psbt.signIdx(addressKeychain.privateKey!, 0);
-  167 |
-> 168 |     test.expect(result).toEqual(createExpectedResult(bytesToHex(psbt.toPSBT())));
-      |                         ^ Error: expect(received).toEqual(expected) // deep equality
-  169 |   });
-  170 |
-  171 |   test('that the request can be signed and broadcast', async ({ page, context }) => {
-  172 |     const psbt = createTestPsbt();
-  173 |     const requestPromise = interceptBroadcastRequest(context, route =>
-  174 |       route.fulfill({
-  175 |         body: 'not-a-real-txid-response',
-  176 |       })
-  177 |     );
-  178 |
-  179 |     const [result] = await Promise.all([
-  180 |       initiatePsbtSigning(page)({
-  181 |         network: 'testnet',
-  182 |         hex: bytesToHex(psbt.toPSBT()),
-  183 |         broadcast: true,
-  184 |       }),
-  185 |       clickActionButton(context)('Confirm'),
-  186 |     ]);
-  187 |
-  188 |     await requestPromise;
-  189 |
-  190 |     delete result.id;
-  191 |
-  192 |     psbt.signIdx(addressKeychain.privateKey!, 0);
-  193 |
-  194 |     test
-  195 |       .expect(result)
-  196 |       .toEqual(
-  197 |         createExpectedResult(
-  198 |           '70736274ff01007b02000000025f9f604745537f28f9ea6a963c35355dd60696a52d909c528b0212a062dc65290100000000fffffffffe690823a3d0fec1513ac8f40e3a3672208a08919fff13763ae01a38ef368d2f0100000000ffffffff01e803000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d000000000001011fc512000000000000160014a8113965cee4d5ffa2d9996a204866a58200131d220203fe21e3444109e30ff7d19da0f530c344cad2e35fbee89afb2413858e4a9d7aa5483045022100d3019073de66ea52a3c93edc9a1b8bb1c9f64902ade9983c588abb45ee5db04d02201011e4b245b115c6f5a80c3ae540f4a9e8c0fa52ca0a459d461917907385cfa7010001011f7feff10000000000160014a8113965cee4d5ffa2d9996a204866a58200131d220203fe21e3444109e30ff7d19da0f530c344cad2e35fbee89afb2413858e4a9d7aa54730440220092a70ffba140cf72576969b22e7da9b510ece28365f558724aab1b80daf952c0220524f8dff67bc5661f5c95043e02ffd926bc9ee53042195fcbd7cd6aad37848dc010000',
-  199 |           'not-a-real-txid-response'
-  200 |         )
-  201 |       );
-  202 |
-  203 |     psbt.sign(addressKeychain.privateKey!);
-  204 |
-  205 |     test
-  206 |       .expect(result)
-  207 |       .toEqual(createExpectedResult(bytesToHex(psbt.toPSBT()), 'not-a-real-txid-response'));
-  208 |
-  209 |     const request = await requestPromise;
-  210 |     const requestBody = request.postDataBuffer();
-  211 |     test.expect(requestBody).toBeDefined();
-  212 |   });
-  213 |
-  214 |   test('that the request to sign can be canceled', async ({ page, context }) => {
-  215 |     const psbt = createTestPsbt();
-  216 |     const [result] = await Promise.all([
-  217 |       initiatePsbtSigning(page)({
-  218 |         network: 'testnet',
-  219 |         hex: bytesToHex(psbt.toPSBT()),
-  220 |         broadcast: false,
-  221 |       }),
-  222 |       clickActionButton(context)('Cancel'),
-  223 |     ]);
-  224 |
-  225 |     delete result.id;
-  226 |
-  227 |     test.expect(result).toEqual(createExpectedError(4001, 'User rejected signing PSBT request'));
-  228 |   });
-  229 |
-  230 |   test('that a failed request occurs if an invalid index is provided', async ({
-  231 |     page,
-  232 |     context,
-  233 |   }) => {
-  234 |     const psbt = createTestPsbt();
-  235 |
-  236 |     const [result] = await Promise.all([
-  237 |       initiatePsbtSigning(page)({
-  238 |         network: 'testnet',
-  239 |         hex: bytesToHex(psbt.toPSBT()),
-  240 |         signAtIndex: 4,
-  241 |         broadcast: false,
-  242 |       }),
-  243 |       clickActionButton(context)('Confirm'),
-  244 |       clickErrorCloseWindowButton(context),
-  245 |     ]);
-  246 |
-  247 |     delete result.id;
-  248 |
-  249 |     test.expect(result).toEqual(createExpectedError(4001, 'User rejected signing PSBT request'));
-  250 |   });
-  251 |
-  252 |   test('that failed broadcasts return an error to the app', async ({ page, context }) => {
-  253 |     const psbt = createTestPsbt();
-  254 |     const requestPromise = interceptBroadcastRequest(context, route =>
-  255 |       route.fulfill({ status: 500 })
-  256 |     );
-  257 |
-  258 |     const [result] = await Promise.all([
-  259 |       initiatePsbtSigning(page)({
-  260 |         network: 'testnet',
-  261 |         hex: bytesToHex(psbt.toPSBT()),
-  262 |         broadcast: true,
-  263 |       }),
-  264 |       clickActionButton(context)('Confirm'),
-  265 |     ]);
-  266 |
-  267 |     await requestPromise;
-  268 |
+   91 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   92 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   93 |       const amount = Number(payload.amount);
+   94 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   95 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   96 |
+   97 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   98 |       test.expect(amount).toEqual(102);
+   99 |     });
+  100 |   });
+  101 | });
+  102 |
 ```
 
 # Local changes
@@ -696,6 +586,35 @@ index 535ae1a77..5d0dffcaa 100755
 -    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
 -  },
 -});
+diff --git a/src/background/messaging/internal-methods/message-handler.ts b/src/background/messaging/internal-methods/message-handler.ts
+index 101c2f911..7b13dd587 100644
+--- a/src/background/messaging/internal-methods/message-handler.ts
++++ b/src/background/messaging/internal-methods/message-handler.ts
+@@ -1,6 +1,5 @@
+ import { logger } from '@shared/logger';
+ import { InternalMethods } from '@shared/message-types';
+-import { BackgroundMessages } from '@shared/messages';
+ 
+ import { syncAddressMonitor } from '@background/monitors/address-monitor';
+ 
+@@ -26,7 +25,7 @@ function logInternalMessage(message: { method: string }) {
+ }
+ 
+ export async function internalBackgroundMessageHandler(
+-  message: BackgroundMessages,
++  message: any,
+   sender: chrome.runtime.MessageSender,
+   sendResponse: (response?: any) => void
+ ) {
+@@ -44,7 +43,7 @@ export async function internalBackgroundMessageHandler(
+       break;
+   }
+ 
+-  if (message.method.includes('bitcoinKeys/signOut')) {
++  if ('method' in message && message.method === 'bitcoinKeys/signOut') {
+     await syncAddressMonitor([]);
+   }
+ 
 diff --git a/src/background/messaging/legacy/legacy-external-message-handler.ts b/src/background/messaging/legacy/legacy-external-message-handler.ts
 index a44f4fa01..6d94c4d7c 100644
 --- a/src/background/messaging/legacy/legacy-external-message-handler.ts
@@ -1449,7 +1368,7 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..62370b1b5 100644
+index 31436c254..3bc35bf62 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
 @@ -25,21 +25,34 @@ import { popup } from '@background/popup';
@@ -1489,7 +1408,7 @@ index 31436c254..62370b1b5 100644
 +  return (response: any) =>
 +    isOriginLeatherExtension(origin)
 +      ? chrome.runtime.sendMessage(response)
-+      : chrome.runtime.sendMessage(sender.tab?.id ?? 0, response);
++      : chrome.tabs.sendMessage(sender.tab?.id ?? 0, response);
 +}
 +
  //

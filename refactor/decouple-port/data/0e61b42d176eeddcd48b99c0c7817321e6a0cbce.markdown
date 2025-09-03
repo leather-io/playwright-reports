@@ -1,105 +1,130 @@
 # Test info
 
-- Name: Message signing >> BIP-322 message signing >> Signature approved
-- Location: /home/runner/work/extension/extension/tests/specs/rpc-message-signing/bip322-message-signing.spec.ts:33:5
+- Name: Gaia profile request >> should send a signed profile token to gaia
+- Location: /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:53:3
 
 # Error details
 
 ```
-Error: expect(received).toEqual(expected) // deep equality
+Error: locator.click: Element is not visible
+Call log:
+  - waiting for getByTestId('switch-account-item-0')
+    - locator resolved to <button data-testid="switch-account-item-0" class="group leather-pos_relative leather-bg_ink.background-primary leather-c_ink.text-primary leather-cursor_pointer leather-d_flex leather-h_auto leather-ring_none leather-bdr_xs leather-us_none leather-w_100% before:leather-content_"" before:leather-bdr_xs before:leather-pos_absolute before:leather-top_-space.03 before:leather-left_-space.03 before:leather-bottom_-space.03 before:leather-right_-space.03 [&:is(:active)]:before:leather-bg_ink.component-back…>…</button>
+  - attempting click action
+    - scrolling into view if needed
 
-- Expected  - 5
-+ Received  + 4
-
-  Object {
--   "jsonrpc": "2.0",
--   "result": Object {
--     "address": "bc1q530dz4h80kwlzywlhx2qn0k6vdtftd93c499yq",
--     "message": "test",
--     "signature": "AkcwRAIgBt6EMsCmR5Wy3NL1mDhviAddDFFSVK7EMNV4Z6fOfsECIGsXBBT2x8sMtBJFvjQwuf5BFMQqbFqGZzQRWy0/V2IhASEDA0e+UAqLJwegDnV2wMUnokfN3G6DY+5RFHuOQ7WQuqk=",
-+   "error": Object {
-+     "code": 4001,
-+     "message": "User rejected request",
-    },
-+   "jsonrpc": "2.0",
-  }
-    at /home/runner/work/extension/extension/tests/specs/rpc-message-signing/bip322-message-signing.spec.ts:42:27
+    at /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:58:61
 ```
 
 # Test source
 
 ```ts
-   1 | import { BrowserContext, Page } from '@playwright/test';
-   2 |
-   3 | import { test } from '../../fixtures/fixtures';
-   4 |
-   5 | test.describe('Message signing', () =>
-   6 |   test.describe('BIP-322 message signing', () => {
-   7 |     test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
-   8 |       await globalPage.setupAndUseApiCalls(extensionId);
-   9 |       await onboardingPage.signInWithTestAccount(extensionId);
-  10 |       await page.goto('localhost:3000', { waitUntil: 'networkidle' });
-  11 |     });
-  12 |
-  13 |     function clickActionButton(context: BrowserContext) {
-  14 |       return async (buttonToPress: 'Cancel' | 'Sign') => {
-  15 |         const popup = await context.waitForEvent('page');
-  16 |         const btn = popup.locator(`text="${buttonToPress}"`);
-  17 |         await btn.click();
-  18 |       };
-  19 |     }
-  20 |
-  21 |     function initiateMessageSigning(page: Page) {
-  22 |       return async (message: string) =>
-  23 |         page.evaluate(
-  24 |           async message =>
-  25 |             (window as any).LeatherProvider.request('signMessage', {
-  26 |               message,
-  27 |               paymentType: 'p2wpkh',
-  28 |             }).catch((e: unknown) => e),
-  29 |           message
-  30 |         );
-  31 |     }
-  32 |
-  33 |     test('Signature approved', async ({ page, context }) => {
-  34 |       const [result] = await Promise.all([
-  35 |         initiateMessageSigning(page)('test'),
-  36 |         clickActionButton(context)('Sign'),
-  37 |       ]);
-  38 |
-  39 |       // ID is random, removed so we can test known values
-  40 |       delete result.id;
-  41 |
-> 42 |       test.expect(result).toEqual({
-     |                           ^ Error: expect(received).toEqual(expected) // deep equality
-  43 |         jsonrpc: '2.0',
-  44 |         result: {
-  45 |           signature:
-  46 |             'AkcwRAIgBt6EMsCmR5Wy3NL1mDhviAddDFFSVK7EMNV4Z6fOfsECIGsXBBT2x8sMtBJFvjQwuf5BFMQqbFqGZzQRWy0/V2IhASEDA0e+UAqLJwegDnV2wMUnokfN3G6DY+5RFHuOQ7WQuqk=',
-  47 |           address: 'bc1q530dz4h80kwlzywlhx2qn0k6vdtftd93c499yq',
-  48 |           message: 'test',
-  49 |         },
-  50 |       });
-  51 |     });
-  52 |
-  53 |     test('Signature rejected', async ({ page, context }) => {
-  54 |       const [result] = await Promise.all([
-  55 |         initiateMessageSigning(page)('test'),
-  56 |         clickActionButton(context)('Cancel'),
-  57 |       ]);
-  58 |
-  59 |       delete result.id;
-  60 |
-  61 |       test.expect(result).toEqual({
-  62 |         jsonrpc: '2.0',
-  63 |         error: {
-  64 |           code: 4001,
-  65 |           message: 'User rejected request',
-  66 |         },
-  67 |       });
-  68 |     });
-  69 |   }));
-  70 |
+   1 | import { mockGaiaProfileResponse } from '@tests/mocks/mock-profile';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { UpdateProfileRequestPage } from '@tests/page-object-models/update-profile-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { delay } from '@leather.io/utils';
+   7 |
+   8 | import { test } from '../../fixtures/fixtures';
+   9 |
+   10 | test.describe.configure({ mode: 'serial' });
+   11 |
+   12 | test.describe('Profile updating', () => {
+   13 |   let testAppPage: TestAppPage;
+   14 |
+   15 |   test.beforeEach(async ({ context, extensionId, globalPage, onboardingPage }) => {
+   16 |     await globalPage.setupAndUseApiCalls(extensionId);
+   17 |     await onboardingPage.signInWithTestAccount(extensionId);
+   18 |     testAppPage = await TestAppPage.openDemoPage(context);
+   19 |   });
+   20 |
+   21 |   test('should show an error for invalid profile', async ({ context }) => {
+   22 |     const newPagePromise = context.waitForEvent('page');
+   23 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   24 |     const accountsPage = await newPagePromise;
+   25 |     await delay(2000);
+   26 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   27 |     await testAppPage.page.bringToFront();
+   28 |     await testAppPage.page.click('text=Profile', {
+   29 |       timeout: 30000,
+   30 |     });
+   31 |     await accountsPage.close();
+   32 |
+   33 |     await testAppPage.clickUpdateInvalidProfileButton();
+   34 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
+   35 |     const error = await profileUpdatingPage.waitForUpdateProfileRequestError(
+   36 |       'Invalid profile update request (Profile must follow Person schema).'
+   37 |     );
+   38 |
+   39 |     test.expect(error).toBeTruthy();
+   40 |     await profileUpdatingPage.page.close();
+   41 |   });
+   42 | });
+   43 |
+   44 | test.describe('Gaia profile request', () => {
+   45 |   let testAppPage: TestAppPage;
+   46 |
+   47 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   48 |     await globalPage.setupAndUseApiCalls(extensionId);
+   49 |     await onboardingPage.signInWithTestAccount(extensionId);
+   50 |     testAppPage = await TestAppPage.openDemoPage(context);
+   51 |   });
+   52 |
+   53 |   test('should send a signed profile token to gaia', async ({ context }) => {
+   54 |     const newPagePromise = context.waitForEvent('page');
+   55 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   56 |     const accountsPage = await newPagePromise;
+   57 |     await delay(2000);
+>  58 |     await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+      |                                                             ^ Error: locator.click: Element is not visible
+   59 |     await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   60 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   61 |     await testAppPage.page.bringToFront();
+   62 |     await testAppPage.page.click('text=Profile', {
+   63 |       timeout: 30000,
+   64 |     });
+   65 |
+   66 |     await testAppPage.clickUpdateProfileButton();
+   67 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
+   68 |
+   69 |     const requestPromise = profileUpdatingPage.page.waitForRequest('https://hub.blockstack.org/*');
+   70 |
+   71 |     await profileUpdatingPage.page.route('https://gaia.hiro.so/hub/*', async route => {
+   72 |       await route.fulfill({
+   73 |         status: 200,
+   74 |         contentType: 'application/octet-stream',
+   75 |         body: JSON.stringify(mockGaiaProfileResponse),
+   76 |       });
+   77 |     });
+   78 |
+   79 |     await profileUpdatingPage.page.route('https://hub.blockstack.org/*', async route => {
+   80 |       await route.abort();
+   81 |     });
+   82 |
+   83 |     const name = profileUpdatingPage.page.getByText('twitter');
+   84 |     const nameText = await name.innerText();
+   85 |     test.expect(nameText).toBe('https://twitter.com/twitterHandle');
+   86 |
+   87 |     await profileUpdatingPage.clickUpdateProfileButton();
+   88 |
+   89 |     const request = await requestPromise;
+   90 |     const requestBody = request.postData();
+   91 |     if (!requestBody) return;
+   92 |
+   93 |     const { decodedToken } = JSON.parse(requestBody)[0];
+   94 |     test.expect(decodedToken).toBeDefined();
+   95 |
+   96 |     test.expect(decodedToken?.header?.alg).toEqual('ES256K');
+   97 |     test.expect(decodedToken?.payload?.claim?.name).toContain('Name ');
+   98 |     test
+   99 |       .expect(decodedToken?.payload?.claim?.image?.[0]?.contentUrl)
+  100 |       .toEqual(
+  101 |         'https://byzantion.mypinata.cloud/ipfs/Qmb84UcaMr1MUwNbYBnXWHM3kEaDcYrKuPWwyRLVTNKELC/2256.png'
+  102 |       );
+  103 |   });
+  104 | });
+  105 |
 ```
 
 # Local changes
@@ -567,6 +592,35 @@ index 535ae1a77..5d0dffcaa 100755
 -    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
 -  },
 -});
+diff --git a/src/background/messaging/internal-methods/message-handler.ts b/src/background/messaging/internal-methods/message-handler.ts
+index 101c2f911..7b13dd587 100644
+--- a/src/background/messaging/internal-methods/message-handler.ts
++++ b/src/background/messaging/internal-methods/message-handler.ts
+@@ -1,6 +1,5 @@
+ import { logger } from '@shared/logger';
+ import { InternalMethods } from '@shared/message-types';
+-import { BackgroundMessages } from '@shared/messages';
+ 
+ import { syncAddressMonitor } from '@background/monitors/address-monitor';
+ 
+@@ -26,7 +25,7 @@ function logInternalMessage(message: { method: string }) {
+ }
+ 
+ export async function internalBackgroundMessageHandler(
+-  message: BackgroundMessages,
++  message: any,
+   sender: chrome.runtime.MessageSender,
+   sendResponse: (response?: any) => void
+ ) {
+@@ -44,7 +43,7 @@ export async function internalBackgroundMessageHandler(
+       break;
+   }
+ 
+-  if (message.method.includes('bitcoinKeys/signOut')) {
++  if ('method' in message && message.method === 'bitcoinKeys/signOut') {
+     await syncAddressMonitor([]);
+   }
+ 
 diff --git a/src/background/messaging/legacy/legacy-external-message-handler.ts b/src/background/messaging/legacy/legacy-external-message-handler.ts
 index a44f4fa01..6d94c4d7c 100644
 --- a/src/background/messaging/legacy/legacy-external-message-handler.ts
@@ -1320,7 +1374,7 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..62370b1b5 100644
+index 31436c254..3bc35bf62 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
 @@ -25,21 +25,34 @@ import { popup } from '@background/popup';
@@ -1360,7 +1414,7 @@ index 31436c254..62370b1b5 100644
 +  return (response: any) =>
 +    isOriginLeatherExtension(origin)
 +      ? chrome.runtime.sendMessage(response)
-+      : chrome.runtime.sendMessage(sender.tab?.id ?? 0, response);
++      : chrome.tabs.sendMessage(sender.tab?.id ?? 0, response);
 +}
 +
  //

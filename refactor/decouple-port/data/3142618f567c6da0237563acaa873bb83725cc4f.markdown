@@ -1,121 +1,155 @@
 # Test info
 
-- Name: RPC: sendTransfer >> that the request can be broadcast
-- Location: /home/runner/work/extension/extension/tests/specs/rpc-send-transfer/rpc-send-transfer.spec.ts:55:3
+- Name: stx_signMessage >> MessageType: structured >> Signature approved
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:81:5
 
 # Error details
 
 ```
 Error: expect(received).toEqual(expected) // deep equality
 
-- Expected  - 3
+- Expected  - 4
 + Received  + 4
 
   Object {
+-   "jsonrpc": "2.0",
+-   "result": Object {
+-     "publicKey": "0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af",
+-     "signature": "9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01",
 +   "error": Object {
 +     "code": 4001,
 +     "message": "User rejected request",
-+   },
-    "jsonrpc": "2.0",
--   "result": Object {
--     "txid": "58d44000884f0ba4cdcbeb1ac082e6c802d300c16b0d3251738e8cf6a57397ce",
--   },
+    },
++   "jsonrpc": "2.0",
   }
-    at /home/runner/work/extension/extension/tests/specs/rpc-send-transfer/rpc-send-transfer.spec.ts:65:25
+    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:93:27
 ```
 
 # Test source
 
 ```ts
    1 | import { BrowserContext, Page } from '@playwright/test';
-   2 | import { TEST_TESTNET_ACCOUNT_2_BTC_ADDRESS } from '@tests/mocks/constants';
-   3 | import { mockTestAccountBtcBroadcastTransaction } from '@tests/mocks/mock-bitcoin-tx';
-   4 |
-   5 | import type { RpcParams, sendTransfer } from '@leather.io/rpc';
-   6 |
-   7 | import { test } from '../../fixtures/fixtures';
-   8 |
-   9 | const baseParams = {
-  10 |   recipients: [
-  11 |     {
-  12 |       address: TEST_TESTNET_ACCOUNT_2_BTC_ADDRESS,
-  13 |       amount: '800',
-  14 |     },
-  15 |     {
-  16 |       address: TEST_TESTNET_ACCOUNT_2_BTC_ADDRESS,
-  17 |       amount: '900',
-  18 |     },
-  19 |   ],
-  20 |   network: 'testnet4',
-  21 | };
-  22 |
-  23 | test.describe('RPC: sendTransfer', () => {
-  24 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
-  25 |     await globalPage.setupAndUseApiCalls(extensionId);
-  26 |     await onboardingPage.signInWithTestAccount(extensionId);
-  27 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
-  28 |   });
-  29 |
-  30 |   function clickActionButton(context: BrowserContext) {
-  31 |     return async (buttonToPress: 'Cancel' | 'Approve') => {
-  32 |       const popup = await context.waitForEvent('page');
-  33 |       await popup.waitForTimeout(1000);
-  34 |       const btn = popup.locator(`text="${buttonToPress}"`);
-  35 |       await btn.click();
-  36 |     };
-  37 |   }
-  38 |
-  39 |   async function mockPopupRequests(context: BrowserContext) {
-  40 |     const popup = await context.waitForEvent('page');
-  41 |     await mockTestAccountBtcBroadcastTransaction(popup);
-  42 |   }
-  43 |
-  44 |   function openSendTransfer(page: Page) {
-  45 |     return async (params: RpcParams<typeof sendTransfer>) =>
-  46 |       page.evaluate(
-  47 |         async params =>
-  48 |           (window as any).LeatherProvider?.request('sendTransfer', {
-  49 |             ...params,
-  50 |           }).catch((e: unknown) => e),
-  51 |         { ...params }
-  52 |       );
-  53 |   }
-  54 |
-  55 |   test('that the request can be broadcast', async ({ page, context }) => {
-  56 |     void mockPopupRequests(context);
-  57 |
-  58 |     const [result] = await Promise.all([
-  59 |       openSendTransfer(page)(baseParams),
-  60 |       clickActionButton(context)('Approve'),
-  61 |     ]);
-  62 |
-  63 |     delete result.id;
-  64 |
-> 65 |     test.expect(result).toEqual({
-     |                         ^ Error: expect(received).toEqual(expected) // deep equality
-  66 |       jsonrpc: '2.0',
-  67 |       result: { txid: '58d44000884f0ba4cdcbeb1ac082e6c802d300c16b0d3251738e8cf6a57397ce' },
-  68 |     });
-  69 |   });
-  70 |
-  71 |   test('that the request can be cancelled', async ({ page, context }) => {
-  72 |     const [result] = await Promise.all([
-  73 |       openSendTransfer(page)(baseParams),
-  74 |       clickActionButton(context)('Cancel'),
-  75 |     ]);
-  76 |
-  77 |     delete result.id;
-  78 |
-  79 |     test.expect(result).toEqual({
-  80 |       jsonrpc: '2.0',
-  81 |       error: {
-  82 |         code: 4001,
-  83 |         message: 'User rejected request',
-  84 |       },
-  85 |     });
-  86 |   });
-  87 | });
-  88 |
+   2 | import {
+   3 |   intCV,
+   4 |   serializeCV,
+   5 |   stringAsciiCV,
+   6 |   stringUtf8CV,
+   7 |   tupleCV,
+   8 |   uintCV,
+   9 | } from '@stacks/transactions';
+   10 |
+   11 | import { test } from '../../fixtures/fixtures';
+   12 |
+   13 | test.describe('stx_signMessage', () => {
+   14 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
+   15 |     await globalPage.setupAndUseApiCalls(extensionId);
+   16 |     await onboardingPage.signInWithTestAccount(extensionId);
+   17 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
+   18 |   });
+   19 |
+   20 |   function clickActionButton(context: BrowserContext) {
+   21 |     return async (buttonToPress: 'Cancel' | 'Sign') => {
+   22 |       const popup = await context.waitForEvent('page');
+   23 |       const btn = popup.locator(`text="${buttonToPress}"`);
+   24 |       await btn.click();
+   25 |     };
+   26 |   }
+   27 |
+   28 |   function initiateUtf8MessageSigning(page: Page) {
+   29 |     return async (message: string) =>
+   30 |       page.evaluate(
+   31 |         async ({ message }) =>
+   32 |           (window as any).LeatherProvider.request('stx_signMessage', {
+   33 |             message,
+   34 |             messageType: 'utf8',
+   35 |           }).catch((e: unknown) => e),
+   36 |         { message }
+   37 |       );
+   38 |   }
+   39 |
+   40 |   test.describe('MessageType: utf8', () => {
+   41 |     test('Signature approved', async ({ page, context }) => {
+   42 |       const [result] = await Promise.all([
+   43 |         initiateUtf8MessageSigning(page)('test'),
+   44 |         clickActionButton(context)('Sign'),
+   45 |       ]);
+   46 |
+   47 |       // ID is random, removed so we can test known values
+   48 |       delete result.id;
+   49 |
+   50 |       test.expect(result).toEqual({
+   51 |         jsonrpc: '2.0',
+   52 |         result: {
+   53 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
+   54 |           signature:
+   55 |             '6d9040912574f9a8128ada79968e9b09e9d469fe84cda063701be0fefb8c3bdc21a309456a78929347a095a4a856271bde9cb327132edad7730d29404dba5e9300',
+   56 |         },
+   57 |       });
+   58 |     });
+   59 |   });
+   60 |
+   61 |   test.describe('MessageType: structured', () => {
+   62 |     const domain = tupleCV({
+   63 |       name: stringAsciiCV('leather.io'),
+   64 |       version: stringAsciiCV('1.0.0'),
+   65 |       'chain-id': uintCV(1),
+   66 |     });
+   67 |
+   68 |     function initiateStxStructuredMessageSigning(page: Page) {
+   69 |       return async (message: string, domain: string) =>
+   70 |         page.evaluate(
+   71 |           async ({ message, domain }) =>
+   72 |             (window as any).LeatherProvider.request('stx_signMessage', {
+   73 |               message,
+   74 |               domain,
+   75 |               messageType: 'structured',
+   76 |             }).catch((e: unknown) => e),
+   77 |           { message, domain }
+   78 |         );
+   79 |     }
+   80 |
+   81 |     test('Signature approved', async ({ page, context }) => {
+   82 |       const [result] = await Promise.all([
+   83 |         initiateStxStructuredMessageSigning(page)(
+   84 |           serializeCV(tupleCV({ a: intCV(-1), b: stringUtf8CV('this is a structured message') })),
+   85 |           serializeCV(domain)
+   86 |         ),
+   87 |         clickActionButton(context)('Sign'),
+   88 |       ]);
+   89 |
+   90 |       // ID is random, removed so we can test known values
+   91 |       delete result.id;
+   92 |
+>  93 |       test.expect(result).toEqual({
+      |                           ^ Error: expect(received).toEqual(expected) // deep equality
+   94 |         jsonrpc: '2.0',
+   95 |         result: {
+   96 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
+   97 |           signature:
+   98 |             '9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01',
+   99 |         },
+  100 |       });
+  101 |     });
+  102 |   });
+  103 |
+  104 |   test('Signature rejected', async ({ page, context }) => {
+  105 |     const [result] = await Promise.all([
+  106 |       initiateUtf8MessageSigning(page)('test'),
+  107 |       clickActionButton(context)('Cancel'),
+  108 |     ]);
+  109 |
+  110 |     delete result.id;
+  111 |
+  112 |     test.expect(result).toEqual({
+  113 |       jsonrpc: '2.0',
+  114 |       error: {
+  115 |         code: 4001,
+  116 |         message: 'User denied signing',
+  117 |       },
+  118 |     });
+  119 |   });
+  120 | });
+  121 |
 ```
 
 # Local changes
@@ -583,6 +617,35 @@ index 535ae1a77..5d0dffcaa 100755
 -    void queueAnalyticsRequest('user_session_complete', sessionMetadata);
 -  },
 -});
+diff --git a/src/background/messaging/internal-methods/message-handler.ts b/src/background/messaging/internal-methods/message-handler.ts
+index 101c2f911..7b13dd587 100644
+--- a/src/background/messaging/internal-methods/message-handler.ts
++++ b/src/background/messaging/internal-methods/message-handler.ts
+@@ -1,6 +1,5 @@
+ import { logger } from '@shared/logger';
+ import { InternalMethods } from '@shared/message-types';
+-import { BackgroundMessages } from '@shared/messages';
+ 
+ import { syncAddressMonitor } from '@background/monitors/address-monitor';
+ 
+@@ -26,7 +25,7 @@ function logInternalMessage(message: { method: string }) {
+ }
+ 
+ export async function internalBackgroundMessageHandler(
+-  message: BackgroundMessages,
++  message: any,
+   sender: chrome.runtime.MessageSender,
+   sendResponse: (response?: any) => void
+ ) {
+@@ -44,7 +43,7 @@ export async function internalBackgroundMessageHandler(
+       break;
+   }
+ 
+-  if (message.method.includes('bitcoinKeys/signOut')) {
++  if ('method' in message && message.method === 'bitcoinKeys/signOut') {
+     await syncAddressMonitor([]);
+   }
+ 
 diff --git a/src/background/messaging/legacy/legacy-external-message-handler.ts b/src/background/messaging/legacy/legacy-external-message-handler.ts
 index a44f4fa01..6d94c4d7c 100644
 --- a/src/background/messaging/legacy/legacy-external-message-handler.ts
@@ -1336,7 +1399,7 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..62370b1b5 100644
+index 31436c254..3bc35bf62 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
 @@ -25,21 +25,34 @@ import { popup } from '@background/popup';
@@ -1376,7 +1439,7 @@ index 31436c254..62370b1b5 100644
 +  return (response: any) =>
 +    isOriginLeatherExtension(origin)
 +      ? chrome.runtime.sendMessage(response)
-+      : chrome.runtime.sendMessage(sender.tab?.id ?? 0, response);
++      : chrome.tabs.sendMessage(sender.tab?.id ?? 0, response);
 +}
 +
  //

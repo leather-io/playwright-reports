@@ -1,139 +1,67 @@
 # Test info
 
-- Name: Rpc: stx_getAddresses >> softwareWallet  >> it returns the second accounts data after changing account
-- Location: /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:165:11
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
 
 # Error details
 
 ```
-Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
-    1) <span aria-busy="false" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka locator('#app').getByTestId('switch-account-item-1')
-    2) <span aria-busy="false" data-testid="switch-account-sheet-account-name-1" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka getByTestId('virtuoso-item-list').getByTestId('switch-account-item-1')
-
+Error: page.click: Target crashed 
 Call log:
-  - expect.toBeVisible with timeout 5000ms
-  - waiting for getByText('Account 2')
+  - waiting for locator('[data-testid="btn-confirm-transaction"]')
+    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-pos_relative leather-textStyle_label.02 leather-ta_center leather-bdr_round leather-d_inline-flex leather-ai_center leather-jc_center leather-gap_space.02 leather-white-space_nowrap loading:after:leather-anim_spin loading:after:leather-bd_2px_solid loading:after:leather-bd-c_currentColor loading:after:leather-bd-b-c_transparent loading:after:leather-bx-s_border-box loading:after:leather-content_"" loading:afte…>…</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
 
-    at /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:176:61
+    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
 ```
 
 # Test source
 
 ```ts
-   76 |   const button = popup.getByTestId('get-addresses-approve-button');
-   77 |   await test.expect(button).toBeVisible();
-   78 |   await button.click();
-   79 | }
-   80 |
-   81 | getAddressesMethods.forEach(method => {
-   82 |   test.describe(`Rpc: ${method}`, () => {
-   83 |     test.beforeEach(
-   84 |       async ({ extensionId, globalPage }) => await globalPage.setupAndUseApiCalls(extensionId)
-   85 |     );
-   86 |
-   87 |     const specs = {
-   88 |       softwareWallet: {
-   89 |         beforeEach: softwareBeforeEach(),
-   90 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
-   91 |       },
-   92 |       ledgerWithBitcoinAndStacksKey: {
-   93 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin', 'stacks'])),
-   94 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
-   95 |       },
-   96 |       ledgerWithStacksKeysOnly: {
-   97 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['stacks'])),
-   98 |         expectedResult: getExpectedResponseForKeys(['stacks']),
-   99 |       },
-  100 |       ledgerWithBitcoinKeysOnly: {
-  101 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin'])),
-  102 |         expectedResult: getExpectedResponseForKeys(['bitcoin']),
-  103 |       },
-  104 |     } as const;
-  105 |
-  106 |     Object.entries(specs).forEach(([walletPreset, { beforeEach, expectedResult }]) => {
-  107 |       test.describe(`${walletPreset} `, () => {
-  108 |         beforeEach();
-  109 |
-  110 |         test('the promise resolves with addresses successfully', async ({ page, context }) => {
-  111 |           await page.goto('localhost:3000');
-  112 |           const getAddressesPromise = initiateGetAddresses(page, method);
-  113 |
-  114 |           const popup = await interceptRequestPopup(context);
-  115 |           await clickConnectLeatherButton(popup);
-  116 |
-  117 |           const result = await getAddressesPromise;
-  118 |           if (!result) throw new Error('Expected result');
-  119 |           const { id, ...payloadWithoutId } = result;
-  120 |
-  121 |           test.expect(payloadWithoutId).toEqual(expectedResult);
-  122 |         });
-  123 |
-  124 |         test('the promise rejects when user closes popup window', async ({ page, context }) => {
-  125 |           await page.goto('localhost:3000');
-  126 |           const getAddressesPromise = initiateGetAddresses(page, method);
-  127 |           const popup = await interceptRequestPopup(context);
-  128 |           await popup.close();
-  129 |           await test.expect(getAddressesPromise).rejects.toThrow();
-  130 |         });
-  131 |
-  132 |         if (walletPreset === 'softwareWallet') {
-  133 |           test('it redirects back to get addresses flow when wallet is locked', async ({
-  134 |             homePage,
-  135 |             page,
-  136 |             context,
-  137 |           }) => {
-  138 |             await homePage.lock();
-  139 |             await page.goto('localhost:3000');
-  140 |             const getAddressesPromise = initiateGetAddresses(page, method);
-  141 |             const popup = await interceptRequestPopup(context);
-  142 |             await popup.getByRole('textbox').fill(TEST_PASSWORD);
-  143 |             await popup.getByRole('button', { name: 'Continue' }).click();
-  144 |             await popup.getByText('Connect').isVisible();
-  145 |             await test.expect(popup.getByTestId('get-addresses-approve-button')).toBeVisible();
-  146 |             await clickConnectLeatherButton(popup);
-  147 |             await test.expect(getAddressesPromise).resolves.toMatchObject(expectedResult);
-  148 |           });
-  149 |
-  150 |           test('it returns testnet addresses with the network param set', async ({
-  151 |             page,
-  152 |             context,
-  153 |           }) => {
-  154 |             await page.goto('localhost:3000');
-  155 |             const getAddressesPromise = initiateGetAddresses(page, method, { network: 'testnet' });
-  156 |             const popup = await interceptRequestPopup(context);
-  157 |             await clickConnectLeatherButton(popup);
-  158 |
-  159 |             const result = await getAddressesPromise;
-  160 |             test
-  161 |               .expect(result.result.addresses[0].address)
-  162 |               .toEqual('tb1q4qgnjewwun2llgken94zqjrx5kpqqycaz5522d');
-  163 |           });
-  164 |
-  165 |           test('it returns the second accounts data after changing account', async ({
-  166 |             page,
-  167 |             context,
-  168 |           }) => {
-  169 |             await page.goto('localhost:3000');
-  170 |             const getAddressesPromise = initiateGetAddresses(page, method);
-  171 |             const popup = await interceptRequestPopup(context);
-  172 |             const switchAccountButton = popup.getByTestId('switch-account-item-0');
-  173 |             await switchAccountButton.click();
-  174 |             const secondAccountInListButton = popup.getByTestId('switch-account-item-1');
-  175 |             await secondAccountInListButton.click();
-> 176 |             await test.expect(popup.getByText('Account 2')).toBeVisible();
-      |                                                             ^ Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
-  177 |             await clickConnectLeatherButton(popup);
-  178 |             const result = await getAddressesPromise;
-  179 |             test
-  180 |               .expect(result.result.addresses[0].address)
-  181 |               .toEqual('bc1qr9wmz342txkcmxxq5ysmfqrd5rvmxtu6nldjgp');
-  182 |           });
-  183 |         }
-  184 |       });
-  185 |     });
-  186 |   });
-  187 | });
-  188 |
+   1 | import { Page } from '@playwright/test';
+   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
+   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   4 | import { createTestSelector } from '@tests/utils';
+   5 |
+   6 | export class TransactionRequestPage {
+   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
+   8 |     TransactionRequestSelectors.BtnConfirmTransaction
+   9 |   );
+  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
+  11 |   readonly transactionRequestPage = createTestSelector(
+  12 |     TransactionRequestSelectors.TransactionRequestPage
+  13 |   );
+  14 |
+  15 |   constructor(readonly page: Page) {}
+  16 |
+  17 |   async clickConfirmTransactionButton() {
+> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
+     |                      ^ Error: page.click: Target crashed 
+  19 |   }
+  20 |
+  21 |   async getDisplayedFeeValue() {
+  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
+  23 |   }
+  24 |
+  25 |   async waitForTransactionRequestError(msg: string) {
+  26 |     return this.page.waitForSelector(`text=${msg}`);
+  27 |   }
+  28 |
+  29 |   async waitForFee() {
+  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
+  31 |   }
+  32 |
+  33 |   async waitForTransactionRequestPage() {
+  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
+  35 |   }
+  36 | }
+  37 |
 ```
 
 # Local changes

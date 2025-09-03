@@ -1,130 +1,155 @@
 # Test info
 
-- Name: Gaia profile request >> should send a signed profile token to gaia
-- Location: /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:53:3
+- Name: stx_signMessage >> MessageType: structured >> Signature approved
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:81:5
 
 # Error details
 
 ```
-Error: locator.click: Element is not visible
-Call log:
-  - waiting for getByTestId('switch-account-item-0')
-    - locator resolved to <button data-testid="switch-account-item-0" class="group leather-pos_relative leather-bg_ink.background-primary leather-c_ink.text-primary leather-cursor_pointer leather-d_flex leather-h_auto leather-ring_none leather-bdr_xs leather-us_none leather-w_100% before:leather-content_"" before:leather-bdr_xs before:leather-pos_absolute before:leather-top_-space.03 before:leather-left_-space.03 before:leather-bottom_-space.03 before:leather-right_-space.03 [&:is(:active)]:before:leather-bg_ink.component-back…>…</button>
-  - attempting click action
-    - scrolling into view if needed
+Error: expect(received).toEqual(expected) // deep equality
 
-    at /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:58:61
+- Expected  - 4
++ Received  + 4
+
+  Object {
+-   "jsonrpc": "2.0",
+-   "result": Object {
+-     "publicKey": "0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af",
+-     "signature": "9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01",
++   "error": Object {
++     "code": 4001,
++     "message": "User rejected request",
+    },
++   "jsonrpc": "2.0",
+  }
+    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:93:27
 ```
 
 # Test source
 
 ```ts
-   1 | import { mockGaiaProfileResponse } from '@tests/mocks/mock-profile';
-   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
-   3 | import { UpdateProfileRequestPage } from '@tests/page-object-models/update-profile-request.page';
-   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
-   5 |
-   6 | import { delay } from '@leather.io/utils';
-   7 |
-   8 | import { test } from '../../fixtures/fixtures';
-   9 |
-   10 | test.describe.configure({ mode: 'serial' });
-   11 |
-   12 | test.describe('Profile updating', () => {
-   13 |   let testAppPage: TestAppPage;
-   14 |
-   15 |   test.beforeEach(async ({ context, extensionId, globalPage, onboardingPage }) => {
-   16 |     await globalPage.setupAndUseApiCalls(extensionId);
-   17 |     await onboardingPage.signInWithTestAccount(extensionId);
-   18 |     testAppPage = await TestAppPage.openDemoPage(context);
-   19 |   });
-   20 |
-   21 |   test('should show an error for invalid profile', async ({ context }) => {
-   22 |     const newPagePromise = context.waitForEvent('page');
-   23 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   24 |     const accountsPage = await newPagePromise;
-   25 |     await delay(2000);
-   26 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   27 |     await testAppPage.page.bringToFront();
-   28 |     await testAppPage.page.click('text=Profile', {
-   29 |       timeout: 30000,
-   30 |     });
-   31 |     await accountsPage.close();
-   32 |
-   33 |     await testAppPage.clickUpdateInvalidProfileButton();
-   34 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
-   35 |     const error = await profileUpdatingPage.waitForUpdateProfileRequestError(
-   36 |       'Invalid profile update request (Profile must follow Person schema).'
-   37 |     );
-   38 |
-   39 |     test.expect(error).toBeTruthy();
-   40 |     await profileUpdatingPage.page.close();
-   41 |   });
-   42 | });
-   43 |
-   44 | test.describe('Gaia profile request', () => {
-   45 |   let testAppPage: TestAppPage;
+   1 | import { BrowserContext, Page } from '@playwright/test';
+   2 | import {
+   3 |   intCV,
+   4 |   serializeCV,
+   5 |   stringAsciiCV,
+   6 |   stringUtf8CV,
+   7 |   tupleCV,
+   8 |   uintCV,
+   9 | } from '@stacks/transactions';
+   10 |
+   11 | import { test } from '../../fixtures/fixtures';
+   12 |
+   13 | test.describe('stx_signMessage', () => {
+   14 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
+   15 |     await globalPage.setupAndUseApiCalls(extensionId);
+   16 |     await onboardingPage.signInWithTestAccount(extensionId);
+   17 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
+   18 |   });
+   19 |
+   20 |   function clickActionButton(context: BrowserContext) {
+   21 |     return async (buttonToPress: 'Cancel' | 'Sign') => {
+   22 |       const popup = await context.waitForEvent('page');
+   23 |       const btn = popup.locator(`text="${buttonToPress}"`);
+   24 |       await btn.click();
+   25 |     };
+   26 |   }
+   27 |
+   28 |   function initiateUtf8MessageSigning(page: Page) {
+   29 |     return async (message: string) =>
+   30 |       page.evaluate(
+   31 |         async ({ message }) =>
+   32 |           (window as any).LeatherProvider.request('stx_signMessage', {
+   33 |             message,
+   34 |             messageType: 'utf8',
+   35 |           }).catch((e: unknown) => e),
+   36 |         { message }
+   37 |       );
+   38 |   }
+   39 |
+   40 |   test.describe('MessageType: utf8', () => {
+   41 |     test('Signature approved', async ({ page, context }) => {
+   42 |       const [result] = await Promise.all([
+   43 |         initiateUtf8MessageSigning(page)('test'),
+   44 |         clickActionButton(context)('Sign'),
+   45 |       ]);
    46 |
-   47 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
-   48 |     await globalPage.setupAndUseApiCalls(extensionId);
-   49 |     await onboardingPage.signInWithTestAccount(extensionId);
-   50 |     testAppPage = await TestAppPage.openDemoPage(context);
-   51 |   });
-   52 |
-   53 |   test('should send a signed profile token to gaia', async ({ context }) => {
-   54 |     const newPagePromise = context.waitForEvent('page');
-   55 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   56 |     const accountsPage = await newPagePromise;
-   57 |     await delay(2000);
->  58 |     await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
-      |                                                             ^ Error: locator.click: Element is not visible
-   59 |     await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
-   60 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   61 |     await testAppPage.page.bringToFront();
-   62 |     await testAppPage.page.click('text=Profile', {
-   63 |       timeout: 30000,
-   64 |     });
-   65 |
-   66 |     await testAppPage.clickUpdateProfileButton();
-   67 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
-   68 |
-   69 |     const requestPromise = profileUpdatingPage.page.waitForRequest('https://hub.blockstack.org/*');
-   70 |
-   71 |     await profileUpdatingPage.page.route('https://gaia.hiro.so/hub/*', async route => {
-   72 |       await route.fulfill({
-   73 |         status: 200,
-   74 |         contentType: 'application/octet-stream',
-   75 |         body: JSON.stringify(mockGaiaProfileResponse),
-   76 |       });
-   77 |     });
-   78 |
-   79 |     await profileUpdatingPage.page.route('https://hub.blockstack.org/*', async route => {
-   80 |       await route.abort();
-   81 |     });
-   82 |
-   83 |     const name = profileUpdatingPage.page.getByText('twitter');
-   84 |     const nameText = await name.innerText();
-   85 |     test.expect(nameText).toBe('https://twitter.com/twitterHandle');
-   86 |
-   87 |     await profileUpdatingPage.clickUpdateProfileButton();
-   88 |
-   89 |     const request = await requestPromise;
-   90 |     const requestBody = request.postData();
-   91 |     if (!requestBody) return;
+   47 |       // ID is random, removed so we can test known values
+   48 |       delete result.id;
+   49 |
+   50 |       test.expect(result).toEqual({
+   51 |         jsonrpc: '2.0',
+   52 |         result: {
+   53 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
+   54 |           signature:
+   55 |             '6d9040912574f9a8128ada79968e9b09e9d469fe84cda063701be0fefb8c3bdc21a309456a78929347a095a4a856271bde9cb327132edad7730d29404dba5e9300',
+   56 |         },
+   57 |       });
+   58 |     });
+   59 |   });
+   60 |
+   61 |   test.describe('MessageType: structured', () => {
+   62 |     const domain = tupleCV({
+   63 |       name: stringAsciiCV('leather.io'),
+   64 |       version: stringAsciiCV('1.0.0'),
+   65 |       'chain-id': uintCV(1),
+   66 |     });
+   67 |
+   68 |     function initiateStxStructuredMessageSigning(page: Page) {
+   69 |       return async (message: string, domain: string) =>
+   70 |         page.evaluate(
+   71 |           async ({ message, domain }) =>
+   72 |             (window as any).LeatherProvider.request('stx_signMessage', {
+   73 |               message,
+   74 |               domain,
+   75 |               messageType: 'structured',
+   76 |             }).catch((e: unknown) => e),
+   77 |           { message, domain }
+   78 |         );
+   79 |     }
+   80 |
+   81 |     test('Signature approved', async ({ page, context }) => {
+   82 |       const [result] = await Promise.all([
+   83 |         initiateStxStructuredMessageSigning(page)(
+   84 |           serializeCV(tupleCV({ a: intCV(-1), b: stringUtf8CV('this is a structured message') })),
+   85 |           serializeCV(domain)
+   86 |         ),
+   87 |         clickActionButton(context)('Sign'),
+   88 |       ]);
+   89 |
+   90 |       // ID is random, removed so we can test known values
+   91 |       delete result.id;
    92 |
-   93 |     const { decodedToken } = JSON.parse(requestBody)[0];
-   94 |     test.expect(decodedToken).toBeDefined();
-   95 |
-   96 |     test.expect(decodedToken?.header?.alg).toEqual('ES256K');
-   97 |     test.expect(decodedToken?.payload?.claim?.name).toContain('Name ');
-   98 |     test
-   99 |       .expect(decodedToken?.payload?.claim?.image?.[0]?.contentUrl)
-  100 |       .toEqual(
-  101 |         'https://byzantion.mypinata.cloud/ipfs/Qmb84UcaMr1MUwNbYBnXWHM3kEaDcYrKuPWwyRLVTNKELC/2256.png'
-  102 |       );
-  103 |   });
-  104 | });
-  105 |
+>  93 |       test.expect(result).toEqual({
+      |                           ^ Error: expect(received).toEqual(expected) // deep equality
+   94 |         jsonrpc: '2.0',
+   95 |         result: {
+   96 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
+   97 |           signature:
+   98 |             '9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01',
+   99 |         },
+  100 |       });
+  101 |     });
+  102 |   });
+  103 |
+  104 |   test('Signature rejected', async ({ page, context }) => {
+  105 |     const [result] = await Promise.all([
+  106 |       initiateUtf8MessageSigning(page)('test'),
+  107 |       clickActionButton(context)('Cancel'),
+  108 |     ]);
+  109 |
+  110 |     delete result.id;
+  111 |
+  112 |     test.expect(result).toEqual({
+  113 |       jsonrpc: '2.0',
+  114 |       error: {
+  115 |         code: 4001,
+  116 |         message: 'User denied signing',
+  117 |       },
+  118 |     });
+  119 |   });
+  120 | });
+  121 |
 ```
 
 # Local changes
@@ -533,10 +558,16 @@ index 39d70a5fa..49c44a73d 100644
    };
  }
 diff --git a/src/background/background.ts b/src/background/background.ts
-index 535ae1a77..5d0dffcaa 100755
+index 535ae1a77..01f37eb7b 100755
 --- a/src/background/background.ts
 +++ b/src/background/background.ts
-@@ -21,6 +21,16 @@ import { initAddressMonitor } from './monitors/address-monitor';
+@@ -16,11 +16,22 @@ import {
+   isLegacyMessage,
+ } from './messaging/legacy/legacy-external-message-handler';
+ import { rpcMessageHandler } from './messaging/rpc-message-handler';
++import { rpcRequestSchema } from './messaging/rpc-request-utils';
+ import { initAddressMonitor } from './monitors/address-monitor';
+ 
  initContextMenuActions();
  warnUsersAboutDevToolsDangers();
  
@@ -553,7 +584,7 @@ index 535ae1a77..5d0dffcaa 100755
  chrome.runtime.onInstalled.addListener(async details => {
    if (details.reason === 'install' && process.env.WALLET_ENVIRONMENT !== 'testing') {
      await chrome.tabs.create({
-@@ -34,7 +44,7 @@ chrome.runtime.onConnect.addListener(port => {
+@@ -34,7 +45,7 @@ chrome.runtime.onConnect.addListener(port => {
    if (port.name !== CONTENT_SCRIPT_PORT) return;
  
    port.onMessage.addListener((message: LegacyMessageFromContentScript | RpcRequests, port) => {
@@ -562,7 +593,7 @@ index 535ae1a77..5d0dffcaa 100755
        return logger.error('Message reached background script without a corresponding tab');
  
      // Chromium/Firefox discrepancy
-@@ -52,24 +62,18 @@ chrome.runtime.onConnect.addListener(port => {
+@@ -52,24 +63,19 @@ chrome.runtime.onConnect.addListener(port => {
      // TODO:
      // Here we'll handle all messages using the rpc style comm method
      // For now all messages are handled as legacy format
@@ -574,8 +605,9 @@ index 535ae1a77..5d0dffcaa 100755
  //
  // Events from the extension frames script
  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-+  if (message.jsonrpc === '2.0') {
++  if (rpcRequestSchema.safeParse(message).success) {
 +    void rpcMessageHandler(message, sender);
++    return true;
 +  }
    void internalBackgroundMessageHandler(message, sender, sendResponse);
 +
@@ -593,31 +625,23 @@ index 535ae1a77..5d0dffcaa 100755
 -  },
 -});
 diff --git a/src/background/messaging/internal-methods/message-handler.ts b/src/background/messaging/internal-methods/message-handler.ts
-index 101c2f911..7b13dd587 100644
+index 101c2f911..cd8607681 100644
 --- a/src/background/messaging/internal-methods/message-handler.ts
 +++ b/src/background/messaging/internal-methods/message-handler.ts
-@@ -1,6 +1,5 @@
+@@ -1,6 +1,6 @@
  import { logger } from '@shared/logger';
  import { InternalMethods } from '@shared/message-types';
 -import { BackgroundMessages } from '@shared/messages';
++import type { BackgroundMessages } from '@shared/messages';
  
  import { syncAddressMonitor } from '@background/monitors/address-monitor';
  
-@@ -26,7 +25,7 @@ function logInternalMessage(message: { method: string }) {
- }
- 
- export async function internalBackgroundMessageHandler(
--  message: BackgroundMessages,
-+  message: any,
-   sender: chrome.runtime.MessageSender,
-   sendResponse: (response?: any) => void
- ) {
-@@ -44,7 +43,7 @@ export async function internalBackgroundMessageHandler(
+@@ -44,7 +44,7 @@ export async function internalBackgroundMessageHandler(
        break;
    }
  
 -  if (message.method.includes('bitcoinKeys/signOut')) {
-+  if ('method' in message && message.method === 'bitcoinKeys/signOut') {
++  if ('method' in message && (message as any).method === 'bitcoinKeys/signOut') {
      await syncAddressMonitor([]);
    }
  
@@ -1374,10 +1398,18 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..3bc35bf62 100644
+index 31436c254..c05ed1141 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
-@@ -25,21 +25,34 @@ import { popup } from '@background/popup';
+@@ -7,6 +7,7 @@ import {
+   type RpcMethodNames,
+   type RpcRequests,
+   createRpcErrorResponse,
++  rpcBasePropsSchema,
+ } from '@leather.io/rpc';
+ import { isUndefined } from '@leather.io/utils';
+ 
+@@ -25,21 +26,34 @@ import { popup } from '@background/popup';
  
  import { trackRpcRequestError } from './rpc-helpers';
  
@@ -1420,7 +1452,7 @@ index 31436c254..3bc35bf62 100644
  //
  // Playwright does not currently support Chrome extension popup testing:
  // https://github.com/microsoft/playwright/issues/5593
-@@ -102,12 +115,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
+@@ -102,12 +116,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
  export type RequestParams = [string, string][];
  
  export function createConnectingAppMetadataSearchParams(
@@ -1436,7 +1468,7 @@ index 31436c254..3bc35bf62 100644
    urlParams.set('origin', origin ?? '');
    urlParams.set('tabId', tabId.toString());
    otherParams.forEach(([key, value]) => urlParams.append(key, value));
-@@ -115,12 +128,12 @@ export function createConnectingAppMetadataSearchParams(
+@@ -115,12 +129,12 @@ export function createConnectingAppMetadataSearchParams(
  }
  
  export async function createConnectingAppSearchParamsWithLastKnownAccount(
@@ -1452,7 +1484,7 @@ index 31436c254..3bc35bf62 100644
      if (appPermissions) {
        urlParams.set('accountIndex', appPermissions.accountIndex.toString());
      }
-@@ -146,20 +159,21 @@ interface ValidateRequestParamsArgs {
+@@ -146,20 +160,21 @@ interface ValidateRequestParamsArgs {
    id: string;
    method: RpcMethodNames;
    params: unknown;
@@ -1478,7 +1510,7 @@ index 31436c254..3bc35bf62 100644
        createRpcErrorResponse(method, {
          id,
          error: { code: RpcErrorCode.INVALID_REQUEST, message: RpcErrorMessage.UndefinedParams },
-@@ -171,8 +185,7 @@ export function validateRequestParams({
+@@ -171,8 +186,7 @@ export function validateRequestParams({
    if (!validateRpcParams(params, schema)) {
      void trackRpcRequestError({ endpoint: method, error: RpcErrorMessage.InvalidParams });
  
@@ -1488,21 +1520,28 @@ index 31436c254..3bc35bf62 100644
        createRpcErrorResponse(method, {
          id,
          error: {
-@@ -185,3 +198,16 @@ export function validateRequestParams({
+@@ -185,3 +199,23 @@ export function validateRequestParams({
    }
    return { status: 'success' };
  }
 +
++export const rpcRequestSchema = z.intersection(
++  rpcBasePropsSchema,
++  z.object({
++    method: z.string(),
++    params: z.any().optional(),
++  })
++);
++
++export const rpcResponseSchema = z.intersection(
++  rpcBasePropsSchema,
++  z.union([z.object({ result: z.any() }), z.object({ error: z.any() })])
++);
++
 +export function listenAndForwardRpcRequest(requestId: string, sendMessage: (resp: any) => void) {
 +  return chrome.runtime.onMessage.addListener(message => {
-+    if (
-+      'jsonrpc' in message &&
-+      message.jsonrpc === '2.0' &&
-+      'id' in message &&
-+      message.id === requestId
-+    ) {
-+      sendMessage(message);
-+    }
++    const result = rpcResponseSchema.safeParse(message);
++    if (result.success && message.id === requestId) sendMessage(message);
 +  });
 +}
 ```

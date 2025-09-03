@@ -1,7 +1,7 @@
 # Test info
 
-- Name: stx_signMessage >> MessageType: structured >> Signature approved
-- Location: /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:81:5
+- Name: stx_signMessage >> MessageType: utf8 >> Signature approved
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:41:5
 
 # Error details
 
@@ -15,14 +15,14 @@ Error: expect(received).toEqual(expected) // deep equality
 -   "jsonrpc": "2.0",
 -   "result": Object {
 -     "publicKey": "0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af",
--     "signature": "9ed8ab4861d5e99f410ac57692feba7f78336602df80908f11c71c400faad03327c3009daf0b4ee4f05c966197ba0ad92d0e0879b6399c3532c148c32fb4e07c01",
+-     "signature": "6d9040912574f9a8128ada79968e9b09e9d469fe84cda063701be0fefb8c3bdc21a309456a78929347a095a4a856271bde9cb327132edad7730d29404dba5e9300",
 +   "error": Object {
 +     "code": 4001,
 +     "message": "User rejected request",
     },
 +   "jsonrpc": "2.0",
   }
-    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:93:27
+    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-message-signing.spec.ts:50:27
 ```
 
 # Test source
@@ -77,7 +77,8 @@ Error: expect(received).toEqual(expected) // deep equality
    47 |       // ID is random, removed so we can test known values
    48 |       delete result.id;
    49 |
-   50 |       test.expect(result).toEqual({
+>  50 |       test.expect(result).toEqual({
+      |                           ^ Error: expect(received).toEqual(expected) // deep equality
    51 |         jsonrpc: '2.0',
    52 |         result: {
    53 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
@@ -120,8 +121,7 @@ Error: expect(received).toEqual(expected) // deep equality
    90 |       // ID is random, removed so we can test known values
    91 |       delete result.id;
    92 |
->  93 |       test.expect(result).toEqual({
-      |                           ^ Error: expect(received).toEqual(expected) // deep equality
+   93 |       test.expect(result).toEqual({
    94 |         jsonrpc: '2.0',
    95 |         result: {
    96 |           publicKey: '0329b076bc20f7b1592b2a1a5cb91dfefe8c966e50e256458e23dd2c5d63f8f1af',
@@ -558,10 +558,16 @@ index 39d70a5fa..49c44a73d 100644
    };
  }
 diff --git a/src/background/background.ts b/src/background/background.ts
-index 535ae1a77..5d0dffcaa 100755
+index 535ae1a77..01f37eb7b 100755
 --- a/src/background/background.ts
 +++ b/src/background/background.ts
-@@ -21,6 +21,16 @@ import { initAddressMonitor } from './monitors/address-monitor';
+@@ -16,11 +16,22 @@ import {
+   isLegacyMessage,
+ } from './messaging/legacy/legacy-external-message-handler';
+ import { rpcMessageHandler } from './messaging/rpc-message-handler';
++import { rpcRequestSchema } from './messaging/rpc-request-utils';
+ import { initAddressMonitor } from './monitors/address-monitor';
+ 
  initContextMenuActions();
  warnUsersAboutDevToolsDangers();
  
@@ -578,7 +584,7 @@ index 535ae1a77..5d0dffcaa 100755
  chrome.runtime.onInstalled.addListener(async details => {
    if (details.reason === 'install' && process.env.WALLET_ENVIRONMENT !== 'testing') {
      await chrome.tabs.create({
-@@ -34,7 +44,7 @@ chrome.runtime.onConnect.addListener(port => {
+@@ -34,7 +45,7 @@ chrome.runtime.onConnect.addListener(port => {
    if (port.name !== CONTENT_SCRIPT_PORT) return;
  
    port.onMessage.addListener((message: LegacyMessageFromContentScript | RpcRequests, port) => {
@@ -587,7 +593,7 @@ index 535ae1a77..5d0dffcaa 100755
        return logger.error('Message reached background script without a corresponding tab');
  
      // Chromium/Firefox discrepancy
-@@ -52,24 +62,18 @@ chrome.runtime.onConnect.addListener(port => {
+@@ -52,24 +63,19 @@ chrome.runtime.onConnect.addListener(port => {
      // TODO:
      // Here we'll handle all messages using the rpc style comm method
      // For now all messages are handled as legacy format
@@ -599,8 +605,9 @@ index 535ae1a77..5d0dffcaa 100755
  //
  // Events from the extension frames script
  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-+  if (message.jsonrpc === '2.0') {
++  if (rpcRequestSchema.safeParse(message).success) {
 +    void rpcMessageHandler(message, sender);
++    return true;
 +  }
    void internalBackgroundMessageHandler(message, sender, sendResponse);
 +
@@ -618,31 +625,23 @@ index 535ae1a77..5d0dffcaa 100755
 -  },
 -});
 diff --git a/src/background/messaging/internal-methods/message-handler.ts b/src/background/messaging/internal-methods/message-handler.ts
-index 101c2f911..7b13dd587 100644
+index 101c2f911..cd8607681 100644
 --- a/src/background/messaging/internal-methods/message-handler.ts
 +++ b/src/background/messaging/internal-methods/message-handler.ts
-@@ -1,6 +1,5 @@
+@@ -1,6 +1,6 @@
  import { logger } from '@shared/logger';
  import { InternalMethods } from '@shared/message-types';
 -import { BackgroundMessages } from '@shared/messages';
++import type { BackgroundMessages } from '@shared/messages';
  
  import { syncAddressMonitor } from '@background/monitors/address-monitor';
  
-@@ -26,7 +25,7 @@ function logInternalMessage(message: { method: string }) {
- }
- 
- export async function internalBackgroundMessageHandler(
--  message: BackgroundMessages,
-+  message: any,
-   sender: chrome.runtime.MessageSender,
-   sendResponse: (response?: any) => void
- ) {
-@@ -44,7 +43,7 @@ export async function internalBackgroundMessageHandler(
+@@ -44,7 +44,7 @@ export async function internalBackgroundMessageHandler(
        break;
    }
  
 -  if (message.method.includes('bitcoinKeys/signOut')) {
-+  if ('method' in message && message.method === 'bitcoinKeys/signOut') {
++  if ('method' in message && (message as any).method === 'bitcoinKeys/signOut') {
      await syncAddressMonitor([]);
    }
  
@@ -1399,10 +1398,18 @@ index 6ccb1a1a4..bc1c3718c 100644
          id: request.id,
          result: {
 diff --git a/src/background/messaging/rpc-request-utils.ts b/src/background/messaging/rpc-request-utils.ts
-index 31436c254..3bc35bf62 100644
+index 31436c254..c05ed1141 100644
 --- a/src/background/messaging/rpc-request-utils.ts
 +++ b/src/background/messaging/rpc-request-utils.ts
-@@ -25,21 +25,34 @@ import { popup } from '@background/popup';
+@@ -7,6 +7,7 @@ import {
+   type RpcMethodNames,
+   type RpcRequests,
+   createRpcErrorResponse,
++  rpcBasePropsSchema,
+ } from '@leather.io/rpc';
+ import { isUndefined } from '@leather.io/utils';
+ 
+@@ -25,21 +26,34 @@ import { popup } from '@background/popup';
  
  import { trackRpcRequestError } from './rpc-helpers';
  
@@ -1445,7 +1452,7 @@ index 31436c254..3bc35bf62 100644
  //
  // Playwright does not currently support Chrome extension popup testing:
  // https://github.com/microsoft/playwright/issues/5593
-@@ -102,12 +115,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
+@@ -102,12 +116,12 @@ export function listenForOriginTabClose({ tabId }: ListenForOriginTabCloseArgs)
  export type RequestParams = [string, string][];
  
  export function createConnectingAppMetadataSearchParams(
@@ -1461,7 +1468,7 @@ index 31436c254..3bc35bf62 100644
    urlParams.set('origin', origin ?? '');
    urlParams.set('tabId', tabId.toString());
    otherParams.forEach(([key, value]) => urlParams.append(key, value));
-@@ -115,12 +128,12 @@ export function createConnectingAppMetadataSearchParams(
+@@ -115,12 +129,12 @@ export function createConnectingAppMetadataSearchParams(
  }
  
  export async function createConnectingAppSearchParamsWithLastKnownAccount(
@@ -1477,7 +1484,7 @@ index 31436c254..3bc35bf62 100644
      if (appPermissions) {
        urlParams.set('accountIndex', appPermissions.accountIndex.toString());
      }
-@@ -146,20 +159,21 @@ interface ValidateRequestParamsArgs {
+@@ -146,20 +160,21 @@ interface ValidateRequestParamsArgs {
    id: string;
    method: RpcMethodNames;
    params: unknown;
@@ -1503,7 +1510,7 @@ index 31436c254..3bc35bf62 100644
        createRpcErrorResponse(method, {
          id,
          error: { code: RpcErrorCode.INVALID_REQUEST, message: RpcErrorMessage.UndefinedParams },
-@@ -171,8 +185,7 @@ export function validateRequestParams({
+@@ -171,8 +186,7 @@ export function validateRequestParams({
    if (!validateRpcParams(params, schema)) {
      void trackRpcRequestError({ endpoint: method, error: RpcErrorMessage.InvalidParams });
  
@@ -1513,21 +1520,28 @@ index 31436c254..3bc35bf62 100644
        createRpcErrorResponse(method, {
          id,
          error: {
-@@ -185,3 +198,16 @@ export function validateRequestParams({
+@@ -185,3 +199,23 @@ export function validateRequestParams({
    }
    return { status: 'success' };
  }
 +
++export const rpcRequestSchema = z.intersection(
++  rpcBasePropsSchema,
++  z.object({
++    method: z.string(),
++    params: z.any().optional(),
++  })
++);
++
++export const rpcResponseSchema = z.intersection(
++  rpcBasePropsSchema,
++  z.union([z.object({ result: z.any() }), z.object({ error: z.any() })])
++);
++
 +export function listenAndForwardRpcRequest(requestId: string, sendMessage: (resp: any) => void) {
 +  return chrome.runtime.onMessage.addListener(message => {
-+    if (
-+      'jsonrpc' in message &&
-+      message.jsonrpc === '2.0' &&
-+      'id' in message &&
-+      message.id === requestId
-+    ) {
-+      sendMessage(message);
-+    }
++    const result = rpcResponseSchema.safeParse(message);
++    if (result.success && message.id === requestId) sendMessage(message);
 +  });
 +}
 ```

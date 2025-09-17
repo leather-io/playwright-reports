@@ -1,0 +1,118 @@
+# Test info
+
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
+
+# Error details
+
+```
+Error: page.click: Target crashed 
+Call log:
+  - waiting for locator('[data-testid="btn-confirm-transaction"]')
+
+    at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
+```
+
+# Test source
+
+```ts
+   1 | import { Page } from '@playwright/test';
+   2 | import { TransactionRequestSelectors } from '@tests/selectors/requests.selectors';
+   3 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   4 | import { createTestSelector } from '@tests/utils';
+   5 |
+   6 | export class TransactionRequestPage {
+   7 |   readonly confirmTransactionBtnSelector = createTestSelector(
+   8 |     TransactionRequestSelectors.BtnConfirmTransaction
+   9 |   );
+  10 |   readonly feeToBePaidLabel = createTestSelector(SharedComponentsSelectors.FeeToBePaidLabel);
+  11 |   readonly transactionRequestPage = createTestSelector(
+  12 |     TransactionRequestSelectors.TransactionRequestPage
+  13 |   );
+  14 |
+  15 |   constructor(readonly page: Page) {}
+  16 |
+  17 |   async clickConfirmTransactionButton() {
+> 18 |     return this.page.click(this.confirmTransactionBtnSelector);
+     |                      ^ Error: page.click: Target crashed 
+  19 |   }
+  20 |
+  21 |   async getDisplayedFeeValue() {
+  22 |     return this.page.locator(this.feeToBePaidLabel).innerText();
+  23 |   }
+  24 |
+  25 |   async waitForTransactionRequestError(msg: string) {
+  26 |     return this.page.waitForSelector(`text=${msg}`);
+  27 |   }
+  28 |
+  29 |   async waitForFee() {
+  30 |     await this.page.locator(this.feeToBePaidLabel).waitFor();
+  31 |   }
+  32 |
+  33 |   async waitForTransactionRequestPage() {
+  34 |     await this.page.locator(this.transactionRequestPage).waitFor();
+  35 |   }
+  36 | }
+  37 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts b/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts
+index 749572f72..acaaf06a1 100644
+--- a/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts
++++ b/src/app/features/ledger/generic-flows/tx-signing/use-ledger-sign-tx.ts
+@@ -6,6 +6,8 @@ import BitcoinApp from 'ledger-bitcoin';
+ import type { SupportedBlockchains } from '@leather.io/models';
+ import { delay, isError } from '@leather.io/utils';
+ 
++import { logger } from '@shared/logger';
++
+ import { useLedgerNavigate } from '../../hooks/use-ledger-navigate';
+ import { BitcoinAppVersion } from '../../utils/bitcoin-ledger-utils';
+ import {
+@@ -74,7 +76,11 @@ export function useLedgerSignTx<App extends StacksApp | BitcoinApp>({
+ 
+       return ledgerNavigate.toErrorStep(chain);
+     } finally {
+-      await app?.transport.close();
++      try {
++        await app?.transport.close();
++      } catch {
++        logger.warn('Failed to close transport connection to Ledger device');
++      }
+     }
+   }
+ 
+diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+index 718e71b52..6912cc182 100644
+--- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
++++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+@@ -180,17 +180,21 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         const signedDepositTx = await sign(deposit.transaction.toPSBT());
+         signedDepositTx.finalize();
+ 
+-        logger.info('Deposit', deposit);
++        logger.info('Deposit', { deposit });
+ 
+         const txid = await client.broadcastTx(signedDepositTx);
+         logger.info('Broadcasted tx', txid);
+ 
+         const amount = deposit.transaction.getOutput(0).amount;
+ 
+-        if (amount)
++        if (amount) {
+           void analytics.untypedTrack('bitcoin_swap_succeeded', { amount: Number(amount) });
++        }
+ 
+-        await client.notifySbtc(deposit);
++        // Software wallets mutate the original transaction when signing and
++        // finalizing the tx. Ledger devices return a new instance. Override tx
++        // with the original here.
++        await client.notifySbtc({ ...deposit, transaction: signedDepositTx });
+         toast.success('Transaction submitted!');
+         setIsIdle();
+         return navigate(RouteUrls.Activity);
+```

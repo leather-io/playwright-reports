@@ -9,6 +9,9 @@
 Error: page.click: Target crashed 
 Call log:
   - waiting for locator('[data-testid="btn-confirm-transaction"]')
+    - locator resolved to <button type="submit" aria-busy="false" data-testid="btn-confirm-transaction" class="leather-pos_relative leather-textStyle_label.02 leather-ta_center leather-bdr_round leather-d_inline-flex leather-ai_center leather-jc_center leather-gap_space.02 leather-white-space_nowrap loading:after:leather-anim_spin loading:after:leather-bd_2px_solid loading:after:leather-bd-c_currentColor loading:after:leather-bd-b-c_transparent loading:after:leather-bx-s_border-box loading:after:leather-content_"" loading:afte…>…</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
 
     at TransactionRequestPage.clickConfirmTransactionButton (/home/runner/work/extension/extension/tests/page-object-models/transaction-request.page.ts:18:22)
     at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:85:36
@@ -87,7 +90,7 @@ index 749572f72..acaaf06a1 100644
    }
  
 diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
-index 718e71b52..6912cc182 100644
+index 718e71b52..c085458f1 100644
 --- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
 +++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
 @@ -180,17 +180,21 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
@@ -110,7 +113,7 @@ index 718e71b52..6912cc182 100644
 -        await client.notifySbtc(deposit);
 +        // Software wallets mutate the original transaction when signing and
 +        // finalizing the tx. Ledger devices return a new instance. Override tx
-+        // with the original here.
++        // in `deposit` with the signed instance
 +        await client.notifySbtc({ ...deposit, transaction: signedDepositTx });
          toast.success('Transaction submitted!');
          setIsIdle();

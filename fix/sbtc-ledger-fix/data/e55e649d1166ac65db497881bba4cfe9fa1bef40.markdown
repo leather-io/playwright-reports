@@ -1,19 +1,16 @@
 # Test info
 
-- Name: Transaction signing >> Contract calls >> that it validates against insufficient funds when performing a contract call
-- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:27:5
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
 
 # Error details
 
 ```
-Error: locator.click: Element is not visible
-Call log:
-  - waiting for getByTestId('switch-account-item-0')
-    - locator resolved to <button data-testid="switch-account-item-0" class="group leather-pos_relative leather-bg_ink.background-primary leather-c_ink.text-primary leather-cursor_pointer leather-d_flex leather-h_auto leather-ring_none leather-bdr_xs leather-us_none leather-w_100% before:leather-content_"" before:leather-bdr_xs before:leather-pos_absolute before:leather-top_-space.03 before:leather-left_-space.03 before:leather-bottom_-space.03 before:leather-right_-space.03 [&:is(:active)]:before:leather-bg_ink.component-back…>…</button>
-  - attempting click action
-    - scrolling into view if needed
-
-    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:34:63
+Error: page.waitForRequest: Page crashed
+=========================== logs ===========================
+waiting for request "*/**/v2/transactions"
+============================================================
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:79:58
 ```
 
 # Test source
@@ -52,8 +49,7 @@ Call log:
    31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
    32 |       const accountsPage = await newPagePromise;
    33 |       await delayAnimationDuration();
->  34 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
-      |                                                               ^ Error: locator.click: Element is not visible
+   34 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
    35 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
    36 |       await delayAnimationDuration();
    37 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
@@ -98,7 +94,8 @@ Call log:
    76 |
    77 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
    78 |
-   79 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+>  79 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+      |                                                          ^ Error: page.waitForRequest: Page crashed
    80 |
    81 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
    82 |         await route.abort();
@@ -154,7 +151,7 @@ index 749572f72..acaaf06a1 100644
    }
  
 diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
-index 718e71b52..6912cc182 100644
+index 718e71b52..c085458f1 100644
 --- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
 +++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
 @@ -180,17 +180,21 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
@@ -177,7 +174,7 @@ index 718e71b52..6912cc182 100644
 -        await client.notifySbtc(deposit);
 +        // Software wallets mutate the original transaction when signing and
 +        // finalizing the tx. Ledger devices return a new instance. Override tx
-+        // with the original here.
++        // in `deposit` with the signed instance
 +        await client.notifySbtc({ ...deposit, transaction: signedDepositTx });
          toast.success('Transaction submitted!');
          setIsIdle();

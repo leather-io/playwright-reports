@@ -1,7 +1,7 @@
 # Test info
 
-- Name: send stx: tests on mainnet >> send form input fields >> that fee row defaults to middle fee estimation
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:235:5
+- Name: send stx: tests on mainnet >> send form input fields >> that low fee estimate can be selected
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:245:5
 
 # Error details
 
@@ -184,7 +184,7 @@ index 749572f72..acaaf06a1 100644
    }
  
 diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
-index 718e71b52..6912cc182 100644
+index 718e71b52..c085458f1 100644
 --- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
 +++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
 @@ -180,17 +180,21 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
@@ -207,7 +207,7 @@ index 718e71b52..6912cc182 100644
 -        await client.notifySbtc(deposit);
 +        // Software wallets mutate the original transaction when signing and
 +        // finalizing the tx. Ledger devices return a new instance. Override tx
-+        // with the original here.
++        // in `deposit` with the signed instance
 +        await client.notifySbtc({ ...deposit, transaction: signedDepositTx });
          toast.success('Transaction submitted!');
          setIsIdle();

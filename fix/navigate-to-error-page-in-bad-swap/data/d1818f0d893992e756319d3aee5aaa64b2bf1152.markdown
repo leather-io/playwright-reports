@@ -1,0 +1,227 @@
+# Test info
+
+- Name: RPC: stx_signTransaction >> that transaction details are the same after signing multi-signature STX transfer
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-sign-transaction.spec.ts:70:3
+
+# Error details
+
+```
+Error: locator.click: Target page, context or browser has been closed
+Call log:
+  - waiting for locator('text="Approve"')
+    - locator resolved to <span class="leather-textStyle_label.02">Approve</span>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
+
+    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-sign-transaction.spec.ts:40:19
+    at /home/runner/work/extension/extension/tests/specs/rpc-sip30-requests/rpc-stx-sign-transaction.spec.ts:83:22
+```
+
+# Test source
+
+```ts
+   1 | import { BrowserContext, Page } from '@playwright/test';
+   2 | import {
+   3 |   MultiSigSpendingCondition,
+   4 |   type TokenTransferPayloadWire,
+   5 |   deserializeTransaction,
+   6 | } from '@stacks/transactions';
+   7 | import {
+   8 |   TEST_ACCOUNT_1_PUBKEY,
+   9 |   TEST_ACCOUNT_2_STX_ADDRESS,
+   10 |   TEST_ACCOUNT_3_PUBKEY,
+   11 | } from '@tests/mocks/constants';
+   12 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   13 | import { generateMultisigUnsignedStxTransfer, generateUnsignedStxTransfer } from '@tests/utils';
+   14 |
+   15 | import { test } from '../../fixtures/fixtures';
+   16 |
+   17 | test.describe('RPC: stx_signTransaction', () => {
+   18 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, page }) => {
+   19 |     await globalPage.setupAndUseApiCalls(extensionId);
+   20 |     await onboardingPage.signInWithTestAccount(extensionId);
+   21 |     await page.goto('localhost:3000', { waitUntil: 'networkidle' });
+   22 |   });
+   23 |
+   24 |   function checkVisibleContent(context: BrowserContext) {
+   25 |     return async (buttonToPress: 'Cancel' | 'Approve') => {
+   26 |       const popup = await context.waitForEvent('page');
+   27 |       await popup.waitForSelector('text="Account 1"');
+   28 |       await popup.waitForSelector('text="0.0005 STX"');
+   29 |
+   30 |       const displayerAddress = await popup
+   31 |         .getByTestId(SharedComponentsSelectors.AddressDisplayer)
+   32 |         .innerText()
+   33 |         .then((value: string) => value.replaceAll('\n', ''));
+   34 |       test.expect(displayerAddress).toEqual('SPXH3HNBPM5YP15VH16ZXZ9AX6CK289K3MCXRKCB');
+   35 |
+   36 |       await popup.waitForTimeout(500);
+   37 |       const btn = popup.locator('text="Approve"');
+   38 |
+   39 |       if (buttonToPress === 'Approve') {
+>  40 |         await btn.click();
+      |                   ^ Error: locator.click: Target page, context or browser has been closed
+   41 |       } else {
+   42 |         await popup.close();
+   43 |       }
+   44 |     };
+   45 |   }
+   46 |
+   47 |   function initiateTxSigningLeatherFormat(page: Page) {
+   48 |     return async (txHex: string) =>
+   49 |       page.evaluate(
+   50 |         async txHex =>
+   51 |           (window as any).LeatherProvider.request('stx_signTransaction', {
+   52 |             txHex,
+   53 |             network: 'mainnet',
+   54 |           }).catch((e: unknown) => e),
+   55 |         txHex
+   56 |       );
+   57 |   }
+   58 |
+   59 |   function initiateTxSigningSip30Format(page: Page) {
+   60 |     return async (hex: string) =>
+   61 |       page.evaluate(
+   62 |         async transaction =>
+   63 |           (window as any).LeatherProvider.request('stx_signTransaction', { transaction }).catch(
+   64 |             (e: unknown) => e
+   65 |           ),
+   66 |         hex
+   67 |       );
+   68 |   }
+   69 |
+   70 |   test('that transaction details are the same after signing multi-signature STX transfer', async ({
+   71 |     page,
+   72 |     context,
+   73 |   }) => {
+   74 |     const multiSignatureTxHex = await generateMultisigUnsignedStxTransfer(
+   75 |       TEST_ACCOUNT_2_STX_ADDRESS,
+   76 |       500,
+   77 |       100,
+   78 |       'mainnet',
+   79 |       [TEST_ACCOUNT_3_PUBKEY, TEST_ACCOUNT_1_PUBKEY],
+   80 |       2,
+   81 |       0
+   82 |     );
+   83 |     const [result] = await Promise.all([
+   84 |       initiateTxSigningLeatherFormat(page)(multiSignatureTxHex),
+   85 |       checkVisibleContent(context)('Approve'),
+   86 |     ]);
+   87 |     const deserializedUnsignedTxHex = deserializeTransaction(multiSignatureTxHex);
+   88 |     const deserializedSignedTx = deserializeTransaction(result.result.txHex);
+   89 |     test
+   90 |       .expect((deserializedUnsignedTxHex.payload as TokenTransferPayloadWire).recipient)
+   91 |       .toEqual((deserializedSignedTx.payload as TokenTransferPayloadWire).recipient);
+   92 |     test
+   93 |       .expect((deserializedUnsignedTxHex.payload as TokenTransferPayloadWire).amount)
+   94 |       .toEqual((deserializedSignedTx.payload as TokenTransferPayloadWire).amount);
+   95 |     test.expect(deserializedUnsignedTxHex.payload.type).toEqual(deserializedSignedTx.payload.type);
+   96 |     test
+   97 |       .expect(deserializedUnsignedTxHex.auth.spendingCondition.nonce)
+   98 |       .toEqual(deserializedSignedTx.auth.spendingCondition.nonce);
+   99 |     test
+  100 |       .expect(deserializedUnsignedTxHex.auth.spendingCondition.fee)
+  101 |       .toEqual(deserializedSignedTx.auth.spendingCondition.fee);
+  102 |     test
+  103 |       .expect(
+  104 |         (deserializedUnsignedTxHex.auth.spendingCondition as MultiSigSpendingCondition)
+  105 |           .signaturesRequired
+  106 |       )
+  107 |       .toEqual(
+  108 |         (deserializedSignedTx.auth.spendingCondition as MultiSigSpendingCondition)
+  109 |           .signaturesRequired
+  110 |       );
+  111 |     test
+  112 |       .expect(deserializedUnsignedTxHex.auth.spendingCondition.signer)
+  113 |       .toEqual(deserializedSignedTx.auth.spendingCondition.signer);
+  114 |     test
+  115 |       .expect(deserializedUnsignedTxHex.auth.spendingCondition.hashMode)
+  116 |       .toEqual(deserializedSignedTx.auth.spendingCondition.hashMode);
+  117 |     test
+  118 |       .expect(
+  119 |         (deserializedSignedTx.auth.spendingCondition as MultiSigSpendingCondition).fields.length
+  120 |       )
+  121 |       .toEqual(1);
+  122 |   });
+  123 |
+  124 |   test('Single signature STX transfer being rejected', async ({ page, context }) => {
+  125 |     const singleSignatureTxHex = await generateUnsignedStxTransfer(
+  126 |       TEST_ACCOUNT_2_STX_ADDRESS,
+  127 |       500,
+  128 |       'mainnet',
+  129 |       TEST_ACCOUNT_3_PUBKEY
+  130 |     );
+  131 |     const [result] = await Promise.all([
+  132 |       initiateTxSigningLeatherFormat(page)(singleSignatureTxHex),
+  133 |       checkVisibleContent(context)('Cancel'),
+  134 |     ]);
+  135 |
+  136 |     delete result.id;
+  137 |
+  138 |     test.expect(result).toEqual({
+  139 |       jsonrpc: '2.0',
+  140 |       error: {
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/transaction/transaction-title.tsx b/src/app/components/transaction/transaction-title.tsx
+index f65da0065..a7fbb24d4 100644
+--- a/src/app/components/transaction/transaction-title.tsx
++++ b/src/app/components/transaction/transaction-title.tsx
+@@ -23,7 +23,7 @@ export function TransactionTitle(props: TransactionTitleProps) {
+   useOnResizeListener(onResize);
+ 
+   return (
+-    <BasicTooltip disabled={!isEllipsisActive} label={title} side="top">
++    <BasicTooltip asChild disabled={!isEllipsisActive} label={title} side="top">
+       <Title
+         overflow="hidden"
+         ref={ref}
+diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+index 95e42ea0e..718e71b52 100644
+--- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
++++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+@@ -31,6 +31,7 @@ import {
+   determineUtxosForSpend,
+   determineUtxosForSpendAll,
+ } from '@app/common/transactions/bitcoin/coinselect/local-coin-selection';
++import { serializeError } from '@app/common/utils';
+ import { useToast } from '@app/features/toasts/use-toast';
+ import { useAverageBitcoinFeeRates } from '@app/query/bitcoin/fees/fee-estimates.hooks';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+@@ -179,16 +180,15 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         const signedDepositTx = await sign(deposit.transaction.toPSBT());
+         signedDepositTx.finalize();
+ 
+-        logger.info('Deposit', { deposit });
++        logger.info('Deposit', deposit);
+ 
+         const txid = await client.broadcastTx(signedDepositTx);
+         logger.info('Broadcasted tx', txid);
+ 
+         const amount = deposit.transaction.getOutput(0).amount;
+ 
+-        if (amount) {
++        if (amount)
+           void analytics.untypedTrack('bitcoin_swap_succeeded', { amount: Number(amount) });
+-        }
+ 
+         await client.notifySbtc(deposit);
+         toast.success('Transaction submitted!');
+@@ -198,6 +198,9 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         setIsIdle();
+         logger.error(`Deposit error: ${error}`);
+         void analytics.untypedTrack('bitcoin_swap_failed', { error });
++        return navigate(RouteUrls.SwapError, {
++          state: { title: 'sBTC swap error', message: serializeError(error).message },
++        });
+       } finally {
+         setIsIdle();
+       }
+```

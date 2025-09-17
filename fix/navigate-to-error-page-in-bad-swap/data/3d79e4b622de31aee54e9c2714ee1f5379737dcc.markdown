@@ -1,0 +1,196 @@
+# Test info
+
+- Name: Rpc: stx_getAddresses >> softwareWallet  >> it returns the second accounts data after changing account
+- Location: /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:165:11
+
+# Error details
+
+```
+Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+    1) <span aria-busy="false" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka locator('#app').getByTestId('switch-account-item-1')
+    2) <span aria-busy="false" data-testid="switch-account-sheet-account-name-1" class="leather-textStyle_label.02 [&[data-state=loading]]:leather-d_inline-block [&[data-state=loading]]:leather--webkit-mask_linear-gradient(-60deg,_#000_30%,_#0005,_#000_70%)_right/300%_100% [&[data-state=loading]]:leather-bg-r_no-repeat [&[data-state=loading]]:leather-anim_shimmer_1.5s_infinite [&[data-state=loading]]:leather-c_ink.text-subdued">Account 2</span> aka getByTestId('virtuoso-item-list').getByTestId('switch-account-item-1')
+
+Call log:
+  - expect.toBeVisible with timeout 5000ms
+  - waiting for getByText('Account 2')
+
+    at /home/runner/work/extension/extension/tests/specs/rpc-get-addresses/get-addresses.spec.ts:176:61
+```
+
+# Test source
+
+```ts
+   76 |   const button = popup.getByTestId('get-addresses-approve-button');
+   77 |   await test.expect(button).toBeVisible();
+   78 |   await button.click();
+   79 | }
+   80 |
+   81 | getAddressesMethods.forEach(method => {
+   82 |   test.describe(`Rpc: ${method}`, () => {
+   83 |     test.beforeEach(
+   84 |       async ({ extensionId, globalPage }) => await globalPage.setupAndUseApiCalls(extensionId)
+   85 |     );
+   86 |
+   87 |     const specs = {
+   88 |       softwareWallet: {
+   89 |         beforeEach: softwareBeforeEach(),
+   90 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   91 |       },
+   92 |       ledgerWithBitcoinAndStacksKey: {
+   93 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin', 'stacks'])),
+   94 |         expectedResult: getExpectedResponseForKeys(['bitcoin', 'stacks']),
+   95 |       },
+   96 |       ledgerWithStacksKeysOnly: {
+   97 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['stacks'])),
+   98 |         expectedResult: getExpectedResponseForKeys(['stacks']),
+   99 |       },
+  100 |       ledgerWithBitcoinKeysOnly: {
+  101 |         beforeEach: ledgerBeforeEach(makeLedgerTestAccountWalletState(['bitcoin'])),
+  102 |         expectedResult: getExpectedResponseForKeys(['bitcoin']),
+  103 |       },
+  104 |     } as const;
+  105 |
+  106 |     Object.entries(specs).forEach(([walletPreset, { beforeEach, expectedResult }]) => {
+  107 |       test.describe(`${walletPreset} `, () => {
+  108 |         beforeEach();
+  109 |
+  110 |         test('the promise resolves with addresses successfully', async ({ page, context }) => {
+  111 |           await page.goto('localhost:3000');
+  112 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  113 |
+  114 |           const popup = await interceptRequestPopup(context);
+  115 |           await clickConnectLeatherButton(popup);
+  116 |
+  117 |           const result = await getAddressesPromise;
+  118 |           if (!result) throw new Error('Expected result');
+  119 |           const { id, ...payloadWithoutId } = result;
+  120 |
+  121 |           test.expect(payloadWithoutId).toEqual(expectedResult);
+  122 |         });
+  123 |
+  124 |         test('the promise rejects when user closes popup window', async ({ page, context }) => {
+  125 |           await page.goto('localhost:3000');
+  126 |           const getAddressesPromise = initiateGetAddresses(page, method);
+  127 |           const popup = await interceptRequestPopup(context);
+  128 |           await popup.close();
+  129 |           await test.expect(getAddressesPromise).rejects.toThrow();
+  130 |         });
+  131 |
+  132 |         if (walletPreset === 'softwareWallet') {
+  133 |           test('it redirects back to get addresses flow when wallet is locked', async ({
+  134 |             homePage,
+  135 |             page,
+  136 |             context,
+  137 |           }) => {
+  138 |             await homePage.lock();
+  139 |             await page.goto('localhost:3000');
+  140 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  141 |             const popup = await interceptRequestPopup(context);
+  142 |             await popup.getByRole('textbox').fill(TEST_PASSWORD);
+  143 |             await popup.getByRole('button', { name: 'Continue' }).click();
+  144 |             await popup.getByText('Connect').isVisible();
+  145 |             await test.expect(popup.getByTestId('get-addresses-approve-button')).toBeVisible();
+  146 |             await clickConnectLeatherButton(popup);
+  147 |             await test.expect(getAddressesPromise).resolves.toMatchObject(expectedResult);
+  148 |           });
+  149 |
+  150 |           test('it returns testnet addresses with the network param set', async ({
+  151 |             page,
+  152 |             context,
+  153 |           }) => {
+  154 |             await page.goto('localhost:3000');
+  155 |             const getAddressesPromise = initiateGetAddresses(page, method, { network: 'testnet' });
+  156 |             const popup = await interceptRequestPopup(context);
+  157 |             await clickConnectLeatherButton(popup);
+  158 |
+  159 |             const result = await getAddressesPromise;
+  160 |             test
+  161 |               .expect(result.result.addresses[0].address)
+  162 |               .toEqual('tb1q4qgnjewwun2llgken94zqjrx5kpqqycaz5522d');
+  163 |           });
+  164 |
+  165 |           test('it returns the second accounts data after changing account', async ({
+  166 |             page,
+  167 |             context,
+  168 |           }) => {
+  169 |             await page.goto('localhost:3000');
+  170 |             const getAddressesPromise = initiateGetAddresses(page, method);
+  171 |             const popup = await interceptRequestPopup(context);
+  172 |             const switchAccountButton = popup.getByTestId('switch-account-item-0');
+  173 |             await switchAccountButton.click();
+  174 |             const secondAccountInListButton = popup.getByTestId('switch-account-item-1');
+  175 |             await secondAccountInListButton.click();
+> 176 |             await test.expect(popup.getByText('Account 2')).toBeVisible();
+      |                                                             ^ Error: expect.toBeVisible: Error: strict mode violation: getByText('Account 2') resolved to 2 elements:
+  177 |             await clickConnectLeatherButton(popup);
+  178 |             const result = await getAddressesPromise;
+  179 |             test
+  180 |               .expect(result.result.addresses[0].address)
+  181 |               .toEqual('bc1qr9wmz342txkcmxxq5ysmfqrd5rvmxtu6nldjgp');
+  182 |           });
+  183 |         }
+  184 |       });
+  185 |     });
+  186 |   });
+  187 | });
+  188 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/components/transaction/transaction-title.tsx b/src/app/components/transaction/transaction-title.tsx
+index f65da0065..a7fbb24d4 100644
+--- a/src/app/components/transaction/transaction-title.tsx
++++ b/src/app/components/transaction/transaction-title.tsx
+@@ -23,7 +23,7 @@ export function TransactionTitle(props: TransactionTitleProps) {
+   useOnResizeListener(onResize);
+ 
+   return (
+-    <BasicTooltip disabled={!isEllipsisActive} label={title} side="top">
++    <BasicTooltip asChild disabled={!isEllipsisActive} label={title} side="top">
+       <Title
+         overflow="hidden"
+         ref={ref}
+diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+index 95e42ea0e..718e71b52 100644
+--- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
++++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+@@ -31,6 +31,7 @@ import {
+   determineUtxosForSpend,
+   determineUtxosForSpendAll,
+ } from '@app/common/transactions/bitcoin/coinselect/local-coin-selection';
++import { serializeError } from '@app/common/utils';
+ import { useToast } from '@app/features/toasts/use-toast';
+ import { useAverageBitcoinFeeRates } from '@app/query/bitcoin/fees/fee-estimates.hooks';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
+@@ -179,16 +180,15 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         const signedDepositTx = await sign(deposit.transaction.toPSBT());
+         signedDepositTx.finalize();
+ 
+-        logger.info('Deposit', { deposit });
++        logger.info('Deposit', deposit);
+ 
+         const txid = await client.broadcastTx(signedDepositTx);
+         logger.info('Broadcasted tx', txid);
+ 
+         const amount = deposit.transaction.getOutput(0).amount;
+ 
+-        if (amount) {
++        if (amount)
+           void analytics.untypedTrack('bitcoin_swap_succeeded', { amount: Number(amount) });
+-        }
+ 
+         await client.notifySbtc(deposit);
+         toast.success('Transaction submitted!');
+@@ -198,6 +198,9 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+         setIsIdle();
+         logger.error(`Deposit error: ${error}`);
+         void analytics.untypedTrack('bitcoin_swap_failed', { error });
++        return navigate(RouteUrls.SwapError, {
++          state: { title: 'sBTC swap error', message: serializeError(error).message },
++        });
+       } finally {
+         setIsIdle();
+       }
+```

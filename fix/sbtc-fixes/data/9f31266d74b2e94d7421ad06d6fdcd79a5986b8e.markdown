@@ -1,0 +1,206 @@
+# Test info
+
+- Name: Gaia profile request >> should send a signed profile token to gaia
+- Location: /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:53:3
+
+# Error details
+
+```
+Error: locator.click: Element is not visible
+Call log:
+  - waiting for getByTestId('switch-account-item-0')
+    - locator resolved to <button data-testid="switch-account-item-0" class="group leather-pos_relative leather-bg_ink.background-primary leather-c_ink.text-primary leather-cursor_pointer leather-d_flex leather-h_auto leather-ring_none leather-bdr_xs leather-us_none leather-w_100% before:leather-content_"" before:leather-bdr_xs before:leather-pos_absolute before:leather-top_-space.03 before:leather-left_-space.03 before:leather-bottom_-space.03 before:leather-right_-space.03 [&:is(:active)]:before:leather-bg_ink.component-back…>…</button>
+  - attempting click action
+    - scrolling into view if needed
+
+    at /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:58:61
+```
+
+# Test source
+
+```ts
+   1 | import { mockGaiaProfileResponse } from '@tests/mocks/mock-profile';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { UpdateProfileRequestPage } from '@tests/page-object-models/update-profile-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { delay } from '@leather.io/utils';
+   7 |
+   8 | import { test } from '../../fixtures/fixtures';
+   9 |
+   10 | test.describe.configure({ mode: 'serial' });
+   11 |
+   12 | test.describe('Profile updating', () => {
+   13 |   let testAppPage: TestAppPage;
+   14 |
+   15 |   test.beforeEach(async ({ context, extensionId, globalPage, onboardingPage }) => {
+   16 |     await globalPage.setupAndUseApiCalls(extensionId);
+   17 |     await onboardingPage.signInWithTestAccount(extensionId);
+   18 |     testAppPage = await TestAppPage.openDemoPage(context);
+   19 |   });
+   20 |
+   21 |   test('should show an error for invalid profile', async ({ context }) => {
+   22 |     const newPagePromise = context.waitForEvent('page');
+   23 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   24 |     const accountsPage = await newPagePromise;
+   25 |     await delay(2000);
+   26 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   27 |     await testAppPage.page.bringToFront();
+   28 |     await testAppPage.page.click('text=Profile', {
+   29 |       timeout: 30000,
+   30 |     });
+   31 |     await accountsPage.close();
+   32 |
+   33 |     await testAppPage.clickUpdateInvalidProfileButton();
+   34 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
+   35 |     const error = await profileUpdatingPage.waitForUpdateProfileRequestError(
+   36 |       'Invalid profile update request (Profile must follow Person schema).'
+   37 |     );
+   38 |
+   39 |     test.expect(error).toBeTruthy();
+   40 |     await profileUpdatingPage.page.close();
+   41 |   });
+   42 | });
+   43 |
+   44 | test.describe('Gaia profile request', () => {
+   45 |   let testAppPage: TestAppPage;
+   46 |
+   47 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   48 |     await globalPage.setupAndUseApiCalls(extensionId);
+   49 |     await onboardingPage.signInWithTestAccount(extensionId);
+   50 |     testAppPage = await TestAppPage.openDemoPage(context);
+   51 |   });
+   52 |
+   53 |   test('should send a signed profile token to gaia', async ({ context }) => {
+   54 |     const newPagePromise = context.waitForEvent('page');
+   55 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   56 |     const accountsPage = await newPagePromise;
+   57 |     await delay(2000);
+>  58 |     await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+      |                                                             ^ Error: locator.click: Element is not visible
+   59 |     await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   60 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   61 |     await testAppPage.page.bringToFront();
+   62 |     await testAppPage.page.click('text=Profile', {
+   63 |       timeout: 30000,
+   64 |     });
+   65 |
+   66 |     await testAppPage.clickUpdateProfileButton();
+   67 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
+   68 |
+   69 |     const requestPromise = profileUpdatingPage.page.waitForRequest('https://hub.blockstack.org/*');
+   70 |
+   71 |     await profileUpdatingPage.page.route('https://gaia.hiro.so/hub/*', async route => {
+   72 |       await route.fulfill({
+   73 |         status: 200,
+   74 |         contentType: 'application/octet-stream',
+   75 |         body: JSON.stringify(mockGaiaProfileResponse),
+   76 |       });
+   77 |     });
+   78 |
+   79 |     await profileUpdatingPage.page.route('https://hub.blockstack.org/*', async route => {
+   80 |       await route.abort();
+   81 |     });
+   82 |
+   83 |     const name = profileUpdatingPage.page.getByText('twitter');
+   84 |     const nameText = await name.innerText();
+   85 |     test.expect(nameText).toBe('https://twitter.com/twitterHandle');
+   86 |
+   87 |     await profileUpdatingPage.clickUpdateProfileButton();
+   88 |
+   89 |     const request = await requestPromise;
+   90 |     const requestBody = request.postData();
+   91 |     if (!requestBody) return;
+   92 |
+   93 |     const { decodedToken } = JSON.parse(requestBody)[0];
+   94 |     test.expect(decodedToken).toBeDefined();
+   95 |
+   96 |     test.expect(decodedToken?.header?.alg).toEqual('ES256K');
+   97 |     test.expect(decodedToken?.payload?.claim?.name).toContain('Name ');
+   98 |     test
+   99 |       .expect(decodedToken?.payload?.claim?.image?.[0]?.contentUrl)
+  100 |       .toEqual(
+  101 |         'https://byzantion.mypinata.cloud/ipfs/Qmb84UcaMr1MUwNbYBnXWHM3kEaDcYrKuPWwyRLVTNKELC/2256.png'
+  102 |       );
+  103 |   });
+  104 | });
+  105 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+index 8d8da007f..95e42ea0e 100644
+--- a/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
++++ b/src/app/pages/swap/hooks/use-sbtc-deposit-transaction.tsx
+@@ -4,10 +4,13 @@ import { useNavigate } from 'react-router';
+ import { bytesToHex } from '@noble/hashes/utils';
+ import * as btc from '@scure/btc-signer';
+ import type { P2Ret, P2TROut } from '@scure/btc-signer/payment';
++import { STACKS_DEVNET } from '@stacks/network';
++import { type BufferCV, fetchCallReadOnlyFunction } from '@stacks/transactions';
+ import {
+   DEFAULT_RECLAIM_LOCK_TIME,
+   MAINNET,
+   REGTEST,
++  type SbtcApiClient,
+   SbtcApiClientMainnet,
+   SbtcApiClientTestnet,
+   TESTNET,
+@@ -31,6 +34,7 @@ import {
+ import { useToast } from '@app/features/toasts/use-toast';
+ import { useAverageBitcoinFeeRates } from '@app/query/bitcoin/fees/fee-estimates.hooks';
+ import { useBreakOnNonCompliantEntity } from '@app/query/common/compliance-checker/compliance-checker.query';
++import { hiroFetchWrapper } from '@app/query/stacks/stacks-client';
+ import { useBitcoinScureLibNetworkConfig } from '@app/store/accounts/blockchain/bitcoin/bitcoin-keychain';
+ import { useSignBitcoinTx } from '@app/store/accounts/blockchain/bitcoin/bitcoin.hooks';
+ import { useCurrentStacksAccount } from '@app/store/accounts/blockchain/stacks/stacks-account.hooks';
+@@ -58,8 +62,31 @@ function getSbtcNetworkConfig(network: BitcoinNetworkModes) {
+   return networkMap[network];
+ }
+ 
+-const clientMainnet = new SbtcApiClientMainnet();
+-const clientTestnet = new SbtcApiClientTestnet();
++const clientMainnet = new SbtcApiClientMainnet({});
++const clientTestnet = new SbtcApiClientTestnet({});
++
++// Cloned from sbtc package because it doesn't support providing custom fetch
++// function, which we need to avoid 429s by adding our header
++// https://github.com/hirosystems/stacks.js/blob/36a2065368f9852b382c15a4e5e852d0c949845a/packages/sbtc/src/api.ts#L153-L164
++// TODO: remove when sbtc supports custom fetch fn
++async function fetchSignersPublicKey({
++  contractAddress,
++  client,
++}: {
++  contractAddress: string;
++  client: SbtcApiClient['config'];
++}): Promise<string> {
++  const res = (await fetchCallReadOnlyFunction({
++    contractAddress,
++    contractName: 'sbtc-registry',
++    functionName: 'get-current-aggregate-pubkey',
++    functionArgs: [],
++    senderAddress: STACKS_DEVNET.bootAddress, // zero address
++    client: { baseUrl: client.stxApiUrl, fetch: hiroFetchWrapper },
++  })) as BufferCV;
++
++  return res.value.slice(2);
++}
+ 
+ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: UtxoResponseItem[]) {
+   const toast = useToast();
+@@ -92,7 +119,11 @@ export function useSbtcDepositTransaction(signer: BitcoinSigner<P2Ret>, utxos: U
+           amountSats: btcToSat(values.swapAmountQuote).toNumber(),
+           network: getSbtcNetworkConfig(network.chain.bitcoin.mode),
+           stacksAddress: stacksAccount.address,
+-          signersPublicKey: await client.fetchSignersPublicKey(),
++          // Adding retry logic until we can
++          signersPublicKey: await fetchSignersPublicKey({
++            contractAddress: client.config.sbtcContract,
++            client: client.config,
++          }),
+           maxSignerFee: swapData.maxSignerFee,
+           reclaimLockTime: DEFAULT_RECLAIM_LOCK_TIME,
+           reclaimPublicKey: bytesToHex(signer.publicKey).slice(2),
+```

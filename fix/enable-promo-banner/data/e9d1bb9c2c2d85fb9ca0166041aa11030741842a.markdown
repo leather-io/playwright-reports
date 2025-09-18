@@ -1,0 +1,141 @@
+# Test info
+
+- Name: Transaction signing >> Contract calls >> that it validates against insufficient funds when performing a contract call
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:27:5
+
+# Error details
+
+```
+Error: locator.click: Element is not visible
+Call log:
+  - waiting for getByTestId('switch-account-item-0')
+    - locator resolved to <button data-testid="switch-account-item-0" class="group leather-pos_relative leather-bg_ink.background-primary leather-c_ink.text-primary leather-cursor_pointer leather-d_flex leather-h_auto leather-ring_none leather-bdr_xs leather-us_none leather-w_100% before:leather-content_"" before:leather-bdr_xs before:leather-pos_absolute before:leather-top_-space.03 before:leather-left_-space.03 before:leather-bottom_-space.03 before:leather-right_-space.03 [&:is(:active)]:before:leather-bg_ink.component-back…>…</button>
+  - attempting click action
+    - scrolling into view if needed
+
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:34:63
+```
+
+# Test source
+
+```ts
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
+   2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
+   4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
+   5 |
+   6 | import { stxToMicroStx } from '@leather.io/utils';
+   7 |
+   8 | import { createDelay } from '@shared/utils';
+   9 |
+   10 | import { test } from '../../fixtures/fixtures';
+   11 |
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await delayAnimationDuration();
+>  34 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+      |                                                               ^ Error: locator.click: Element is not visible
+   35 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   36 |       await delayAnimationDuration();
+   37 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   38 |       await delayAnimationDuration();
+   39 |       await testAppPage.page.bringToFront();
+   40 |       await testAppPage.page.click('text=Debugger', {
+   41 |         timeout: 30000,
+   42 |       });
+   43 |       await accountsPage.close();
+   44 |
+   45 |       await testAppPage.clickContractCallButton();
+   46 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   47 |       await transactionRequestPage.waitForTransactionRequestPage();
+   48 |       const error =
+   49 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   50 |
+   51 |       test.expect(error).toBeTruthy();
+   52 |     });
+   53 |   });
+   54 |
+   55 |   test.describe('App initiated STX transfer', () => {
+   56 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   57 |       const newPagePromise = context.waitForEvent('page');
+   58 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   59 |       const accountsPage = await newPagePromise;
+   60 |       await delayAnimationDuration();
+   61 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   62 |       await delayAnimationDuration();
+   63 |       await testAppPage.page.bringToFront();
+   64 |       await testAppPage.page.click('text=Debugger', {
+   65 |         timeout: 30000,
+   66 |       });
+   67 |       await accountsPage.close();
+   68 |
+   69 |       await testAppPage.clickStxTransferButton();
+   70 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   71 |
+   72 |       await transactionRequestPage.waitForTransactionRequestPage();
+   73 |       await transactionRequestPage.waitForFee();
+   74 |
+   75 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   76 |
+   77 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
+   78 |
+   79 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+   80 |
+   81 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   82 |         await route.abort();
+   83 |       });
+   84 |
+   85 |       await transactionRequestPage.clickConfirmTransactionButton();
+   86 |
+   87 |       const request = await requestPromise;
+   88 |       const requestBody = request.postData();
+   89 |       if (!requestBody) return;
+   90 |
+   91 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   92 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   93 |       const amount = Number(payload.amount);
+   94 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   95 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   96 |
+   97 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   98 |       test.expect(amount).toEqual(102);
+   99 |     });
+  100 |   });
+  101 | });
+  102 |
+```
+
+# Local changes
+
+```diff
+diff --git a/config/wallet-config.json b/config/wallet-config.json
+index f5e190543..ef3cad463 100644
+--- a/config/wallet-config.json
++++ b/config/wallet-config.json
+@@ -181,5 +181,5 @@
+       "max": 2000000
+     }
+   },
+-  "promoCardEnabled": false
++  "promoCardEnabled": true
+ }
+```

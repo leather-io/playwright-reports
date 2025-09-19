@@ -1,0 +1,493 @@
+# Test info
+
+- Name: Send sip10 >> can send sip10 token
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:20:3
+
+# Error details
+
+```
+Error: Timed out 5000ms waiting for expect(locator).toBeAttached()
+
+Locator: getByTestId('sent-transaction-summary')
+Expected: attached
+Received: <element(s) not found>
+Call log:
+  - expect.toBeAttached with timeout 5000ms
+  - waiting for getByTestId('sent-transaction-summary')
+
+    at /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:36:46
+```
+
+# Test source
+
+```ts
+   1 | import { expect } from '@playwright/test';
+   2 | import { TEST_ACCOUNT_2_STX_ADDRESS } from '@tests/mocks/constants';
+   3 | import { mockStacksBroadcastTransaction } from '@tests/mocks/mock-stacks-txs';
+   4 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   5 |
+   6 | import { test } from '../../fixtures/fixtures';
+   7 |
+   8 | const amount = '0.000001';
+   9 |
+  10 | test.describe('Send sip10', () => {
+  11 |   test.beforeEach(async ({ extensionId, globalPage, homePage, onboardingPage, sendPage }) => {
+  12 |     await globalPage.setupAndUseApiCalls(extensionId);
+  13 |     await mockStacksBroadcastTransaction(globalPage.page);
+  14 |
+  15 |     await onboardingPage.signInWithTestAccount(extensionId);
+  16 |     await homePage.sendButton.click();
+  17 |     await sendPage.selectSIP10AndGoToSendForm();
+  18 |   });
+  19 |
+  20 |   test('can send sip10 token', async ({ sendPage }) => {
+  21 |     await sendPage.amountInput.fill(amount);
+  22 |     await sendPage.recipientInput.fill(TEST_ACCOUNT_2_STX_ADDRESS);
+  23 |     await sendPage.recipientInput.blur();
+  24 |
+  25 |     await sendPage.previewSendTxButton.click();
+  26 |     const details = await sendPage.confirmationDetails.allInnerTexts();
+  27 |
+  28 |     test.expect(details).toBeTruthy();
+  29 |
+  30 |     await sendPage.confirmSendTransaction();
+  31 |
+  32 |     const sentTransactionSummaryPage = sendPage.page.getByTestId(
+  33 |       SendCryptoAssetSelectors.SentTransactionSummary
+  34 |     );
+  35 |
+> 36 |     await expect(sentTransactionSummaryPage).toBeAttached();
+     |                                              ^ Error: Timed out 5000ms waiting for expect(locator).toBeAttached()
+  37 |   });
+  38 | });
+  39 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/common/stacks-utils.ts b/src/app/common/stacks-utils.ts
+index e340b68f2..f6ba5927c 100644
+--- a/src/app/common/stacks-utils.ts
++++ b/src/app/common/stacks-utils.ts
+@@ -1,4 +1,5 @@
+ import { ChainId } from '@stacks/network';
++import type { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
+ import { type ContractIdString, parseContractId } from '@stacks/transactions';
+ import BigNumber from 'bignumber.js';
+ import { c32addressDecode } from 'c32check';
+diff --git a/src/app/common/transactions/stacks/is-sip-10-transfer.ts b/src/app/common/transactions/stacks/is-sip-10-transfer.ts
+deleted file mode 100644
+index 50460b5e3..000000000
+--- a/src/app/common/transactions/stacks/is-sip-10-transfer.ts
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import { ContractCallPayload, StacksTransactionWire } from '@stacks/transactions';
+-
+-export function isSip10Transfer(tx: StacksTransactionWire) {
+-  if (!tx.payload || !('functionName' in tx.payload)) return false;
+-  const payload = tx.payload as ContractCallPayload;
+-  return (
+-    payload.functionName.content === 'transfer' &&
+-    (payload.functionArgs.length === 3 || payload.functionArgs.length === 4)
+-  );
+-}
+diff --git a/src/app/common/transactions/stacks/transaction.utils.ts b/src/app/common/transactions/stacks/transaction.utils.ts
+index 6d825bd15..d18f056f8 100644
+--- a/src/app/common/transactions/stacks/transaction.utils.ts
++++ b/src/app/common/transactions/stacks/transaction.utils.ts
+@@ -1,15 +1,20 @@
+ import type { StacksNetwork } from '@stacks/network';
+ import {
+   CoinbaseTransaction,
++  type MempoolTransaction,
++  type Transaction,
+   TransactionEventFungibleAsset,
+ } from '@stacks/stacks-blockchain-api-types';
+ import {
+   AddressHashMode,
+   AuthType,
++  type ContractCallPayload,
+   StacksTransactionWire,
+   addressFromVersionHash,
+   addressHashModeToVersion,
+   addressToString,
++  cvToString,
++  deserializeCV,
+ } from '@stacks/transactions';
+ import { BigNumber } from 'bignumber.js';
+ 
+@@ -17,6 +22,8 @@ import { StacksTx, StacksTxStatus } from '@leather.io/models';
+ import { getStacksContractName } from '@leather.io/stacks';
+ import { truncateMiddle } from '@leather.io/utils';
+ 
++import { safeCall } from '@shared/utils';
++
+ import { stacksValue } from '@app/common/stacks-utils';
+ import { getStacksNetworkFromChainId } from '@app/store/networks/networks.hooks';
+ 
+@@ -127,3 +134,36 @@ export enum StacksTransactionActionType {
+   IncreaseFee = 'increase-fee',
+   RpcRequest = 'rpc-request',
+ }
++
++export function getRecipientFromStacksTransaction(transaction: MempoolTransaction | Transaction) {
++  switch (transaction.tx_type) {
++    case 'token_transfer':
++      return transaction.token_transfer.recipient_address;
++    case 'contract_call': {
++      const sip10RecipientArg = transaction.contract_call?.function_args?.[2];
++      if (!sip10RecipientArg) return null;
++      const [result] = safeCall(() => cvToString(deserializeCV(sip10RecipientArg.hex)));
++      return result;
++    }
++    default:
++      return null;
++  }
++}
++
++// function getTokenSymbolFromTransaction(transaction: MempoolTransaction | Transaction) {
++//   if (transaction.tx_type === 'token_transfer') return 'STX';
++//   if (transaction.tx_type === 'contract_call') {
++//     // transaction.contract_call
++//   }
++// }
++
++export function isSip10Transfer(
++  tx: StacksTransactionWire
++): tx is StacksTransactionWire & { payload: ContractCallPayload } {
++  if (!tx.payload || !('functionName' in tx.payload)) return false;
++  const payload = tx.payload;
++  return (
++    payload.functionName.content === 'transfer' &&
++    (payload.functionArgs.length === 3 || payload.functionArgs.length === 4)
++  );
++}
+diff --git a/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx b/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx
+index 3be3499cc..e68e79a19 100644
+--- a/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx
++++ b/src/app/features/ledger/flows/stacks-tx-signing/steps/approve-sign-stacks-ledger-tx.tsx
+@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js';
+ 
+ import { microStxToStx } from '@leather.io/utils';
+ 
+-import { isSip10Transfer } from '@app/common/transactions/stacks/is-sip-10-transfer';
++import { isSip10Transfer } from '@app/common/transactions/stacks/transaction.utils';
+ import { useLedgerTxSigningContext } from '@app/features/ledger/generic-flows/tx-signing/ledger-sign-tx.context';
+ import { ApproveLedgerOperationLayout } from '@app/features/ledger/generic-steps/approve-ledger-operation/approve-ledger-operation.layout';
+ import { useHasApprovedOperation } from '@app/features/ledger/hooks/use-has-approved-transaction';
+diff --git a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
+index 48f3fe2b2..9a6a695c7 100644
+--- a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
++++ b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
+@@ -73,7 +73,7 @@ export function useStacksBroadcastTransaction({
+       if (txId) {
+         void navigate(
+           RouteUrls.SentStxTxSummary.replace(':symbol', token.toLowerCase()).replace(
+-            ':txId',
++            ':txid',
+             `${txId}`
+           ),
+           formSentSummaryTxState ? formSentSummaryTxState(txId, signedTx, decimals) : {}
+diff --git a/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts b/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts
+index 344488266..75e10fd88 100644
+--- a/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts
++++ b/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts
+@@ -97,7 +97,7 @@ export function useStacksTransactionSummary(token: CryptoCurrency) {
+     return isSome ? serializeCV(payload.functionArgs[3]) : noMemoText;
+   }
+ 
+-  function formSip10TxSummary(tx: StacksTransactionWire, symbol: string, decimals = 6) {
++  function formSip10TxSummary(tx: StacksTransactionWire, symbol: string, decimals: number) {
+     const payload = tx.payload as ContractCallPayload;
+     const fee = tx.auth.spendingCondition.fee;
+     const txValue = Number((payload.functionArgs[0] as IntCV).value);
+diff --git a/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx b/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
+index 47909e3ad..55d9456a6 100644
+--- a/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
++++ b/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
+@@ -15,7 +15,7 @@ import { AccountGate } from '@app/routes/account-gate';
+ import { BroadcastError } from '../broadcast-error/broadcast-error';
+ import { ChooseCryptoAsset } from '../choose-crypto-asset/choose-crypto-asset';
+ import { BtcSentSummary } from '../sent-summary/btc-sent-summary';
+-import { StxSentSummary } from '../sent-summary/stx-sent-summary';
++import { StacksChainTxSummaryRoute } from '../sent-summary/stacks/stx-sent-summary';
+ import { RecipientAccountsSheet } from './components/recipient-accounts-dialog/recipient-accounts-dialog';
+ import { SendBitcoinAssetContainer } from './family/bitcoin/components/send-bitcoin-asset-container';
+ import { BtcChooseFee } from './form/btc/btc-choose-fee';
+@@ -67,6 +67,7 @@ export const sendCryptoAssetFormRoutes = (
+       </Route>
+       <Route path={RouteUrls.SentBtcTxSummary} element={<BtcSentSummary />} />
+     </Route>
++
+     <Route
+       path={RouteUrls.SendCryptoAssetForm.replace(':symbol', 'stx')}
+       element={
+@@ -85,6 +86,7 @@ export const sendCryptoAssetFormRoutes = (
+     >
+       {ledgerStacksTxSigningRoutes}
+     </Route>
++
+     <Route
+       path={RouteUrls.SendSip10Form}
+       element={
+@@ -100,6 +102,6 @@ export const sendCryptoAssetFormRoutes = (
+     <Route path="/send/:symbol/:contractId/confirm" element={<StacksSendFormConfirmation />}>
+       {ledgerStacksTxSigningRoutes}
+     </Route>
+-    <Route path={RouteUrls.SentStxTxSummary} element={<StxSentSummary />} />
++    <Route path={RouteUrls.SentStxTxSummary} element={<StacksChainTxSummaryRoute />} />
+   </Route>
+ );
+diff --git a/src/app/pages/send/sent-summary/stx-sent-summary.tsx b/src/app/pages/send/sent-summary/stacks/stacks-chain-tx-summary.tsx
+similarity index 60%
+rename from src/app/pages/send/sent-summary/stx-sent-summary.tsx
+rename to src/app/pages/send/sent-summary/stacks/stacks-chain-tx-summary.tsx
+index 3df4085c4..d16fa8f8e 100644
+--- a/src/app/pages/send/sent-summary/stx-sent-summary.tsx
++++ b/src/app/pages/send/sent-summary/stacks/stacks-chain-tx-summary.tsx
+@@ -1,4 +1,4 @@
+-import { useLocation } from 'react-router';
++import type { ReactNode } from 'react';
+ 
+ import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+ import { Stack } from 'leather-styles/jsx';
+@@ -17,36 +17,31 @@ import { Card, Content, Page, SummaryFooter } from '@app/components/layout';
+ import { PageHeader } from '@app/features/container/headers/page.header';
+ import { useToast } from '@app/features/toasts/use-toast';
+ 
+-import { TxDone } from '../send-crypto-asset-form/components/tx-done';
++import { TxDone } from '../../send-crypto-asset-form/components/tx-done';
+ 
+-export function StxSentSummary() {
+-  const { state } = useLocation();
+-  const toast = useToast();
+-
+-  const {
+-    txValue,
+-    txFiatValue,
+-    txFiatValueSymbol,
+-    symbol,
+-    txLink,
+-    fee,
+-    recipient,
+-    txId,
+-    totalSpend,
+-    sendingValue,
+-  } = state;
++interface StacksChainTxSummaryLayoutProps {
++  txid: string;
++  token: string;
++  recipient?: string;
++  value: number;
++  txFiatValue?: string;
++  metadata: [string, ReactNode][];
++}
++export function StacksChainTxSummaryLayout(props: StacksChainTxSummaryLayoutProps) {
++  const { txid, token, recipient, value, txFiatValue, metadata } = props;
+ 
+-  const { onCopy } = useClipboard(txId || '');
++  const { onCopy } = useClipboard(txid);
+   const { handleOpenStacksTxLink } = useStacksExplorerLink();
++  const toast = useToast();
+ 
+   function onClickLink() {
+     void analytics.track('view_transaction_confirmation', { symbol: 'STX' });
+-    handleOpenStacksTxLink(txLink);
++    handleOpenStacksTxLink({ txid });
+   }
+ 
+   function onClickCopy() {
+-    onCopy();
+     toast.success('ID copied!');
++    onCopy();
+   }
+ 
+   return (
+@@ -56,28 +51,30 @@ export function StxSentSummary() {
+         <Page>
+           <Card
+             data-testid={SendCryptoAssetSelectors.SentTransactionSummary}
+-            contentStyle={{
+-              p: 'space.00',
+-            }}
++            contentStyle={{ p: 'space.00' }}
+             footer={<SummaryFooter onClickCopy={onClickCopy} onClickLink={onClickLink} />}
+           >
+             <TxDone />
+ 
+             <InfoCardAssetValue
+-              fiatSymbol={txFiatValueSymbol}
++              fiatSymbol="USD"
+               fiatValue={txFiatValue}
+               px="space.05"
+-              symbol={symbol}
+-              value={txValue}
++              symbol={token.toUpperCase()}
++              value={value}
+             />
+ 
+             <Stack pb="space.06" px="space.06" width="100%">
+-              <InfoCardRow title="To" value={<FormAddressDisplayer address={recipient} />} />
+-              <InfoCardSeparator />
+-              <InfoCardRow title="Total spend" value={totalSpend} />
++              {recipient && (
++                <>
++                  <InfoCardRow title="To" value={<FormAddressDisplayer address={recipient} />} />
++                  <InfoCardSeparator />
++                </>
++              )}
+ 
+-              <InfoCardRow title="Sending" value={sendingValue} />
+-              <InfoCardRow title="Fee" value={fee} />
++              {metadata.map(([title, value]) => (
++                <InfoCardRow key={title} title={title} value={value} />
++              ))}
+             </Stack>
+           </Card>
+         </Page>
+diff --git a/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
+new file mode 100644
+index 000000000..3c9c58282
+--- /dev/null
++++ b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
+@@ -0,0 +1,108 @@
++import { Navigate, useParams } from 'react-router';
++
++import { type IntCV, deserializeTransaction } from '@stacks/transactions';
++import z from 'zod';
++
++import { baseCurrencyAmountInQuote, createMoney, microStxToStx } from '@leather.io/utils';
++
++import { formatCurrency } from '@app/common/currency-formatter';
++import {
++  getRecipientFromStacksTransaction,
++  isSip10Transfer,
++} from '@app/common/transactions/stacks/transaction.utils';
++import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
++import { useGetRawTransactionByIdQuery } from '@app/query/stacks/transactions/raw-transaction-by-id.query';
++import { useGetTransactionByIdQuery } from '@app/query/stacks/transactions/transactions-by-id.query';
++
++import { StacksChainTxSummaryLayout } from './stacks-chain-tx-summary';
++
++const paramsSchema = z.object({ symbol: z.string(), txid: z.string() });
++type RouteParams = z.infer<typeof paramsSchema>;
++
++export function StacksChainTxSummaryRoute() {
++  const { data: params } = paramsSchema.safeParse(useParams());
++  if (!params) return <Navigate to="/" replace />;
++
++  if (params.symbol.toUpperCase() === 'STX') return <StxSentSummary {...params} />;
++
++  return <Sip10SentSummary {...params} />;
++}
++
++export function StxSentSummary({ txid }: RouteParams) {
++  const tokenMarketData = useCryptoCurrencyMarketDataMeanAverage('STX');
++  const { data: transaction } = useGetTransactionByIdQuery(txid);
++  const { data: rawTransaction } = useGetRawTransactionByIdQuery(txid);
++
++  if (!transaction || !rawTransaction) return 'loading...';
++
++  if (transaction.tx_type !== 'token_transfer')
++    throw new Error('Impossible state, STX transfers are always of type `token_transfer`');
++
++  console.log({ transaction, rawTransaction });
++
++  const decodedTx = deserializeTransaction(rawTransaction.raw_tx);
++  console.log({ decodedTx });
++
++  const stacksOnlyFiatValue = {
++    fiatValue: formatCurrency(
++      baseCurrencyAmountInQuote(
++        createMoney(Number(transaction.token_transfer.amount), 'STX'),
++        tokenMarketData
++      )
++    ),
++    fiatSymbol: tokenMarketData.price.symbol,
++  };
++
++  const fee = createMoney(Number(decodedTx.auth.spendingCondition.fee), 'STX');
++
++  return (
++    <StacksChainTxSummaryLayout
++      value={microStxToStx(Number(transaction.token_transfer.amount)).toNumber()}
++      txFiatValue={stacksOnlyFiatValue.fiatValue}
++      recipient={transaction.token_transfer.recipient_address}
++      token="STX"
++      txid={txid}
++      metadata={[
++        ['Total spend', '100stx'],
++        ['Sending', 'lksjdfs'],
++        ['Fee', formatCurrency(fee)],
++      ]}
++    />
++  );
++}
++
++export function Sip10SentSummary({ txid, symbol }: RouteParams) {
++  const { data: transaction } = useGetTransactionByIdQuery(txid);
++  const { data: rawTransaction } = useGetRawTransactionByIdQuery(txid);
++
++  if (!transaction || !rawTransaction) return 'loading...';
++
++  console.log({ transaction, rawTransaction });
++
++  const decodedTx = deserializeTransaction(rawTransaction.raw_tx);
++  console.log({ decodedTx });
++
++  const amountAsMoney = (() => {
++    if (isSip10Transfer(decodedTx)) {
++      return Number((decodedTx.payload.functionArgs?.[0] as IntCV).value);
++    }
++    return 0;
++  })();
++
++  const recipient = getRecipientFromStacksTransaction(transaction) ?? undefined;
++  const fee = createMoney(Number(decodedTx.auth.spendingCondition.fee), 'STX');
++
++  return (
++    <StacksChainTxSummaryLayout
++      token={symbol}
++      txid={txid}
++      value={amountAsMoney}
++      recipient={recipient}
++      metadata={[
++        ['Total spend', '100stx'],
++        ['Sending', 'lksjdfs'],
++        ['Fee', formatCurrency(fee)],
++      ]}
++    />
++  );
++}
+diff --git a/src/shared/route-urls.ts b/src/shared/route-urls.ts
+index 048005143..595244276 100644
+--- a/src/shared/route-urls.ts
++++ b/src/shared/route-urls.ts
+@@ -63,7 +63,7 @@ export enum RouteUrls {
+   SendStxConfirmation = '/send/stx/confirm',
+   SendStacksSip10Confirmation = '/send/:symbol/confirm',
+   SentBtcTxSummary = '/sent/btc/:txId',
+-  SentStxTxSummary = '/sent/stx/:txId',
++  SentStxTxSummary = '/sent/:symbol/:txid',
+ 
+   // Send ordinal inscriptions
+   SendOrdinalInscription = 'send/ordinal-inscription',
+diff --git a/src/shared/utils.ts b/src/shared/utils.ts
+index fae900d8f..d222484e1 100644
+--- a/src/shared/utils.ts
++++ b/src/shared/utils.ts
+@@ -25,3 +25,12 @@ export function getAddressFromAssetString(assetString: string) {
+   const principal = getPrincipalFromAssetString(assetString);
+   return principal.split('.')[0];
+ }
++
++export function safeCall<T>(fn: () => T): [T, null] | [null, unknown] {
++  try {
++    const result = fn();
++    return [result, null];
++  } catch (error) {
++    return [null, error];
++  }
++}
+```

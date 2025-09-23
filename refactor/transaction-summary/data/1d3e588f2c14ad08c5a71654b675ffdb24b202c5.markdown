@@ -83,7 +83,7 @@ index 50460b5e3..000000000
 -  );
 -}
 diff --git a/src/app/common/transactions/stacks/transaction.utils.ts b/src/app/common/transactions/stacks/transaction.utils.ts
-index 6d825bd15..b5903ffb4 100644
+index 6d825bd15..163c7c416 100644
 --- a/src/app/common/transactions/stacks/transaction.utils.ts
 +++ b/src/app/common/transactions/stacks/transaction.utils.ts
 @@ -6,31 +6,47 @@ import {
@@ -195,7 +195,7 @@ index 6d825bd15..b5903ffb4 100644
  
  export function isTxSponsored(tx: StacksTransactionWire) {
    return tx.auth.authType === AuthType.Sponsored;
-@@ -127,3 +143,87 @@ export enum StacksTransactionActionType {
+@@ -127,3 +143,85 @@ export enum StacksTransactionActionType {
    IncreaseFee = 'increase-fee',
    RpcRequest = 'rpc-request',
  }
@@ -236,9 +236,7 @@ index 6d825bd15..b5903ffb4 100644
 +  symbol: string,
 +  decimals: number
 +) {
-+  const amount = new BigNumber(Number((payload.functionArgs?.[0] as IntCV).value)).shiftedBy(
-+    !decimals ? 0 : -decimals
-+  );
++  const amount = new BigNumber(Number((payload.functionArgs?.[0] as IntCV).value));
 +  return createMoney(amount, symbol.toUpperCase(), decimals);
 +}
 +
@@ -665,7 +663,7 @@ index 3a6c3f0ba..d6e2adabf 100644
            title="Memo"
            value={memoDisplayText}
 diff --git a/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx b/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
-index 636a3872b..bb4af123f 100644
+index 636a3872b..4f64004c5 100644
 --- a/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
 +++ b/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
 @@ -1,16 +1,28 @@
@@ -791,7 +789,7 @@ index 636a3872b..bb4af123f 100644
 +            <SendFormConfirmation
 +              txValue={getSip10TransferAmount(tx.payload, symbol, decimals)}
 +              totalSpend={
-+                getSip10TransferAmount(tx.payload, symbol, decimals) +
++                formatCurrency(getSip10TransferAmount(tx.payload, symbol, decimals)) +
 +                ' + ' +
 +                formatCurrency(sharedProps.fee)
 +              }

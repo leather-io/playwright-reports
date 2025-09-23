@@ -1,66 +1,157 @@
 # Test info
 
-- Name: Send sip10 >> can send sip10 token
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:20:3
+- Name: send stx: tests on testnet >> send form validation >> that the amount field enforces max length based on decimals
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:132:5
 
 # Error details
 
 ```
-Error: Timed out 5000ms waiting for expect(locator).toBeAttached()
-
-Locator: getByTestId('sent-transaction-summary')
-Expected: attached
-Received: <element(s) not found>
-Call log:
-  - expect.toBeAttached with timeout 5000ms
-  - waiting for getByTestId('sent-transaction-summary')
-
-    at /home/runner/work/extension/extension/tests/specs/send/send-sip10.spec.ts:36:46
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:27:5
 ```
 
 # Test source
 
 ```ts
-   1 | import { expect } from '@playwright/test';
-   2 | import { TEST_ACCOUNT_2_STX_ADDRESS } from '@tests/mocks/constants';
-   3 | import { mockStacksBroadcastTransaction } from '@tests/mocks/mock-stacks-txs';
-   4 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
-   5 |
-   6 | import { test } from '../../fixtures/fixtures';
-   7 |
-   8 | const amount = '0.000001';
-   9 |
-  10 | test.describe('Send sip10', () => {
-  11 |   test.beforeEach(async ({ extensionId, globalPage, homePage, onboardingPage, sendPage }) => {
-  12 |     await globalPage.setupAndUseApiCalls(extensionId);
-  13 |     await mockStacksBroadcastTransaction(globalPage.page);
-  14 |
-  15 |     await onboardingPage.signInWithTestAccount(extensionId);
-  16 |     await homePage.sendButton.click();
-  17 |     await sendPage.selectSIP10AndGoToSendForm();
-  18 |   });
-  19 |
-  20 |   test('can send sip10 token', async ({ sendPage }) => {
-  21 |     await sendPage.amountInput.fill(amount);
-  22 |     await sendPage.recipientInput.fill(TEST_ACCOUNT_2_STX_ADDRESS);
-  23 |     await sendPage.recipientInput.blur();
-  24 |
-  25 |     await sendPage.previewSendTxButton.click();
-  26 |     const details = await sendPage.confirmationDetails.allInnerTexts();
-  27 |
-  28 |     test.expect(details).toBeTruthy();
-  29 |
-  30 |     await sendPage.confirmSendTransaction();
-  31 |
-  32 |     const sentTransactionSummaryPage = sendPage.page.getByTestId(
-  33 |       SendCryptoAssetSelectors.SentTransactionSummary
-  34 |     );
-  35 |
-> 36 |     await expect(sentTransactionSummaryPage).toBeAttached();
-     |                                              ^ Error: Timed out 5000ms waiting for expect(locator).toBeAttached()
-  37 |   });
-  38 | });
-  39 |
+   1 | import { Locator, Page } from '@playwright/test';
+   2 | import { MockedTokensSelectors } from '@tests/selectors/mocked-tokens.selectors';
+   3 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   4 | import { SharedComponentsSelectors } from '@tests/selectors/shared-component.selectors';
+   5 | import { createTestSelector } from '@tests/utils';
+   6 |
+   7 | import { RouteUrls } from '@shared/route-urls';
+   8 |
+   9 | export class SendPage {
+   10 |   readonly page: Page;
+   11 |   readonly amountInput: Locator;
+   12 |   readonly amountInputErrorLabel: Locator;
+   13 |   readonly confirmationDetails: Locator;
+   14 |   readonly confirmationDetailsRecipient: Locator;
+   15 |   readonly formInputErrorLabel: Locator;
+   16 |   readonly memoInput: Locator;
+   17 |   readonly previewSendTxButton: Locator;
+   18 |   readonly recipientChooseAccountButton: Locator;
+   19 |   readonly recipientSelectRecipientTypeDropdown: Locator;
+   20 |   readonly recipientSelectFieldAddress: Locator;
+   21 |   readonly recipientSelectFieldBnsName: Locator;
+   22 |   readonly recipientInput: Locator;
+   23 |   readonly recipientBnsAddressLabel: Locator;
+   24 |   readonly sendMaxButton: Locator;
+   25 |   readonly feesRow: Locator;
+   26 |   readonly memoRow: Locator;
+   27 |   readonly feesListItem: Locator;
+   28 |   readonly feeToBePaid: Locator;
+   29 |   readonly infoCardButton: Locator;
+   30 |   readonly broadcastErrorTitle: Locator;
+   31 |
+   32 |   constructor(page: Page) {
+   33 |     this.page = page;
+   34 |     this.amountInput = this.page.getByTestId(SendCryptoAssetSelectors.AmountFieldInput);
+   35 |     this.amountInputErrorLabel = this.page.getByTestId(
+   36 |       SendCryptoAssetSelectors.AmountFieldInputErrorLabel
+   37 |     );
+   38 |     this.confirmationDetails = this.page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetails);
+   39 |     this.confirmationDetailsRecipient = this.page.getByTestId(
+   40 |       SendCryptoAssetSelectors.ConfirmationDetailsRecipient
+   41 |     );
+   42 |     this.formInputErrorLabel = page.getByTestId(SendCryptoAssetSelectors.FormFieldInputErrorLabel);
+   43 |     this.memoInput = this.page.getByTestId(SendCryptoAssetSelectors.MemoFieldInput);
+   44 |     this.previewSendTxButton = page.getByTestId(SendCryptoAssetSelectors.PreviewSendTxBtn);
+   45 |     this.recipientChooseAccountButton = page.getByTestId(
+   46 |       SendCryptoAssetSelectors.RecipientChooseAccountButton
+   47 |     );
+   48 |     this.page.getByTestId(SendCryptoAssetSelectors.RecipientSelectFieldAddress);
+   49 |     this.recipientSelectRecipientTypeDropdown = this.page.getByTestId(
+   50 |       SendCryptoAssetSelectors.RecipientSelectRecipientTypeDropdown
+   51 |     );
+   52 |     this.recipientSelectFieldAddress = this.page.getByTestId(
+   53 |       SendCryptoAssetSelectors.RecipientSelectFieldAddress
+   54 |     );
+   55 |     this.recipientSelectFieldBnsName = this.page.getByTestId(
+   56 |       SendCryptoAssetSelectors.RecipientSelectFieldBnsName
+   57 |     );
+   58 |     this.recipientInput = this.page.getByTestId(SendCryptoAssetSelectors.RecipientFieldInput);
+   59 |     this.recipientBnsAddressLabel = this.page.getByTestId(
+   60 |       SendCryptoAssetSelectors.RecipientBnsAddressLabel
+   61 |     );
+   62 |     this.feesRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsFee);
+   63 |     this.memoRow = page.getByTestId(SendCryptoAssetSelectors.ConfirmationDetailsMemo);
+   64 |
+   65 |     this.sendMaxButton = page.getByTestId(SendCryptoAssetSelectors.SendMaxBtn);
+   66 |     this.feesListItem = page.getByTestId(SharedComponentsSelectors.FeesListItem);
+   67 |     this.feeToBePaid = page.getByTestId(SharedComponentsSelectors.FeeToBePaidLabel);
+   68 |     this.infoCardButton = page.getByTestId(SharedComponentsSelectors.InfoCardButton);
+   69 |     this.broadcastErrorTitle = page.getByTestId(SharedComponentsSelectors.BroadcastErrorTitle);
+   70 |   }
+   71 |
+   72 |   async selectBtcAndGoToSendForm() {
+   73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   74 |     await this.page.getByTestId('BTC').click();
+   75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
+   76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   77 |   }
+   78 |
+   79 |   async selectStxAndGoToSendForm() {
+   80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   81 |     await this.page.getByTestId('STX').click();
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
+   83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   84 |   }
+   85 |
+   86 |   async selectSIP10AndGoToSendForm() {
+   87 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
+   88 |     await this.page.getByTestId(MockedTokensSelectors.Sip10TokenTestId).click();
+   89 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
+   90 |   }
+   91 |
+   92 |   async waitForSendPageReady() {
+   93 |     await this.page.waitForSelector(createTestSelector(SendCryptoAssetSelectors.SendPageReady), {
+   94 |       state: 'attached',
+   95 |     });
+   96 |   }
+   97 |
+   98 |   async goBack() {
+   99 |     await this.page.getByTestId(SharedComponentsSelectors.HeaderBackBtn).click({ force: true });
+  100 |   }
+  101 |
+  102 |   async goBackSelectStx() {
+  103 |     await this.goBack();
+  104 |     await this.selectStxAndGoToSendForm();
+  105 |   }
+  106 |
+  107 |   async clickInfoCardButton() {
+  108 |     await this.infoCardButton.click();
+  109 |   }
+  110 |
+  111 |   async waitForFeeRow() {
+  112 |     await this.page.getByTestId(SharedComponentsSelectors.FeeRow).waitFor({ state: 'attached' });
+  113 |   }
+  114 |
+  115 |   async selectInscription() {
+  116 |     const inscriptions = this.page.getByTestId(SendCryptoAssetSelectors.Inscription);
+  117 |     const sendButton = this.page.getByTestId(SendCryptoAssetSelectors.InscriptionSendButton);
+  118 |     const count = await inscriptions.count();
+  119 |     if (count === 1) {
+  120 |       await inscriptions.hover();
+  121 |       await this.page
+  122 |         .getByTestId(SendCryptoAssetSelectors.InscriptionSendButton)
+  123 |         .click({ force: true });
+  124 |     } else {
+  125 |       await inscriptions.nth(0).hover();
+  126 |       await sendButton.nth(0).click({ force: true });
+  127 |     }
+  128 |   }
+  129 |
+  130 |   async confirmSendTransaction() {
+  131 |     await this.page.getByTestId(SendCryptoAssetSelectors.ConfirmSendTxBtn).click();
+  132 |   }
+  133 | }
+  134 |
 ```
 
 # Local changes
@@ -83,10 +174,10 @@ index 50460b5e3..000000000
 -  );
 -}
 diff --git a/src/app/common/transactions/stacks/transaction.utils.ts b/src/app/common/transactions/stacks/transaction.utils.ts
-index 6d825bd15..163c7c416 100644
+index 6d825bd15..81e3a3124 100644
 --- a/src/app/common/transactions/stacks/transaction.utils.ts
 +++ b/src/app/common/transactions/stacks/transaction.utils.ts
-@@ -6,31 +6,47 @@ import {
+@@ -6,31 +6,50 @@ import {
  import {
    AddressHashMode,
    AuthType,
@@ -100,10 +191,13 @@ index 6d825bd15..163c7c416 100644
    addressToString,
 +  createAddress,
 +  cvToString,
++  deserializeMemoString,
++  deserializeTransaction,
 +  isTokenTransferPayload,
 +  serializeCV,
  } from '@stacks/transactions';
  import { BigNumber } from 'bignumber.js';
++import z from 'zod';
  
  import { StacksTx, StacksTxStatus } from '@leather.io/models';
  import { getStacksContractName } from '@leather.io/stacks';
@@ -140,7 +234,7 @@ index 6d825bd15..163c7c416 100644
    switch (transaction.tx_type) {
      case 'smart_contract':
        return truncateMiddle(transaction.smart_contract.contract_id.split('.')[0], 4);
-@@ -43,17 +59,17 @@ export const getTxCaption = (transaction: StacksTx) => {
+@@ -43,17 +62,17 @@ export const getTxCaption = (transaction: StacksTx) => {
      default:
        return null;
    }
@@ -162,7 +256,7 @@ index 6d825bd15..163c7c416 100644
    if (tx.tx_type === 'token_transfer') {
      return `${isOriginator ? '-' : ''}${stacksValue({
        value: tx.token_transfer.amount,
-@@ -63,9 +79,9 @@ export const getTxValue = (tx: StacksTx, isOriginator: boolean): number | string
+@@ -63,9 +82,9 @@ export const getTxValue = (tx: StacksTx, isOriginator: boolean): number | string
    const transfer = getAssetTransfer(tx);
    if (transfer) return new BigNumber(transfer.asset.amount).toFormat();
    return null;
@@ -174,7 +268,7 @@ index 6d825bd15..163c7c416 100644
    switch (tx.tx_type) {
      case 'token_transfer':
        return 'Stacks';
-@@ -80,16 +96,16 @@ export const getTxTitle = (tx: StacksTx) => {
+@@ -80,16 +99,16 @@ export const getTxTitle = (tx: StacksTx) => {
      default:
        return '';
    }
@@ -195,7 +289,7 @@ index 6d825bd15..163c7c416 100644
  
  export function isTxSponsored(tx: StacksTransactionWire) {
    return tx.auth.authType === AuthType.Sponsored;
-@@ -127,3 +143,85 @@ export enum StacksTransactionActionType {
+@@ -127,3 +146,85 @@ export enum StacksTransactionActionType {
    IncreaseFee = 'increase-fee',
    RpcRequest = 'rpc-request',
  }
@@ -254,19 +348,19 @@ index 6d825bd15..163c7c416 100644
 +export function getSip10MemoDisplayText(payload: ContractCallPayload) {
 +  if (!isDefined(payload.functionArgs[3])) return null;
 +  const isSome = payload.functionArgs[3].type === ClarityType.OptionalSome;
-+  return isSome ? serializeCV(payload.functionArgs[3]) : null;
++  return isSome ? deserializeMemoString(serializeCV(payload.functionArgs[3])).content : null;
 +}
 +
-+// function isValidEncodedTransaction(tx: string | Uint8Array) {
-+//   const [result, error] = safeCall(() => deserializeTransaction(tx));
-+//   return !!result && !error;
-+// }
++function isValidEncodedTransaction(tx: string | Uint8Array) {
++  const [result, error] = safeCall(() => deserializeTransaction(tx));
++  return !!result && !error;
++}
 +
-+// export const hexEncodedStacksTxSchema = z
-+//   .string()
-+//   .refine(value => isValidEncodedTransaction(value), {
-+//     message: 'Invalid hex-encoded Stacks transaction',
-+//   });
++export const hexEncodedStacksTxSchema = z
++  .string()
++  .refine(value => isValidEncodedTransaction(value), {
++    message: 'Invalid hex-encoded Stacks transaction',
++  });
 +
 +export function getContractAddressFromContractCallPayload(payload: ContractCallPayload) {
 +  const contractAddress = addressToString(payload.contractAddress);
@@ -372,7 +466,7 @@ index 3be3499cc..8132d8a69 100644
        return transaction.payload.functionArgs
          .map(cv => cvToString(cv))
 diff --git a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
-index 48f3fe2b2..dedb00004 100644
+index 48f3fe2b2..834985c86 100644
 --- a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
 +++ b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
 @@ -21,15 +21,12 @@ import { useToast } from '@app/features/toasts/use-toast';
@@ -407,20 +501,20 @@ index 48f3fe2b2..dedb00004 100644
    const navigate = useNavigate();
    const toast = useToast();
  
-@@ -73,10 +69,9 @@ export function useStacksBroadcastTransaction({
+@@ -73,10 +69,10 @@ export function useStacksBroadcastTransaction({
        if (txId) {
          void navigate(
            RouteUrls.SentStxTxSummary.replace(':symbol', token.toLowerCase()).replace(
 -            ':txId',
 +            ':txid',
              `${txId}`
--          ),
+           ),
 -          formSentSummaryTxState ? formSentSummaryTxState(txId, signedTx, decimals) : {}
-+          )
++          { state: { tx: stacksTransactionToHex(signedTx) } }
          );
        }
      }
-@@ -141,8 +136,6 @@ export function useStacksBroadcastTransaction({
+@@ -141,8 +137,6 @@ export function useStacksBroadcastTransaction({
      showSummaryPage,
      navigate,
      token,
@@ -802,7 +896,7 @@ index 636a3872b..4f64004c5 100644
        </Content>
      </>
 diff --git a/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx b/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
-index 47909e3ad..55d9456a6 100644
+index 47909e3ad..da43f6c24 100644
 --- a/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
 +++ b/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
 @@ -15,7 +15,7 @@ import { AccountGate } from '@app/routes/account-gate';
@@ -810,7 +904,7 @@ index 47909e3ad..55d9456a6 100644
  import { ChooseCryptoAsset } from '../choose-crypto-asset/choose-crypto-asset';
  import { BtcSentSummary } from '../sent-summary/btc-sent-summary';
 -import { StxSentSummary } from '../sent-summary/stx-sent-summary';
-+import { StacksChainTxSummaryRoute } from '../sent-summary/stacks/stx-sent-summary';
++import { StacksChainTxSummaryRoute } from '../sent-summary/stacks/stx-sent-summary.route';
  import { RecipientAccountsSheet } from './components/recipient-accounts-dialog/recipient-accounts-dialog';
  import { SendBitcoinAssetContainer } from './family/bitcoin/components/send-bitcoin-asset-container';
  import { BtcChooseFee } from './form/btc/btc-choose-fee';
@@ -965,17 +1059,60 @@ index 000000000..aa418f1d1
 +    </StacksChainTxSummaryContainerLayout>
 +  );
 +}
-diff --git a/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
+diff --git a/src/app/pages/send/sent-summary/stacks/stx-sent-summary.route.tsx b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.route.tsx
 new file mode 100644
-index 000000000..8c78e7793
+index 000000000..0b3bb6db1
 --- /dev/null
-+++ b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
-@@ -0,0 +1,124 @@
++++ b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.route.tsx
+@@ -0,0 +1,40 @@
 +import { Navigate, useParams } from 'react-router';
 +
-+import { deserializeTransaction, isTokenTransferPayload } from '@stacks/transactions';
-+import type { UseQueryResult } from '@tanstack/react-query';
++import { deserializeTransaction } from '@stacks/transactions';
 +import z from 'zod';
++
++import { useLocationStateWithCache } from '@app/common/hooks/use-location-state';
++import { hexEncodedStacksTxSchema } from '@app/common/transactions/stacks/transaction.utils';
++import { RawTransactionLoader } from '@app/components/loaders/raw-tx-loader';
++
++import { StacksChainTxSummaryLoading } from './stacks-chain-tx-summary';
++import { Sip10SentSummary, StxSentSummary } from './stx-sent-summary';
++
++const routeParamsSchema = z.object({
++  symbol: z.string(),
++  txid: z.string(),
++});
++
++export function StacksChainTxSummaryRoute() {
++  const { data: params } = routeParamsSchema.safeParse(useParams());
++  const tx = useLocationStateWithCache('tx');
++
++  if (!params || !hexEncodedStacksTxSchema.safeParse(tx).success)
++    return <Navigate to="/" replace />;
++
++  const SummaryComponent =
++    params.symbol.toUpperCase() === 'STX' ? StxSentSummary : Sip10SentSummary;
++
++  if (!tx) {
++    return (
++      <RawTransactionLoader
++        txid={params.txid}
++        fallback={<StacksChainTxSummaryLoading txid={params.txid} />}
++      >
++        {({ rawTx }) => <SummaryComponent {...params} tx={deserializeTransaction(rawTx)} />}
++      </RawTransactionLoader>
++    );
++  }
++
++  return <SummaryComponent {...params} tx={deserializeTransaction(tx)} />;
++}
+diff --git a/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
+new file mode 100644
+index 000000000..f74eaade7
+--- /dev/null
++++ b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
+@@ -0,0 +1,90 @@
++import { type StacksTransactionWire, isTokenTransferPayload } from '@stacks/transactions';
++import type { UseQueryResult } from '@tanstack/react-query';
 +
 +import type { FtAssetResponse } from '@leather.io/query';
 +import { baseCurrencyAmountInQuote, createMoney, sumMoney } from '@leather.io/utils';
@@ -983,6 +1120,7 @@ index 000000000..8c78e7793
 +import { formatCurrency } from '@app/common/currency-formatter';
 +import {
 +  getContractAddressFromContractCallPayload,
++  getNonceFromStacksTransaction,
 +  getRecipientFromStacksTransaction,
 +  getSip10MemoDisplayText,
 +  getSip10TransferAmount,
@@ -992,46 +1130,17 @@ index 000000000..8c78e7793
 +  isSip10TransferContactCall,
 +  safeAddressToString,
 +} from '@app/common/transactions/stacks/transaction.utils';
-+import { RawTransactionLoader } from '@app/components/loaders/raw-tx-loader';
 +import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
 +import { useGetFungibleTokenMetadataQuery } from '@app/query/stacks/token-metadata/fungible-tokens/fungible-token-metadata.query';
 +
 +import { StacksChainTxSummaryLayout, StacksChainTxSummaryLoading } from './stacks-chain-tx-summary';
 +
-+const paramsSchema = z.object({ symbol: z.string(), txid: z.string() });
-+type RouteParams = z.infer<typeof paramsSchema>;
-+
-+export function StacksChainTxSummaryRoute() {
-+  const { data: params } = paramsSchema.safeParse(useParams());
-+
-+  if (!params) return <Navigate to="/" replace />;
-+
-+  const loaderProps = {
-+    txid: params.txid,
-+    fallback: <StacksChainTxSummaryLoading txid={params.txid} />,
-+  };
-+
-+  if (params.symbol.toUpperCase() === 'STX')
-+    return (
-+      <RawTransactionLoader {...loaderProps}>
-+        {({ rawTx }) => <StxSentSummary {...params} txHex={rawTx} />}
-+      </RawTransactionLoader>
-+    );
-+
-+  return (
-+    <RawTransactionLoader {...loaderProps}>
-+      {({ rawTx }) => <Sip10SentSummary {...params} txHex={rawTx} />}
-+    </RawTransactionLoader>
-+  );
++interface StacksChainSummaryProps {
++  txid: string;
++  symbol: string;
++  tx: StacksTransactionWire;
 +}
-+
-+interface StacksChainSummaryProps extends RouteParams {
-+  txHex: string;
-+}
-+
-+function StxSentSummary({ txid, txHex }: StacksChainSummaryProps) {
-+  const tx = deserializeTransaction(txHex);
-+
++export function StxSentSummary({ txid, tx }: StacksChainSummaryProps) {
 +  const tokenMarketData = useCryptoCurrencyMarketDataMeanAverage('STX');
 +
 +  if (!isTokenTransferPayload(tx.payload))
@@ -1055,17 +1164,14 @@ index 000000000..8c78e7793
 +        ['Sending', formatCurrency(createMoney(Number(tx.payload.amount), 'STX'))],
 +        ['Fee', formatCurrency(fee)],
 +        ['Memo', memo],
-+        ['Nonce', tx.auth.spendingCondition.nonce],
++        ['Nonce', getNonceFromStacksTransaction(tx)],
 +      ]}
 +    />
 +  );
 +}
 +
-+function Sip10SentSummary({ txid, symbol, txHex }: StacksChainSummaryProps) {
-+  const tx = deserializeTransaction(txHex);
-+
++export function Sip10SentSummary({ txid, symbol, tx }: StacksChainSummaryProps) {
 +  if (!isSip10TransferContactCall(tx)) throw new Error('Impossible state, not a SIP-10 transfer');
-+
 +  const contract = getContractAddressFromContractCallPayload(tx.payload);
 +
 +  // Type casting because monorepo returns inaccurate type
@@ -1090,7 +1196,7 @@ index 000000000..8c78e7793
 +      metadata={[
 +        ['Fee', formatCurrency(fee)],
 +        ['Memo', memo],
-+        ['Nonce', tx.auth.spendingCondition.nonce],
++        ['Nonce', getNonceFromStacksTransaction(tx)],
 +      ]}
 +    />
 +  );

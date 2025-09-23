@@ -1,130 +1,124 @@
 # Test info
 
-- Name: Gaia profile request >> should send a signed profile token to gaia
-- Location: /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:53:3
+- Name: Transaction signing >> App initiated STX transfer >> that it broadcasts correctly with given fee and amount
+- Location: /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:56:5
 
 # Error details
 
 ```
-Error: locator.click: Element is not visible
-Call log:
-  - waiting for getByTestId('switch-account-item-0')
-    - locator resolved to <button data-testid="switch-account-item-0" class="group leather-pos_relative leather-bg_ink.background-primary leather-c_ink.text-primary leather-cursor_pointer leather-d_flex leather-h_auto leather-ring_none leather-bdr_xs leather-us_none leather-w_100% before:leather-content_"" before:leather-bdr_xs before:leather-pos_absolute before:leather-top_-space.03 before:leather-left_-space.03 before:leather-bottom_-space.03 before:leather-right_-space.03 [&:is(:active)]:before:leather-bg_ink.component-back…>…</button>
-  - attempting click action
-    - scrolling into view if needed
-
-    at /home/runner/work/extension/extension/tests/specs/profile/profile.spec.ts:58:61
+Error: page.waitForRequest: Page crashed
+=========================== logs ===========================
+waiting for request "*/**/v2/transactions"
+============================================================
+    at /home/runner/work/extension/extension/tests/specs/transactions/transactions.spec.ts:79:58
 ```
 
 # Test source
 
 ```ts
-   1 | import { mockGaiaProfileResponse } from '@tests/mocks/mock-profile';
+   1 | import { TokenTransferPayloadWire, deserializeTransaction } from '@stacks/transactions';
    2 | import { TestAppPage } from '@tests/page-object-models/test-app.page';
-   3 | import { UpdateProfileRequestPage } from '@tests/page-object-models/update-profile-request.page';
+   3 | import { TransactionRequestPage } from '@tests/page-object-models/transaction-request.page';
    4 | import { OnboardingSelectors } from '@tests/selectors/onboarding.selectors';
    5 |
-   6 | import { delay } from '@leather.io/utils';
+   6 | import { stxToMicroStx } from '@leather.io/utils';
    7 |
-   8 | import { test } from '../../fixtures/fixtures';
+   8 | import { createDelay } from '@shared/utils';
    9 |
-   10 | test.describe.configure({ mode: 'serial' });
+   10 | import { test } from '../../fixtures/fixtures';
    11 |
-   12 | test.describe('Profile updating', () => {
-   13 |   let testAppPage: TestAppPage;
-   14 |
-   15 |   test.beforeEach(async ({ context, extensionId, globalPage, onboardingPage }) => {
-   16 |     await globalPage.setupAndUseApiCalls(extensionId);
-   17 |     await onboardingPage.signInWithTestAccount(extensionId);
-   18 |     testAppPage = await TestAppPage.openDemoPage(context);
-   19 |   });
-   20 |
-   21 |   test('should show an error for invalid profile', async ({ context }) => {
-   22 |     const newPagePromise = context.waitForEvent('page');
-   23 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   24 |     const accountsPage = await newPagePromise;
-   25 |     await delay(2000);
-   26 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   27 |     await testAppPage.page.bringToFront();
-   28 |     await testAppPage.page.click('text=Profile', {
-   29 |       timeout: 30000,
-   30 |     });
-   31 |     await accountsPage.close();
-   32 |
-   33 |     await testAppPage.clickUpdateInvalidProfileButton();
-   34 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
-   35 |     const error = await profileUpdatingPage.waitForUpdateProfileRequestError(
-   36 |       'Invalid profile update request (Profile must follow Person schema).'
-   37 |     );
-   38 |
-   39 |     test.expect(error).toBeTruthy();
-   40 |     await profileUpdatingPage.page.close();
-   41 |   });
-   42 | });
-   43 |
-   44 | test.describe('Gaia profile request', () => {
-   45 |   let testAppPage: TestAppPage;
-   46 |
-   47 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
-   48 |     await globalPage.setupAndUseApiCalls(extensionId);
-   49 |     await onboardingPage.signInWithTestAccount(extensionId);
-   50 |     testAppPage = await TestAppPage.openDemoPage(context);
-   51 |   });
-   52 |
-   53 |   test('should send a signed profile token to gaia', async ({ context }) => {
-   54 |     const newPagePromise = context.waitForEvent('page');
-   55 |     await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
-   56 |     const accountsPage = await newPagePromise;
-   57 |     await delay(2000);
->  58 |     await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
-      |                                                             ^ Error: locator.click: Element is not visible
-   59 |     await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
-   60 |     await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
-   61 |     await testAppPage.page.bringToFront();
-   62 |     await testAppPage.page.click('text=Profile', {
-   63 |       timeout: 30000,
-   64 |     });
-   65 |
-   66 |     await testAppPage.clickUpdateProfileButton();
-   67 |     const profileUpdatingPage = new UpdateProfileRequestPage(await context.waitForEvent('page'));
+   12 | const delayAnimationDuration = createDelay(2000);
+   13 |
+   14 | test.describe('Transaction signing', () => {
+   15 |   let testAppPage: TestAppPage;
+   16 |
+   17 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage, context }) => {
+   18 |     await globalPage.setupAndUseApiCalls(extensionId);
+   19 |     await onboardingPage.signInWithTestAccount(extensionId);
+   20 |     testAppPage = await TestAppPage.openDemoPage(context);
+   21 |   });
+   22 |
+   23 |   // These tests often break if ran in parallel
+   24 |   test.describe.configure({ mode: 'serial' });
+   25 |
+   26 |   test.describe('Contract calls', () => {
+   27 |     test('that it validates against insufficient funds when performing a contract call', async ({
+   28 |       context,
+   29 |     }) => {
+   30 |       const newPagePromise = context.waitForEvent('page');
+   31 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   32 |       const accountsPage = await newPagePromise;
+   33 |       await delayAnimationDuration();
+   34 |       await accountsPage.getByTestId('switch-account-item-0').click({ force: true });
+   35 |       await accountsPage.getByTestId('switch-account-item-1').click({ force: true });
+   36 |       await delayAnimationDuration();
+   37 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   38 |       await delayAnimationDuration();
+   39 |       await testAppPage.page.bringToFront();
+   40 |       await testAppPage.page.click('text=Debugger', {
+   41 |         timeout: 30000,
+   42 |       });
+   43 |       await accountsPage.close();
+   44 |
+   45 |       await testAppPage.clickContractCallButton();
+   46 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   47 |       await transactionRequestPage.waitForTransactionRequestPage();
+   48 |       const error =
+   49 |         await transactionRequestPage.waitForTransactionRequestError('Insufficient balance');
+   50 |
+   51 |       test.expect(error).toBeTruthy();
+   52 |     });
+   53 |   });
+   54 |
+   55 |   test.describe('App initiated STX transfer', () => {
+   56 |     test('that it broadcasts correctly with given fee and amount', async ({ context }) => {
+   57 |       const newPagePromise = context.waitForEvent('page');
+   58 |       await testAppPage.page.getByTestId(OnboardingSelectors.SignUpBtn).click();
+   59 |       const accountsPage = await newPagePromise;
+   60 |       await delayAnimationDuration();
+   61 |       await accountsPage.getByRole('button').getByText('Confirm').click({ force: true });
+   62 |       await delayAnimationDuration();
+   63 |       await testAppPage.page.bringToFront();
+   64 |       await testAppPage.page.click('text=Debugger', {
+   65 |         timeout: 30000,
+   66 |       });
+   67 |       await accountsPage.close();
    68 |
-   69 |     const requestPromise = profileUpdatingPage.page.waitForRequest('https://hub.blockstack.org/*');
-   70 |
-   71 |     await profileUpdatingPage.page.route('https://gaia.hiro.so/hub/*', async route => {
-   72 |       await route.fulfill({
-   73 |         status: 200,
-   74 |         contentType: 'application/octet-stream',
-   75 |         body: JSON.stringify(mockGaiaProfileResponse),
-   76 |       });
-   77 |     });
+   69 |       await testAppPage.clickStxTransferButton();
+   70 |       const transactionRequestPage = new TransactionRequestPage(await context.waitForEvent('page'));
+   71 |
+   72 |       await transactionRequestPage.waitForTransactionRequestPage();
+   73 |       await transactionRequestPage.waitForFee();
+   74 |
+   75 |       const displayedFee = await transactionRequestPage.getDisplayedFeeValue();
+   76 |
+   77 |       if (!displayedFee) throw new Error('Cannot pull fee from UI');
    78 |
-   79 |     await profileUpdatingPage.page.route('https://hub.blockstack.org/*', async route => {
-   80 |       await route.abort();
-   81 |     });
-   82 |
-   83 |     const name = profileUpdatingPage.page.getByText('twitter');
-   84 |     const nameText = await name.innerText();
-   85 |     test.expect(nameText).toBe('https://twitter.com/twitterHandle');
+>  79 |       const requestPromise = transactionRequestPage.page.waitForRequest('*/**/v2/transactions');
+      |                                                          ^ Error: page.waitForRequest: Page crashed
+   80 |
+   81 |       await transactionRequestPage.page.route('*/**/v2/transactions', async route => {
+   82 |         await route.abort();
+   83 |       });
+   84 |
+   85 |       await transactionRequestPage.clickConfirmTransactionButton();
    86 |
-   87 |     await profileUpdatingPage.clickUpdateProfileButton();
-   88 |
-   89 |     const request = await requestPromise;
-   90 |     const requestBody = request.postData();
-   91 |     if (!requestBody) return;
-   92 |
-   93 |     const { decodedToken } = JSON.parse(requestBody)[0];
-   94 |     test.expect(decodedToken).toBeDefined();
-   95 |
-   96 |     test.expect(decodedToken?.header?.alg).toEqual('ES256K');
-   97 |     test.expect(decodedToken?.payload?.claim?.name).toContain('Name ');
-   98 |     test
-   99 |       .expect(decodedToken?.payload?.claim?.image?.[0]?.contentUrl)
-  100 |       .toEqual(
-  101 |         'https://byzantion.mypinata.cloud/ipfs/Qmb84UcaMr1MUwNbYBnXWHM3kEaDcYrKuPWwyRLVTNKELC/2256.png'
-  102 |       );
-  103 |   });
-  104 | });
-  105 |
+   87 |       const request = await requestPromise;
+   88 |       const requestBody = request.postData();
+   89 |       if (!requestBody) return;
+   90 |
+   91 |       const deserializedTx = deserializeTransaction(JSON.parse(requestBody).tx);
+   92 |       const payload = deserializedTx.payload as TokenTransferPayloadWire;
+   93 |       const amount = Number(payload.amount);
+   94 |       const fee = Number(deserializedTx.auth.spendingCondition?.fee);
+   95 |       const parsedDisplayedFee = parseFloat(displayedFee.replace(' STX', ''));
+   96 |
+   97 |       test.expect(fee).toEqual(stxToMicroStx(parsedDisplayedFee).toNumber());
+   98 |       test.expect(amount).toEqual(102);
+   99 |     });
+  100 |   });
+  101 | });
+  102 |
 ```
 
 # Local changes
@@ -158,10 +152,10 @@ index 50460b5e3..000000000
 -  );
 -}
 diff --git a/src/app/common/transactions/stacks/transaction.utils.ts b/src/app/common/transactions/stacks/transaction.utils.ts
-index 6d825bd15..62bdbc9a9 100644
+index 6d825bd15..419f1c5d8 100644
 --- a/src/app/common/transactions/stacks/transaction.utils.ts
 +++ b/src/app/common/transactions/stacks/transaction.utils.ts
-@@ -6,31 +6,43 @@ import {
+@@ -6,31 +6,49 @@ import {
  import {
    AddressHashMode,
    AuthType,
@@ -173,6 +167,7 @@ index 6d825bd15..62bdbc9a9 100644
    addressFromVersionHash,
    addressHashModeToVersion,
    addressToString,
++  createAddress,
 +  cvToString,
 +  deserializeTransaction,
 +  isTokenTransferPayload,
@@ -184,7 +179,12 @@ index 6d825bd15..62bdbc9a9 100644
  import { StacksTx, StacksTxStatus } from '@leather.io/models';
  import { getStacksContractName } from '@leather.io/stacks';
 -import { truncateMiddle } from '@leather.io/utils';
-+import { createMoney, isDefined, truncateMiddle } from '@leather.io/utils';
++import {
++  createMoney,
++  isDefined,
++  removeTrailingNullCharacters,
++  truncateMiddle,
++} from '@leather.io/utils';
 +
 +import { safeCall } from '@shared/utils';
  
@@ -211,7 +211,7 @@ index 6d825bd15..62bdbc9a9 100644
    switch (transaction.tx_type) {
      case 'smart_contract':
        return truncateMiddle(transaction.smart_contract.contract_id.split('.')[0], 4);
-@@ -43,17 +55,17 @@ export const getTxCaption = (transaction: StacksTx) => {
+@@ -43,17 +61,17 @@ export const getTxCaption = (transaction: StacksTx) => {
      default:
        return null;
    }
@@ -233,7 +233,7 @@ index 6d825bd15..62bdbc9a9 100644
    if (tx.tx_type === 'token_transfer') {
      return `${isOriginator ? '-' : ''}${stacksValue({
        value: tx.token_transfer.amount,
-@@ -63,9 +75,9 @@ export const getTxValue = (tx: StacksTx, isOriginator: boolean): number | string
+@@ -63,9 +81,9 @@ export const getTxValue = (tx: StacksTx, isOriginator: boolean): number | string
    const transfer = getAssetTransfer(tx);
    if (transfer) return new BigNumber(transfer.asset.amount).toFormat();
    return null;
@@ -245,7 +245,7 @@ index 6d825bd15..62bdbc9a9 100644
    switch (tx.tx_type) {
      case 'token_transfer':
        return 'Stacks';
-@@ -80,16 +92,16 @@ export const getTxTitle = (tx: StacksTx) => {
+@@ -80,16 +98,16 @@ export const getTxTitle = (tx: StacksTx) => {
      default:
        return '';
    }
@@ -266,7 +266,7 @@ index 6d825bd15..62bdbc9a9 100644
  
  export function isTxSponsored(tx: StacksTransactionWire) {
    return tx.auth.authType === AuthType.Sponsored;
-@@ -127,3 +139,75 @@ export enum StacksTransactionActionType {
+@@ -127,3 +145,87 @@ export enum StacksTransactionActionType {
    IncreaseFee = 'increase-fee',
    RpcRequest = 'rpc-request',
  }
@@ -288,6 +288,10 @@ index 6d825bd15..62bdbc9a9 100644
 +
 +export function getTokenTransferAmount(payload: TokenTransferPayloadWire) {
 +  return createMoney(Number(payload.amount), 'STX');
++}
++
++export function getTokenTransferMemoDisplayText(payload: TokenTransferPayloadWire) {
++  return removeTrailingNullCharacters(payload.memo.content);
 +}
 +
 +export function getStacksTransactionFee(tx: StacksTransactionWire) {
@@ -341,6 +345,14 @@ index 6d825bd15..62bdbc9a9 100644
 +  const contractAddress = addressToString(payload.contractAddress);
 +  const contractName = payload.contractName.content;
 +  return [contractAddress, contractName].join('.');
++}
++
++export function safeAddressToString(address: string) {
++  try {
++    return addressToString(createAddress(address));
++  } catch (error) {
++    return '';
++  }
 +}
 diff --git a/src/app/components/info-card/info-card.tsx b/src/app/components/info-card/info-card.tsx
 index 18cf2ead6..4f8745548 100644
@@ -505,35 +517,50 @@ index 48f3fe2b2..dedb00004 100644
      broadcastTransactionFn,
      signStacksTransaction,
 diff --git a/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts b/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts
-index 344488266..4ea89a5c5 100644
+deleted file mode 100644
+index 344488266..000000000
 --- a/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts
-+++ b/src/app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary.ts
-@@ -17,15 +17,13 @@ import {
-   convertToMoneyTypeWithDefaultOfZero,
-   createMoney,
-   isDefined,
++++ /dev/null
+@@ -1,139 +0,0 @@
+-import {
+-  ClarityType,
+-  ContractCallPayload,
+-  IntCV,
+-  StacksTransactionWire,
+-  TokenTransferPayloadWire,
+-  addressToString,
+-  createAddress,
+-  cvToString,
+-  serializeCV,
+-} from '@stacks/transactions';
+-import BigNumber from 'bignumber.js';
+-
+-import type { CryptoCurrency } from '@leather.io/models';
+-import {
+-  baseCurrencyAmountInQuote,
+-  convertToMoneyTypeWithDefaultOfZero,
+-  createMoney,
+-  isDefined,
 -  isEmptyString,
 -  microStxToStx,
- } from '@leather.io/utils';
- 
- import { formatCurrency } from '@app/common/currency-formatter';
- import { removeTrailingNullCharacters } from '@app/common/utils';
- import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
- 
+-} from '@leather.io/utils';
+-
+-import { formatCurrency } from '@app/common/currency-formatter';
+-import { removeTrailingNullCharacters } from '@app/common/utils';
+-import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
+-
 -function safeAddressToString(address: string) {
-+export function safeAddressToString(address: string) {
-   try {
-     return addressToString(createAddress(address));
-   } catch (error) {
-@@ -33,30 +31,10 @@ function safeAddressToString(address: string) {
-   }
- }
- 
+-  try {
+-    return addressToString(createAddress(address));
+-  } catch (error) {
+-    return '';
+-  }
+-}
+-
 -export function useStacksTransactionSummary(token: CryptoCurrency) {
-+export function useStacksTransactionDetails(token: CryptoCurrency) {
-   // TODO: unsafe type assumption
-   const tokenMarketData = useCryptoCurrencyMarketDataMeanAverage(token as 'BTC' | 'STX');
- 
+-  // TODO: unsafe type assumption
+-  const tokenMarketData = useCryptoCurrencyMarketDataMeanAverage(token as 'BTC' | 'STX');
+-
 -  // RPC requests do not show a review step
 -  if (isEmptyString(token)) return { formSentSummaryTxState: null, formReviewTxSummary: null };
 -
@@ -554,50 +581,86 @@ index 344488266..4ea89a5c5 100644
 -    };
 -  }
 -
-   // This function violates the rule of not pre-formatting data
-   function formReviewTxSummary(tx: StacksTransactionWire, symbol = 'STX', decimals = 6) {
-     if (symbol !== 'STX') {
-@@ -77,7 +55,7 @@ export function useStacksTransactionSummary(token: CryptoCurrency) {
-         convertToMoneyTypeWithDefaultOfZero('STX', Number(txValue) + Number(fee))
-       ),
-       symbol: 'STX',
+-  // This function violates the rule of not pre-formatting data
+-  function formReviewTxSummary(tx: StacksTransactionWire, symbol = 'STX', decimals = 6) {
+-    if (symbol !== 'STX') {
+-      return formSip10TxSummary(tx, symbol, decimals);
+-    }
+-
+-    // WARNING: this is a very dangerous type cast as it can totally be another tx type...
+-    const payload = tx.payload as TokenTransferPayloadWire;
+-    const txValue = payload.amount;
+-    const fee = tx.auth.spendingCondition.fee;
+-    const memoContent = payload?.memo?.content ?? '';
+-    const memoDisplayText = removeTrailingNullCharacters(memoContent) || 'No memo';
+-
+-    return {
+-      recipient: safeAddressToString(payload?.recipient?.value),
+-      fee: formatCurrency(convertToMoneyTypeWithDefaultOfZero('STX', Number(fee))),
+-      totalSpend: formatCurrency(
+-        convertToMoneyTypeWithDefaultOfZero('STX', Number(txValue) + Number(fee))
+-      ),
+-      symbol: 'STX',
 -      txValue: microStxToStx(Number(txValue)).toString(),
-+      txValue: createMoney(txValue, 'STX'),
-       sendingValue: formatCurrency(convertToMoneyTypeWithDefaultOfZero('STX', Number(txValue))),
-       txFiatValue: formatCurrency(
-         baseCurrencyAmountInQuote(createMoney(Number(payload.amount), 'STX'), tokenMarketData)
-@@ -97,7 +75,7 @@ export function useStacksTransactionSummary(token: CryptoCurrency) {
-     return isSome ? serializeCV(payload.functionArgs[3]) : noMemoText;
-   }
- 
+-      sendingValue: formatCurrency(convertToMoneyTypeWithDefaultOfZero('STX', Number(txValue))),
+-      txFiatValue: formatCurrency(
+-        baseCurrencyAmountInQuote(createMoney(Number(payload.amount), 'STX'), tokenMarketData)
+-      ),
+-      txFiatValueSymbol: tokenMarketData.price.symbol,
+-      nonce: String(tx.auth.spendingCondition.nonce),
+-      memoDisplayText,
+-    };
+-  }
+-
+-  function getSip10MemoDisplayText(payload: ContractCallPayload): string {
+-    const noMemoText = 'No memo';
+-    if (!isDefined(payload.functionArgs[3])) {
+-      return noMemoText;
+-    }
+-    const isSome = payload.functionArgs[3].type === ClarityType.OptionalSome;
+-    return isSome ? serializeCV(payload.functionArgs[3]) : noMemoText;
+-  }
+-
 -  function formSip10TxSummary(tx: StacksTransactionWire, symbol: string, decimals = 6) {
-+  function formSip10TxSummary(tx: StacksTransactionWire, symbol: string, decimals: number) {
-     const payload = tx.payload as ContractCallPayload;
-     const fee = tx.auth.spendingCondition.fee;
-     const txValue = Number((payload.functionArgs[0] as IntCV).value);
-@@ -120,7 +98,11 @@ export function useStacksTransactionSummary(token: CryptoCurrency) {
- 
-     return {
-       recipient: cvToString(payload.functionArgs[2]),
+-    const payload = tx.payload as ContractCallPayload;
+-    const fee = tx.auth.spendingCondition.fee;
+-    const txValue = Number((payload.functionArgs[0] as IntCV).value);
+-    const memoDisplayText = getSip10MemoDisplayText(payload);
+-
+-    const sendingValue = formatCurrency(
+-      convertToMoneyTypeWithDefaultOfZero(symbol, txValue, decimals)
+-    );
+-    const feeValue = formatCurrency(convertToMoneyTypeWithDefaultOfZero('STX', Number(fee)));
+-    const totalSpend = `${sendingValue} + ${feeValue}`;
+-
+-    const currencyTxAmount = baseCurrencyAmountInQuote(
+-      createMoney(txValue, symbol.toUpperCase(), decimals),
+-      tokenMarketData
+-    );
+-
+-    const txFiatValue = currencyTxAmount.amount.toNumber()
+-      ? formatCurrency(currencyTxAmount)
+-      : undefined;
+-
+-    return {
+-      recipient: cvToString(payload.functionArgs[2]),
 -      txValue: new BigNumber(txValue).shiftedBy(-decimals).toString(),
-+      txValue: createMoney(
-+        new BigNumber(txValue).shiftedBy(-decimals),
-+        symbol.toUpperCase(),
-+        decimals
-+      ),
-       nonce: String(tx.auth.spendingCondition.nonce),
-       fee: feeValue,
-       totalSpend,
-@@ -132,8 +114,5 @@ export function useStacksTransactionSummary(token: CryptoCurrency) {
-     };
-   }
- 
+-      nonce: String(tx.auth.spendingCondition.nonce),
+-      fee: feeValue,
+-      totalSpend,
+-      sendingValue,
+-      txFiatValue,
+-      txFiatValueSymbol: tokenMarketData.price.symbol,
+-      memoDisplayText,
+-      symbol,
+-    };
+-  }
+-
 -  return {
 -    formSentSummaryTxState,
 -    formReviewTxSummary,
 -  };
-+  return { formReviewTxSummary };
- }
+-}
 diff --git a/src/app/pages/send/send-crypto-asset-form/form/btc/btc-send-form-confirmation.tsx b/src/app/pages/send/send-crypto-asset-form/form/btc/btc-send-form-confirmation.tsx
 index 7060dd5e4..cdc752664 100644
 --- a/src/app/pages/send/send-crypto-asset-form/form/btc/btc-send-form-confirmation.tsx
@@ -612,19 +675,28 @@ index 7060dd5e4..cdc752664 100644
  
              <Stack pb="space.06" px="space.06" width="100%">
 diff --git a/src/app/pages/send/send-crypto-asset-form/form/send-form-confirmation.tsx b/src/app/pages/send/send-crypto-asset-form/form/send-form-confirmation.tsx
-index 3a6c3f0ba..7d7e27150 100644
+index 3a6c3f0ba..d6e2adabf 100644
 --- a/src/app/pages/send/send-crypto-asset-form/form/send-form-confirmation.tsx
 +++ b/src/app/pages/send/send-crypto-asset-form/form/send-form-confirmation.tsx
-@@ -1,6 +1,7 @@
+@@ -1,8 +1,10 @@
  import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
  import { Stack } from 'leather-styles/jsx';
  
 +import type { Money } from '@leather.io/models';
  import { Button, Callout } from '@leather.io/ui';
  
++import { formatCurrency } from '@app/common/currency-formatter';
  import { FormAddressDisplayer } from '@app/components/address-displayer/form-address-displayer';
-@@ -16,7 +17,7 @@ interface SendFormConfirmationProps {
-   fee?: string;
+ import {
+   InfoCardAssetValue,
+@@ -12,11 +14,11 @@ import {
+ import { Card } from '@app/components/layout';
+ 
+ interface SendFormConfirmationProps {
+-  recipient: string;
+-  fee?: string;
++  recipient?: string | null;
++  fee?: Money;
    totalSpend: string;
    symbol: string;
 -  txValue: string | number;
@@ -632,7 +704,7 @@ index 3a6c3f0ba..7d7e27150 100644
    sendingValue: string;
    txFiatValue?: string;
    txFiatValueSymbol?: string;
-@@ -66,7 +67,7 @@ export function SendFormConfirmation({
+@@ -66,7 +68,7 @@ export function SendFormConfirmation({
          mt={['unset', 'space.05']}
          px="space.05"
          symbol={symbol}
@@ -641,33 +713,181 @@ index 3a6c3f0ba..7d7e27150 100644
        />
  
        <Callout variant="info" title="Sending to an exchange?" px="space.03" mb="space.05">
+@@ -74,20 +76,24 @@ export function SendFormConfirmation({
+       </Callout>
+ 
+       <Stack pb="space.06" px="space.06" width="100%">
+-        <InfoCardRow
+-          title="To"
+-          value={<FormAddressDisplayer address={recipient} />}
+-          data-testid={SendCryptoAssetSelectors.ConfirmationDetailsRecipient}
+-        />
++        {recipient && (
++          <InfoCardRow
++            title="To"
++            value={<FormAddressDisplayer address={recipient} />}
++            data-testid={SendCryptoAssetSelectors.ConfirmationDetailsRecipient}
++          />
++        )}
+         <InfoCardSeparator />
+         <InfoCardRow title="Total spend" value={totalSpend} />
+         <InfoCardRow title="Sending" value={sendingValue} />
+-        <InfoCardRow
+-          title="Fee"
+-          value={fee}
+-          titleAdditionalElement={feeWarningTooltip}
+-          data-testid={SendCryptoAssetSelectors.ConfirmationDetailsFee}
+-        />
++        {fee && (
++          <InfoCardRow
++            title="Fee"
++            value={formatCurrency(fee)}
++            titleAdditionalElement={feeWarningTooltip}
++            data-testid={SendCryptoAssetSelectors.ConfirmationDetailsFee}
++          />
++        )}
+         <InfoCardRow
+           title="Memo"
+           value={memoDisplayText}
 diff --git a/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx b/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
-index 636a3872b..d24e35c03 100644
+index 636a3872b..bb4af123f 100644
 --- a/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
 +++ b/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
-@@ -10,7 +10,7 @@ import { useLocationStateWithCache } from '@app/common/hooks/use-location-state'
+@@ -1,16 +1,28 @@
+ import { Outlet, useParams } from 'react-router';
+ 
+-import { deserializeTransaction } from '@stacks/transactions';
++import { deserializeTransaction, isTokenTransferPayload } from '@stacks/transactions';
+ import { Box, Stack } from 'leather-styles/jsx';
+ 
+ import type { CryptoCurrency } from '@leather.io/models';
+ import { InfoCircleIcon } from '@leather.io/ui';
++import { baseCurrencyAmountInQuote, sumMoney } from '@leather.io/utils';
+ 
++import { formatCurrency } from '@app/common/currency-formatter';
+ import { useLocationStateWithCache } from '@app/common/hooks/use-location-state';
++import {
++  getNonceFromStacksTransaction,
++  getRecipientFromStacksTransaction,
++  getSip10MemoDisplayText,
++  getSip10TransferAmount,
++  getStacksTransactionFee,
++  getTokenTransferAmount,
++  getTokenTransferMemoDisplayText,
++  isSip10TransferContactCall,
++} from '@app/common/transactions/stacks/transaction.utils';
  import { Content, Page } from '@app/components/layout';
  import { PageHeader } from '@app/features/container/headers/page.header';
  import { useStacksBroadcastTransaction } from '@app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction';
 -import { useStacksTransactionSummary } from '@app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary';
-+import { useStacksTransactionDetails } from '@app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary';
++import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
  import { BasicTooltip } from '@app/ui/components/tooltip/basic-tooltip';
  
  import { SendFormConfirmation } from '../send-form-confirmation';
-@@ -30,12 +30,11 @@ export function StacksSendFormConfirmation() {
+@@ -24,34 +36,16 @@ function useStacksSendFormConfirmationState() {
+ }
+ 
+ export function StacksSendFormConfirmation() {
+-  const { tx, decimals, showFeeChangeWarning } = useStacksSendFormConfirmationState();
++  const { tx: txHex, decimals, showFeeChangeWarning } = useStacksSendFormConfirmationState();
++  const tokenMarketData = useCryptoCurrencyMarketDataMeanAverage('STX');
+ 
+   const { symbol = 'STX' } = useParams();
  
    const { stacksBroadcastTransaction, isBroadcasting } = useStacksBroadcastTransaction({
      token: symbol.toUpperCase() as CryptoCurrency,
 -    decimals,
    });
  
-   const stacksDeserializedTransaction = deserializeTransaction(tx);
- 
+-  const stacksDeserializedTransaction = deserializeTransaction(tx);
+-
 -  const { formReviewTxSummary } = useStacksTransactionSummary(
-+  const { formReviewTxSummary } = useStacksTransactionDetails(
-     symbol.toUpperCase() as CryptoCurrency
-   );
+-    symbol.toUpperCase() as CryptoCurrency
+-  );
+-
+-  if (!formReviewTxSummary) return null;
+-
+-  const {
+-    txValue,
+-    txFiatValue,
+-    txFiatValueSymbol,
+-    recipient,
+-    fee,
+-    totalSpend,
+-    sendingValue,
+-    nonce,
+-    memoDisplayText,
+-  } = formReviewTxSummary(stacksDeserializedTransaction, symbol, decimals);
++  const tx = deserializeTransaction(txHex);
  
+   const feeWarningTooltip = showFeeChangeWarning ? (
+     <BasicTooltip
+@@ -68,27 +62,50 @@ export function StacksSendFormConfirmation() {
+     </BasicTooltip>
+   ) : null;
+ 
++  const sharedProps = {
++    symbol: symbol.toUpperCase(),
++    onBroadcastTransaction: () => stacksBroadcastTransaction(tx),
++    recipient: getRecipientFromStacksTransaction(tx),
++    fee: getStacksTransactionFee(tx),
++    nonce: getNonceFromStacksTransaction(tx).toString(),
++    isLoading: isBroadcasting,
++    feeWarningTooltip: feeWarningTooltip,
++  } as const;
++
+   return (
+     <>
+       <PageHeader title="Review" />
+       <Content>
+         <Page>
+           <Outlet />
+-          <SendFormConfirmation
+-            txValue={txValue}
+-            txFiatValue={txFiatValue}
+-            txFiatValueSymbol={txFiatValueSymbol}
+-            recipient={recipient}
+-            fee={fee}
+-            totalSpend={totalSpend}
+-            sendingValue={sendingValue}
+-            nonce={nonce}
+-            memoDisplayText={memoDisplayText}
+-            symbol={symbol.toUpperCase()}
+-            isLoading={isBroadcasting}
+-            feeWarningTooltip={feeWarningTooltip}
+-            onBroadcastTransaction={() => stacksBroadcastTransaction(stacksDeserializedTransaction)}
+-          />
++          {isTokenTransferPayload(tx.payload) && (
++            <SendFormConfirmation
++              txValue={getTokenTransferAmount(tx.payload)}
++              txFiatValue={formatCurrency(
++                baseCurrencyAmountInQuote(getTokenTransferAmount(tx.payload), tokenMarketData)
++              )}
++              txFiatValueSymbol={tokenMarketData.price.symbol}
++              totalSpend={formatCurrency(
++                sumMoney([sharedProps.fee, getTokenTransferAmount(tx.payload)])
++              )}
++              sendingValue={formatCurrency(getTokenTransferAmount(tx.payload))}
++              memoDisplayText={getTokenTransferMemoDisplayText(tx.payload) || 'No memo'}
++              {...sharedProps}
++            />
++          )}
++          {isSip10TransferContactCall(tx) && (
++            <SendFormConfirmation
++              txValue={getSip10TransferAmount(tx.payload, symbol, decimals)}
++              totalSpend={
++                getSip10TransferAmount(tx.payload, symbol, decimals) +
++                ' + ' +
++                formatCurrency(sharedProps.fee)
++              }
++              sendingValue={formatCurrency(getSip10TransferAmount(tx.payload, symbol, decimals))}
++              memoDisplayText={getSip10MemoDisplayText(tx.payload) ?? 'No memo'}
++              {...sharedProps}
++            />
++          )}
+         </Page>
+       </Content>
+     </>
 diff --git a/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx b/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
 index 47909e3ad..55d9456a6 100644
 --- a/src/app/pages/send/send-crypto-asset-form/send-crypto-asset-form.routes.tsx
@@ -834,7 +1054,7 @@ index 000000000..27966fb88
 +}
 diff --git a/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
 new file mode 100644
-index 000000000..04331c5c0
+index 000000000..0f865e3e6
 --- /dev/null
 +++ b/src/app/pages/send/sent-summary/stacks/stx-sent-summary.tsx
 @@ -0,0 +1,124 @@
@@ -855,11 +1075,11 @@ index 000000000..04331c5c0
 +  getSip10TransferAmount,
 +  getStacksTransactionFee,
 +  getTokenTransferAmount,
++  getTokenTransferMemoDisplayText,
 +  isSip10TransferContactCall,
++  safeAddressToString,
 +} from '@app/common/transactions/stacks/transaction.utils';
-+import { removeTrailingNullCharacters } from '@app/common/utils';
 +import { RawTransactionLoader } from '@app/components/loaders/raw-tx-loader';
-+import { safeAddressToString } from '@app/features/stacks-transaction-request/hooks/use-stacks-transaction-summary';
 +import { useCryptoCurrencyMarketDataMeanAverage } from '@app/query/common/market-data/market-data.hooks';
 +import { useGetFungibleTokenMetadataQuery } from '@app/query/stacks/token-metadata/fungible-tokens/fungible-token-metadata.query';
 +
@@ -908,7 +1128,7 @@ index 000000000..04331c5c0
 +  const fiatAmount = baseCurrencyAmountInQuote(amount, tokenMarketData);
 +  const fee = getStacksTransactionFee(tx);
 +  const total = sumMoney([amount, fee]);
-+  const memo = removeTrailingNullCharacters(tx.payload.memo.content) || '—';
++  const memo = getTokenTransferMemoDisplayText(tx.payload) || '—';
 +
 +  return (
 +    <StacksChainTxSummaryLayout

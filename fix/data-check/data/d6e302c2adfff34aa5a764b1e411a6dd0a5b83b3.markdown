@@ -1,0 +1,247 @@
+# Test info
+
+- Name: Send inscription >> valid send inscription data >> should show the inscription review step
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-inscription.spec.ts:27:5
+
+# Error details
+
+```
+Error: locator.click: Target page, context or browser has been closed
+Call log:
+  - waiting for getByTestId('fee-list-item').filter({ hasText: 'Low' })
+
+    at /home/runner/work/extension/extension/tests/specs/send/send-inscription.spec.ts:35:71
+```
+
+# Test source
+
+```ts
+   1 | import { TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS } from '@tests/mocks/constants';
+   2 | import { mockTestnetTestAccountInscriptionsRequests } from '@tests/mocks/mock-inscriptions-bis';
+   3 | import { mockTestnetTestAccountEmptyUtxosRequests } from '@tests/mocks/mock-utxos';
+   4 | import { SendCryptoAssetSelectors } from '@tests/selectors/send.selectors';
+   5 | import { getDisplayerAddress } from '@tests/utils';
+   6 |
+   7 | import { BtcFeeType } from '@leather.io/models';
+   8 | import { mockInscriptionResponse3, mockInscriptionResponseNonZeroOffset } from '@leather.io/query';
+   9 |
+   10 | import { FormErrorMessages } from '@shared/error-messages';
+   11 |
+   12 | import { test } from '../../fixtures/fixtures';
+   13 |
+   14 | const mockInscriptionResp = {
+   15 |   ...mockInscriptionResponse3,
+   16 |   owner_wallet_addr: TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS,
+   17 | };
+   18 |
+   19 | test.describe('Send inscription', () => {
+   20 |   test.beforeEach(async ({ extensionId, globalPage, onboardingPage }) => {
+   21 |     await globalPage.setupAndUseApiCalls(extensionId);
+   22 |     await onboardingPage.signInWithTestAccount(extensionId);
+   23 |     await mockTestnetTestAccountInscriptionsRequests(globalPage.page, [mockInscriptionResp]);
+   24 |   });
+   25 |
+   26 |   test.describe('valid send inscription data', () => {
+   27 |     test('should show the inscription review step', async ({ sendPage, homePage }) => {
+   28 |       await homePage.selectTestnet();
+   29 |       await sendPage.selectInscription();
+   30 |       await sendPage.recipientInput.fill(TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS);
+   31 |       const inscriptionSendButton = sendPage.page.getByTestId(
+   32 |         SendCryptoAssetSelectors.PreviewSendTxBtn
+   33 |       );
+   34 |       await inscriptionSendButton.click();
+>  35 |       await sendPage.feesListItem.filter({ hasText: BtcFeeType.Low }).click();
+      |                                                                       ^ Error: locator.click: Target page, context or browser has been closed
+   36 |       const displayerAddress = await getDisplayerAddress(sendPage.confirmationDetailsRecipient);
+   37 |       test.expect(displayerAddress).toEqual(TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS);
+   38 |     });
+   39 |   });
+   40 |
+   41 |   test.describe('validation errors', () => {
+   42 |     test('should show the insufficient balance error', async ({
+   43 |       globalPage,
+   44 |       homePage,
+   45 |       sendPage,
+   46 |     }) => {
+   47 |       await mockTestnetTestAccountEmptyUtxosRequests(globalPage.page);
+   48 |       await homePage.selectTestnet();
+   49 |       await sendPage.selectInscription();
+   50 |
+   51 |       await sendPage.recipientInput.fill(TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS);
+   52 |       const inscriptionSendButton = sendPage.page.getByTestId(
+   53 |         SendCryptoAssetSelectors.PreviewSendTxBtn
+   54 |       );
+   55 |       await inscriptionSendButton.click();
+   56 |
+   57 |       const errorLabel = await sendPage.formInputErrorLabel.textContent();
+   58 |       test.expect(errorLabel).toContain(FormErrorMessages.InsufficientFunds);
+   59 |     });
+   60 |
+   61 |     test('should show invalid address error', async ({ homePage, sendPage }) => {
+   62 |       await homePage.selectTestnet();
+   63 |       await sendPage.selectInscription();
+   64 |
+   65 |       await sendPage.recipientInput.fill('123');
+   66 |       const inscriptionSendButton = sendPage.page.getByTestId(
+   67 |         SendCryptoAssetSelectors.PreviewSendTxBtn
+   68 |       );
+   69 |       await inscriptionSendButton.click();
+   70 |
+   71 |       const errorMsg = await sendPage.formInputErrorLabel.textContent();
+   72 |       test.expect(errorMsg).toContain(FormErrorMessages.InvalidAddress);
+   73 |     });
+   74 |
+   75 |     test('should show non-zero offset inscription error', async ({
+   76 |       globalPage,
+   77 |       homePage,
+   78 |       sendPage,
+   79 |     }) => {
+   80 |       await mockTestnetTestAccountInscriptionsRequests(globalPage.page, [
+   81 |         {
+   82 |           ...mockInscriptionResponseNonZeroOffset,
+   83 |           owner_wallet_addr: TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS,
+   84 |         },
+   85 |       ]);
+   86 |       await homePage.selectTestnet();
+   87 |       await sendPage.selectInscription();
+   88 |
+   89 |       await sendPage.recipientInput.fill(TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS);
+   90 |       const inscriptionSendButton = sendPage.page.getByTestId(
+   91 |         SendCryptoAssetSelectors.PreviewSendTxBtn
+   92 |       );
+   93 |       await inscriptionSendButton.click();
+   94 |
+   95 |       const errorLabel = await sendPage.formInputErrorLabel.textContent();
+   96 |       test.expect(errorLabel).toContain(FormErrorMessages.NonZeroOffsetInscription);
+   97 |     });
+   98 |   });
+   99 |
+  100 |   test('should show multiple inscription on utxo error', async ({
+  101 |     globalPage,
+  102 |     homePage,
+  103 |     sendPage,
+  104 |   }) => {
+  105 |     await mockTestnetTestAccountInscriptionsRequests(globalPage.page, [
+  106 |       mockInscriptionResp,
+  107 |       mockInscriptionResp,
+  108 |     ]);
+  109 |     await homePage.selectTestnet();
+  110 |     await sendPage.selectInscription();
+  111 |
+  112 |     await sendPage.recipientInput.fill(TEST_TESTNET_ACCOUNT_2_TAPROOT_ADDRESS);
+  113 |     const inscriptionSendButton = sendPage.page.getByTestId(
+  114 |       SendCryptoAssetSelectors.PreviewSendTxBtn
+  115 |     );
+  116 |     await inscriptionSendButton.click();
+  117 |
+  118 |     const errorLabel = await sendPage.formInputErrorLabel.textContent();
+  119 |     test.expect(errorLabel).toContain(FormErrorMessages.UtxoWithMultipleInscriptions);
+  120 |   });
+  121 | });
+  122 |
+```
+
+# Local changes
+
+```diff
+diff --git a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
+index 834985c86..bb0063c12 100644
+--- a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
++++ b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
+@@ -28,6 +28,7 @@ async function simulateShortDelayToAvoidUndefinedTabId() {
+ interface UseStacksBroadcastTransactionArgs {
+   actionType?: StacksTransactionActionType;
+   token: CryptoCurrency;
++  redirectToSuccessPage?: boolean;
+ }
+ /**
+  * @deprecated Use new version from `@app/common/transactions/stacks`
+@@ -35,6 +36,7 @@ interface UseStacksBroadcastTransactionArgs {
+ export function useStacksBroadcastTransaction({
+   actionType,
+   token,
++  redirectToSuccessPage,
+ }: UseStacksBroadcastTransactionArgs) {
+   const signStacksTransaction = useSignStacksTransaction();
+   const [isBroadcasting, setIsBroadcasting] = useState(false);
+@@ -55,22 +57,22 @@ export function useStacksBroadcastTransaction({
+   });
+ 
+   return useMemo(() => {
+-    function handlePreviewSuccess(signedTx: StacksTransactionWire, txId?: string) {
++    function handlePreviewSuccess(signedTx: StacksTransactionWire, txid?: string) {
+       if (requestToken && tabId) {
+         finalizeTxSignature({
+           requestPayload: requestToken,
+           tabId,
+           data: {
+             txRaw: stacksTransactionToHex(signedTx),
+-            txId,
++            txId: txid,
+           },
+         });
+       }
+-      if (txId) {
++      if (txid && redirectToSuccessPage) {
+         void navigate(
+           RouteUrls.SentStxTxSummary.replace(':symbol', token.toLowerCase()).replace(
+             ':txid',
+-            `${txId}`
++            `${txid}`
+           ),
+           { state: { tx: stacksTransactionToHex(signedTx) } }
+         );
+@@ -132,13 +134,14 @@ export function useStacksBroadcastTransaction({
+     isBroadcasting,
+     requestToken,
+     tabId,
+-    isCancelTransaction,
+-    isIncreaseFeeTransaction,
+-    showSummaryPage,
++    redirectToSuccessPage,
+     navigate,
+     token,
+     toast,
+     broadcastTransactionFn,
++    showSummaryPage,
++    isCancelTransaction,
++    isIncreaseFeeTransaction,
+     signStacksTransaction,
+   ]);
+ }
+diff --git a/src/app/features/tx-status-badge/tx-status-badge.tsx b/src/app/features/tx-status-badge/tx-status-badge.tsx
+index 753a5780c..47b4ef588 100644
+--- a/src/app/features/tx-status-badge/tx-status-badge.tsx
++++ b/src/app/features/tx-status-badge/tx-status-badge.tsx
+@@ -17,7 +17,7 @@ export function TxStatusBadge({ txid }: { txid: string }) {
+     },
+   });
+ 
+-  if (data?.tx_status === 'pending')
++  if (!data || data?.tx_status === 'pending')
+     return (
+       <Badge
+         label="In mempool"
+diff --git a/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx b/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
+index 117292a14..6a7eebe7b 100644
+--- a/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
++++ b/src/app/pages/send/send-crypto-asset-form/form/stacks/stacks-send-form-confirmation.tsx
+@@ -3,7 +3,6 @@ import { Outlet, useParams } from 'react-router';
+ import { deserializeTransaction, isTokenTransferPayload } from '@stacks/transactions';
+ import { Box, Stack } from 'leather-styles/jsx';
+ 
+-import type { CryptoCurrency } from '@leather.io/models';
+ import { InfoCircleIcon } from '@leather.io/ui';
+ import { baseCurrencyAmountInQuote, sumMoney } from '@leather.io/utils';
+ 
+@@ -42,7 +41,8 @@ export function StacksSendFormConfirmation() {
+   const { symbol = 'STX' } = useParams();
+ 
+   const { stacksBroadcastTransaction, isBroadcasting } = useStacksBroadcastTransaction({
+-    token: symbol.toUpperCase() as CryptoCurrency,
++    token: symbol.toUpperCase(),
++    redirectToSuccessPage: true,
+   });
+ 
+   const tx = deserializeTransaction(txHex);
+```

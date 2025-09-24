@@ -1,17 +1,17 @@
 # Test info
 
-- Name: send btc >> btc send form >> that it shows preview of tx details to be confirmed
-- Location: /home/runner/work/extension/extension/tests/specs/send/send-btc.spec.ts:22:5
+- Name: send stx: tests on mainnet >> send form input fields >> that fee row defaults to middle fee estimation
+- Location: /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:235:5
 
 # Error details
 
 ```
-Error: locator.click: Target page, context or browser has been closed
-Call log:
-  - waiting for getByTestId('BTC')
-
-    at SendPage.selectBtcAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:74:40)
-    at /home/runner/work/extension/extension/tests/specs/send/send-btc.spec.ts:17:5
+Error: page.waitForURL: Target page, context or browser has been closed
+=========================== logs ===========================
+waiting for navigation to "**/send/stx" until "load"
+============================================================
+    at SendPage.selectStxAndGoToSendForm (/home/runner/work/extension/extension/tests/page-object-models/send.page.ts:82:21)
+    at /home/runner/work/extension/extension/tests/specs/send/send-stx.spec.ts:206:5
 ```
 
 # Test source
@@ -90,8 +90,7 @@ Call log:
    71 |
    72 |   async selectBtcAndGoToSendForm() {
    73 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
->  74 |     await this.page.getByTestId('BTC').click();
-      |                                        ^ Error: locator.click: Target page, context or browser has been closed
+   74 |     await this.page.getByTestId('BTC').click();
    75 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/btc`);
    76 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    77 |   }
@@ -99,7 +98,8 @@ Call log:
    79 |   async selectStxAndGoToSendForm() {
    80 |     await this.page.waitForURL('**' + RouteUrls.SendCryptoAsset);
    81 |     await this.page.getByTestId('STX').click();
-   82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+>  82 |     await this.page.waitForURL('**' + `${RouteUrls.SendCryptoAsset}/stx`);
+      |                     ^ Error: page.waitForURL: Target page, context or browser has been closed
    83 |     await this.page.getByTestId(SendCryptoAssetSelectors.SendForm).waitFor();
    84 |   }
    85 |
@@ -157,6 +157,18 @@ Call log:
 # Local changes
 
 ```diff
+diff --git a/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts b/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts
+index 893e5d13c..d7f09323d 100644
+--- a/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts
++++ b/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts
+@@ -32,6 +32,7 @@ export function useStacksTransactionAction({ actionType, txid }: UseStacksTransa
+   const { stacksBroadcastTransaction, isBroadcasting } = useStacksBroadcastTransaction({
+     token: 'STX',
+     actionType,
++    redirectToSuccessPage: true,
+   });
+ 
+   const stacksAddress = useCurrentStacksAccountAddress();
 diff --git a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
 index 834985c86..bb0063c12 100644
 --- a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx

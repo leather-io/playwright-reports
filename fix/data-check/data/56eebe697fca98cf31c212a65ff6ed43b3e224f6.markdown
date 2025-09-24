@@ -144,6 +144,18 @@ Call log:
 # Local changes
 
 ```diff
+diff --git a/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts b/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts
+index 893e5d13c..d7f09323d 100644
+--- a/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts
++++ b/src/app/features/dialogs/transaction-action-dialog/hooks/use-stacks-transaction-action.ts
+@@ -32,6 +32,7 @@ export function useStacksTransactionAction({ actionType, txid }: UseStacksTransa
+   const { stacksBroadcastTransaction, isBroadcasting } = useStacksBroadcastTransaction({
+     token: 'STX',
+     actionType,
++    redirectToSuccessPage: true,
+   });
+ 
+   const stacksAddress = useCurrentStacksAccountAddress();
 diff --git a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx b/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx
 index 834985c86..bb0063c12 100644
 --- a/src/app/features/stacks-transaction-request/hooks/use-legacy-stacks-broadcast-transaction.tsx

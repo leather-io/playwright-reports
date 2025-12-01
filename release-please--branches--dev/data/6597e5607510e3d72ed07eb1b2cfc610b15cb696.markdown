@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e8]:
+          - button "ArrowLeft" [ref=e9] [cursor=pointer]:
+            - generic [ref=e11]:
+              - img [ref=e12]
+              - generic [ref=e14]: ArrowLeft
+          - button [ref=e16] [cursor=pointer]:
+            - img [ref=e17]
+        - generic [ref=e19]: Send
+        - button [ref=e23] [cursor=pointer]:
+          - img [ref=e24]
+    - generic [ref=e29]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]:
+              - textbox "0" [ref=e35]: "0.000001"
+              - generic [ref=e36]: LONG
+            - generic [ref=e38]: ~ < $0.01
+          - generic [ref=e39] [cursor=pointer]: Send max
+        - generic [ref=e42]:
+          - generic [ref=e45]: FT
+          - generic [ref=e46]: LONG
+        - generic [ref=e48]:
+          - button "Select account" [ref=e50] [cursor=pointer]
+          - button [ref=e52] [cursor=pointer]:
+            - generic [ref=e53]:
+              - img [ref=e55]
+              - generic [ref=e57]: Address
+          - textbox "Recipient" [ref=e58]: SPXH3HNBPM5YP15VH16ZXZ9AX6CK289K3MCXRKCB
+        - generic [ref=e60]:
+          - generic: Memo
+          - textbox [ref=e61]
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - button "Fee" [ref=e66] [cursor=pointer]:
+              - generic [ref=e67]:
+                - generic [ref=e68]: Fee
+                - img [ref=e69]
+            - generic [ref=e74] [cursor=pointer]:
+              - generic [ref=e75]: Standard
+              - img [ref=e76]
+          - button "0.003 STX" [ref=e79] [cursor=pointer]:
+            - generic [ref=e80]: 0.003 STX
+        - generic [ref=e81] [cursor=pointer]: Edit nonce
+      - generic [ref=e83]:
+        - button "Continue" [disabled] [ref=e84]:
+          - generic [ref=e85]: Continue
+        - generic [ref=e86]:
+          - generic [ref=e87]:
+            - generic [ref=e88]: Available balance
+            - img [ref=e90]
+          - generic [ref=e93]: 1.89M LONG
+  - region "Notifications (F8)":
+    - list
+```

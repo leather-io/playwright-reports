@@ -1,0 +1,195 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - banner:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+            - generic:
+              - generic:
+                - button:
+                  - img
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Account 1
+                      - generic:
+                        - img
+                - generic:
+                  - generic:
+                    - heading [level=1]:
+                      - generic: $12.33
+                    - heading [level=2]:
+                      - text: "Available balance:"
+                      - generic:
+                        - button:
+                          - generic:
+                            - generic:
+                              - img
+                            - generic: $12.33
+                  - generic:
+                    - button:
+                      - generic:
+                        - generic:
+                          - img
+                          - generic: Send
+                          - generic: Send
+                    - button:
+                      - generic:
+                        - generic:
+                          - img
+                          - generic: Receive
+                          - generic: Receive
+                    - button:
+                      - generic:
+                        - generic:
+                          - img
+                          - generic: Buy
+                          - generic: Buy
+                    - generic:
+                      - button:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Swap
+                            - generic: Swap
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Mobile app is here for iOS and Android
+                      - button:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Close
+                - generic:
+                  - button:
+                    - generic:
+                      - generic:
+                        - img
+                        - generic: ArrowLeft
+            - button:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                  - text: Give feedback
+            - generic:
+              - generic:
+                - tablist:
+                  - tab [selected]: Assets
+                  - tab: Activity
+              - generic:
+                - generic:
+                  - generic:
+                    - button:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Bitcoin
+                              - generic: BTC
+                            - generic:
+                              - generic:
+                                - button:
+                                  - generic:
+                                    - generic:
+                                      - img
+                                      - generic: Connect Bitcoin
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Stacks
+                              - generic: STX
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: "13.568"
+                                - generic:
+                                  - generic: $11.53
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: FT
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: LONGcoin
+                                - generic: LONG
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: 1.89M
+                                  - generic:
+                                    - generic: $0.80
+                  - button:
+                    - generic:
+                      - generic: Manage Tokens
+                      - img
+                  - generic:
+                    - generic:
+                      - generic:
+                        - button:
+                          - generic:
+                            - generic:
+                              - img
+                            - generic: Collectibles
+    - list
+  - generic:
+    - heading [level=2]: Dialog
+  - dialog "Dialog" [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Receive STX" [level=2] [ref=e4]:
+        - text: Receive
+        - text: STX
+      - button "Close" [active] [ref=e5] [cursor=pointer]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e10]: Close
+    - generic [ref=e12]:
+      - img [ref=e15]
+      - generic [ref=e18]:
+        - generic [ref=e19]: Account 1
+        - generic [ref=e20]:
+          - generic [ref=e21]: SPS8
+          - generic [ref=e22]: CKF6
+          - generic [ref=e23]: 3P16
+          - generic [ref=e24]: J28A
+          - generic [ref=e25]: YF7P
+          - generic [ref=e26]: XW9E
+          - generic [ref=e27]: 5AAC
+          - generic [ref=e28]: H0NZ
+          - generic [ref=e29]: NTEF
+          - generic [ref=e30]: WSFE
+    - button "Copy address" [ref=e32] [cursor=pointer]:
+      - generic [ref=e33]: Copy address
+```

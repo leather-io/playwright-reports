@@ -1,0 +1,248 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - banner:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Testnet4
+                - button:
+                  - img
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Account 1
+                      - generic:
+                        - img
+                - generic:
+                  - generic:
+                    - heading [level=1]:
+                      - generic: $192.33
+                    - heading [level=2]:
+                      - text: "Available balance:"
+                      - generic:
+                        - button:
+                          - generic:
+                            - generic:
+                              - img
+                            - generic: $192.33
+                  - generic:
+                    - button:
+                      - generic:
+                        - generic:
+                          - img
+                          - generic: Send
+                          - generic: Send
+                    - button:
+                      - generic:
+                        - generic:
+                          - img
+                          - generic: Receive
+                          - generic: Receive
+                    - button:
+                      - generic:
+                        - generic:
+                          - img
+                          - generic: Buy
+                          - generic: Buy
+                    - generic:
+                      - button [disabled]:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Swap
+                            - generic: Swap
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - paragraph: Mobile app is here for iOS and Android
+                      - button:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Close
+                - generic:
+                  - button:
+                    - generic:
+                      - generic:
+                        - img
+                        - generic: ArrowLeft
+            - button:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                  - text: Give feedback
+            - generic:
+              - generic:
+                - tablist:
+                  - tab [selected]: Assets
+                  - tab: Activity
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Bitcoin
+                              - generic: BTC
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: "0.002"
+                                - generic:
+                                  - generic: $90.00
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Stacks
+                              - generic: STX
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: "13.568"
+                                - generic:
+                                  - generic: $11.53
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: FT
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: LONGcoin
+                                - generic: LONG
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: 1.89M
+                                  - generic:
+                                    - generic: $0.80
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: PXL
+                              - generic: SRC-20
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: 6,182.00
+                  - button:
+                    - generic:
+                      - generic: Manage Tokens
+                      - img
+                  - generic:
+                    - generic:
+                      - generic:
+                        - button:
+                          - generic:
+                            - generic:
+                              - img
+                            - generic: Collectibles
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                      - generic:
+                        - generic: Add new
+                        - generic: Collectible
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - img
+                          - generic:
+                            - button:
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: ExternalLink
+                        - generic:
+                          - img
+                      - generic:
+                        - generic: "# 259109"
+                        - generic: Bitcoin Stamp
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic: "{ \"p\": \"brc-20\", \"op\": \"transfer\", \"tick\": \"pixe\", \"amt\": \"10\" }"
+                          - generic:
+                            - generic: "# 10371348"
+                            - generic: Ordinal inscription
+                          - generic:
+                            - button: Send
+    - list
+  - generic:
+    - heading [level=2]: Dialog
+  - dialog "Dialog" [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Send" [level=2] [ref=e4]
+      - button "Close" [ref=e5] [cursor=pointer]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e10]: Close
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e17]: "{ \"p\": \"brc-20\", \"op\": \"transfer\", \"tick\": \"pixe\", \"amt\": \"10\" }"
+        - generic [ref=e19]:
+          - generic [ref=e20]: Inscription 10371348
+          - generic [ref=e21]: Ordinal inscription
+      - generic [ref=e23]:
+        - generic [ref=e26]:
+          - img [ref=e28]
+          - generic [ref=e32]: Ordinal inscription
+        - textbox "Recipient" [ref=e35]: tb1pve00jmp43whpqj2wpcxtc7m8wqhz0azq689y4r7h8tmj8ltaj87qj2nj6w
+      - generic [ref=e36]:
+        - img [ref=e38]
+        - generic [ref=e41]: Insufficient funds to cover fee. Deposit some BTC to your Native Segwit address.
+    - button "Continue" [active] [ref=e43] [cursor=pointer]:
+      - generic [ref=e44]: Continue
+```

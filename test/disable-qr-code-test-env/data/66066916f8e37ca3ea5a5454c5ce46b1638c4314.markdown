@@ -1,0 +1,93 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e10]:
+          - img [ref=e11]
+        - button [ref=e15] [cursor=pointer]:
+          - img [ref=e16]
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e24] [cursor=pointer]:
+            - generic [ref=e25]: Account 1
+            - img [ref=e27]
+          - generic [ref=e32]:
+            - button "Send Send" [ref=e33] [cursor=pointer]:
+              - generic [ref=e35]:
+                - img [ref=e36]
+                - generic [ref=e38]: Send
+                - generic [ref=e39]: Send
+            - button "Receive Receive" [ref=e40] [cursor=pointer]:
+              - generic [ref=e42]:
+                - img [ref=e43]
+                - generic [ref=e45]: Receive
+                - generic [ref=e46]: Receive
+            - button "Buy Buy" [ref=e47] [cursor=pointer]:
+              - generic [ref=e49]:
+                - img [ref=e50]
+                - generic [ref=e52]: Buy
+                - generic [ref=e53]: Buy
+            - button "Swap Swap" [ref=e55] [cursor=pointer]:
+              - generic [ref=e57]:
+                - img [ref=e58]
+                - generic [ref=e60]: Swap
+                - generic [ref=e61]: Swap
+        - generic [ref=e62]:
+          - generic [ref=e65] [cursor=pointer]:
+            - generic [ref=e66]:
+              - img "Mobile app is here for iOS and Android" [ref=e68]
+              - paragraph [ref=e70]: Mobile app is here for iOS and Android
+            - button "Close" [ref=e71]:
+              - generic [ref=e73]:
+                - img [ref=e74]
+                - generic [ref=e76]: Close
+          - button "ArrowLeft" [ref=e82] [cursor=pointer]:
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - generic [ref=e87]: ArrowLeft
+      - button "Give feedback" [ref=e88] [cursor=pointer]:
+        - generic [ref=e90]:
+          - img [ref=e92]
+          - text: Give feedback
+      - generic [ref=e94]:
+        - tablist [ref=e96]:
+          - tab "Assets" [selected] [ref=e97] [cursor=pointer]
+          - tab "Activity" [ref=e98] [cursor=pointer]
+        - generic [ref=e100]:
+          - generic [ref=e131]:
+            - generic:
+              - img
+            - generic [ref=e133]:
+              - generic [ref=e134]:
+                - generic [ref=e136]: PXL
+                - generic [ref=e137]: SRC-20
+              - generic [ref=e141]: 6,182.00
+          - button "Manage Tokens" [ref=e142] [cursor=pointer]:
+            - generic [ref=e143]:
+              - generic [ref=e144]: Manage Tokens
+              - img [ref=e145]
+          - generic [ref=e148]:
+            - button "Collectibles" [ref=e150] [cursor=pointer]:
+              - generic [ref=e151]:
+                - img [ref=e153]
+                - generic [ref=e155]: Collectibles
+            - generic [ref=e157]: Loading...
+          - generic [ref=e158]:
+            - generic [ref=e164] [cursor=pointer]:
+              - generic [ref=e165]: Add new
+              - generic [ref=e166]: Collectible
+            - generic [ref=e168]:
+              - button "ExternalLink" [ref=e174] [cursor=pointer]:
+                - generic [ref=e176]:
+                  - img [ref=e177]
+                  - generic [ref=e179]: ExternalLink
+              - generic [ref=e181]:
+                - generic [ref=e182]: "# 259109"
+                - generic [ref=e183]: Bitcoin Stamp
+  - region "Notifications (F8)":
+    - list
+```

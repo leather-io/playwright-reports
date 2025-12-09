@@ -1,0 +1,143 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e9]:
+          - button:
+            - img
+        - button [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e22] [cursor=pointer]:
+            - generic [ref=e23]: Account 1
+            - img [ref=e25]
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - heading "$192.33" [level=1] [ref=e29]:
+                - generic [ref=e30]: $192.33
+              - 'heading "Available balance: $192.33" [level=2] [ref=e31]':
+                - text: "Available balance:"
+                - button "$192.33" [ref=e33] [cursor=pointer]:
+                  - generic [ref=e34]:
+                    - img [ref=e36]
+                    - generic [ref=e39]: $192.33
+            - generic [ref=e40]:
+              - button "Send Send" [ref=e41] [cursor=pointer]:
+                - generic [ref=e43]:
+                  - img [ref=e44]
+                  - generic [ref=e46]: Send
+                  - generic [ref=e47]: Send
+              - button "Receive Receive" [ref=e48] [cursor=pointer]:
+                - generic [ref=e50]:
+                  - img [ref=e51]
+                  - generic [ref=e53]: Receive
+                  - generic [ref=e54]: Receive
+              - button "Buy Buy" [ref=e55] [cursor=pointer]:
+                - generic [ref=e57]:
+                  - img [ref=e58]
+                  - generic [ref=e60]: Buy
+                  - generic [ref=e61]: Buy
+              - button "Swap Swap" [ref=e63] [cursor=pointer]:
+                - generic [ref=e65]:
+                  - img [ref=e66]
+                  - generic [ref=e68]: Swap
+                  - generic [ref=e69]: Swap
+        - generic [ref=e70]:
+          - generic [ref=e73] [cursor=pointer]:
+            - generic [ref=e74]:
+              - img "Mobile app is here for iOS and Android" [ref=e76]
+              - paragraph [ref=e78]: Mobile app is here for iOS and Android
+            - button "Close" [ref=e79]:
+              - generic [ref=e81]:
+                - img [ref=e82]
+                - generic [ref=e84]: Close
+          - button "ArrowLeft" [ref=e90] [cursor=pointer]:
+            - generic [ref=e92]:
+              - img [ref=e93]
+              - generic [ref=e95]: ArrowLeft
+      - button "Give feedback" [ref=e96] [cursor=pointer]:
+        - generic [ref=e98]:
+          - img [ref=e100]
+          - text: Give feedback
+      - generic [ref=e102]:
+        - tablist [ref=e104]:
+          - tab "Assets" [selected] [ref=e105] [cursor=pointer]
+          - tab "NFTs" [ref=e106] [cursor=pointer]
+          - tab "Activity" [active] [ref=e107] [cursor=pointer]
+        - generic [ref=e112]:
+          - button "BTC Received Aug 21, 2025 + $90.00 0.002" [ref=e114] [cursor=pointer]:
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - img [ref=e118]
+                  - img [ref=e122]
+                - generic [ref=e126]:
+                  - paragraph [ref=e127]: BTC
+                  - paragraph [ref=e128]: Received Aug 21, 2025
+              - generic [ref=e129]:
+                - generic [ref=e130]: + $90.00
+                - generic [ref=e131]: "0.002"
+          - button "rALEX alexdao.org Received Apr 3, 2025 + $0.00 14,000" [ref=e133] [cursor=pointer]:
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]:
+                  - img "rALEX" [ref=e137]
+                  - img [ref=e139]
+                - generic [ref=e143]:
+                  - paragraph [ref=e144]: alexdao.org
+                  - paragraph [ref=e145]: Received Apr 3, 2025
+              - generic [ref=e146]:
+                - generic [ref=e147]: + $0.00
+                - generic [ref=e148]: 14,000
+          - button "STX Received Apr 2, 2025 + $4.25 5.00" [ref=e150] [cursor=pointer]:
+            - generic [ref=e151]:
+              - generic [ref=e152]:
+                - generic [ref=e153]:
+                  - img [ref=e154]
+                  - img [ref=e159]
+                - generic [ref=e163]:
+                  - paragraph [ref=e164]: STX
+                  - paragraph [ref=e165]: Received Apr 2, 2025
+              - generic [ref=e166]:
+                - generic [ref=e167]: + $4.25
+                - generic [ref=e168]: "5.00"
+          - button "STX Sent Mar 1, 2025 − < $0.01 0.000001" [ref=e170] [cursor=pointer]:
+            - generic [ref=e171]:
+              - generic [ref=e172]:
+                - generic [ref=e173]:
+                  - img [ref=e174]
+                  - img [ref=e179]
+                - generic [ref=e182]:
+                  - paragraph [ref=e183]: STX
+                  - paragraph [ref=e184]: Sent Mar 1, 2025
+              - generic [ref=e185]:
+                - generic [ref=e186]: − < $0.01
+                - generic [ref=e187]: "0.000001"
+          - button "LONG Sent Mar 1, 2025 − < $0.01 0.000001" [ref=e189] [cursor=pointer]:
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - img [ref=e194]
+                - generic [ref=e197]:
+                  - paragraph [ref=e198]: LONG
+                  - paragraph [ref=e199]: Sent Mar 1, 2025
+              - generic [ref=e200]:
+                - generic [ref=e201]: − < $0.01
+                - generic [ref=e202]: "0.000001"
+          - button "LONG Sent Feb 21, 2025 − < $0.01 0.000001" [ref=e204] [cursor=pointer]:
+            - generic [ref=e205]:
+              - generic [ref=e206]:
+                - img [ref=e209]
+                - generic [ref=e212]:
+                  - paragraph [ref=e213]: LONG
+                  - paragraph [ref=e214]: Sent Feb 21, 2025
+              - generic [ref=e215]:
+                - generic [ref=e216]: − < $0.01
+                - generic [ref=e217]: "0.000001"
+  - region "Notifications (F8)":
+    - list
+```

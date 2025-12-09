@@ -1,0 +1,109 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e9]:
+          - button:
+            - img
+        - generic [ref=e12]:
+          - generic [ref=e14]: Testnet4
+          - button [ref=e15] [cursor=pointer]:
+            - img [ref=e16]
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e24] [cursor=pointer]:
+            - generic [ref=e25]: Account 1
+            - img [ref=e27]
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - heading "$12.33" [level=1] [ref=e31]:
+                - generic [ref=e32]: $12.33
+              - 'heading "Available balance: $12.33" [level=2] [ref=e33]':
+                - text: "Available balance:"
+                - button "$12.33" [ref=e35] [cursor=pointer]:
+                  - generic [ref=e36]:
+                    - img [ref=e38]
+                    - generic [ref=e41]: $12.33
+            - generic [ref=e42]:
+              - button "Send Send" [ref=e43] [cursor=pointer]:
+                - generic [ref=e45]:
+                  - img [ref=e46]
+                  - generic [ref=e48]: Send
+                  - generic [ref=e49]: Send
+              - button "Receive Receive" [ref=e50] [cursor=pointer]:
+                - generic [ref=e52]:
+                  - img [ref=e53]
+                  - generic [ref=e55]: Receive
+                  - generic [ref=e56]: Receive
+              - button "Buy Buy" [ref=e57] [cursor=pointer]:
+                - generic [ref=e59]:
+                  - img [ref=e60]
+                  - generic [ref=e62]: Buy
+                  - generic [ref=e63]: Buy
+              - button "Swap Swap" [disabled] [ref=e65]:
+                - generic [ref=e67]:
+                  - img [ref=e68]
+                  - generic [ref=e70]: Swap
+                  - generic [ref=e71]: Swap
+        - generic [ref=e72]:
+          - generic [ref=e75] [cursor=pointer]:
+            - generic [ref=e76]:
+              - img "Mobile app is here for iOS and Android" [ref=e78]
+              - paragraph [ref=e80]: Mobile app is here for iOS and Android
+            - button "Close" [ref=e81]:
+              - generic [ref=e83]:
+                - img [ref=e84]
+                - generic [ref=e86]: Close
+          - button "ArrowLeft" [ref=e92] [cursor=pointer]:
+            - generic [ref=e94]:
+              - img [ref=e95]
+              - generic [ref=e97]: ArrowLeft
+      - button "Give feedback" [ref=e98] [cursor=pointer]:
+        - generic [ref=e100]:
+          - img [ref=e102]
+          - text: Give feedback
+      - generic [ref=e104]:
+        - tablist [ref=e106]:
+          - tab "Assets" [selected] [ref=e107] [cursor=pointer]
+          - tab "NFTs" [ref=e108] [cursor=pointer]
+          - tab "Activity" [ref=e109] [cursor=pointer]
+        - generic [ref=e112]:
+          - generic [ref=e114]:
+            - img [ref=e117]
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - generic [ref=e124]: Bitcoin
+                - generic [ref=e125]: BTC
+              - generic [ref=e129]: "0.00"
+          - generic [ref=e131]:
+            - img [ref=e134]
+            - generic [ref=e139]:
+              - generic [ref=e140]:
+                - generic [ref=e142]: Stacks
+                - generic [ref=e143]: STX
+              - generic [ref=e145]:
+                - generic [ref=e147]: "13.568"
+                - generic [ref=e149]: $11.53
+          - generic [ref=e152]:
+            - generic [ref=e155]: FT
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - generic [ref=e160]: LONGcoin
+                - generic [ref=e161]: LONG
+              - generic [ref=e163]:
+                - generic [ref=e165]: 1.89M
+                - generic [ref=e167]: $0.80
+          - generic [ref=e169]:
+            - img [ref=e171]
+            - generic [ref=e173]:
+              - generic [ref=e174]:
+                - generic [ref=e176]: PXL
+                - generic [ref=e177]: SRC-20
+              - generic [ref=e181]: 6,182.00
+  - region "Notifications (F8)":
+    - list
+```

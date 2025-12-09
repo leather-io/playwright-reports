@@ -1,0 +1,33 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - img "Unhappy user interface cloud" [ref=e7]
+    - generic [ref=e8]: Something went wrong
+    - generic [ref=e9]:
+      - text: Leather has crashed. If this problem persists, contact our
+      - link "support team." [ref=e10] [cursor=pointer]:
+        - /url: https://leather.io/support
+    - generic [ref=e13]:
+      - generic [ref=e16]: "TypeError: (0 , queries_dist.createAccountTotalBalanceQueryConfig) is not a function"
+      - generic [ref=e19]: at useGetAccountTotalBalanceQuery (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/index.js:5811:61)
+      - generic [ref=e22]: at useAccountTotalBalance (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/index.js:5803:5)
+      - generic [ref=e25]: at useAccountScaledBalanceAnalytics (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/index.js:5922:24)
+      - generic [ref=e28]: at useHomePageState (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/index.js:19426:3)
+      - generic [ref=e31]: at HomeLegacy (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/index.js:20723:7)
+      - generic [ref=e34]: at renderWithHooks (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/997.js:88401:21)
+      - generic [ref=e37]: at updateFunctionComponent (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/997.js:90357:15)
+      - generic [ref=e40]: at beginWork (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/997.js:91386:14)
+      - generic [ref=e43]: at performUnitOfWork (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/997.js:95580:14)
+      - generic [ref=e46]: at workLoopSync (chrome-extension://jpjaaaenklbaicfpaofmbmpkhceogjap/997.js:95463:37)
+    - generic [ref=e47]:
+      - button "Copy error" [ref=e48] [cursor=pointer]:
+        - generic [ref=e50]:
+          - text: Copy error
+          - img [ref=e51]
+      - button "Reload extension" [ref=e53] [cursor=pointer]:
+        - generic [ref=e54]: Reload extension
+  - region "Notifications (F8)":
+    - list
+```

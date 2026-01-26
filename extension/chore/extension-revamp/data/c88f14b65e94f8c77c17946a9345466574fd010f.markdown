@@ -1,0 +1,125 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e10]:
+          - img [ref=e11]
+        - button [ref=e15] [cursor=pointer]:
+          - img [ref=e16]
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e25] [cursor=pointer]:
+            - generic [ref=e26]: Account 1
+            - img [ref=e28]
+          - generic [ref=e33]:
+            - button "Send Send" [ref=e34] [cursor=pointer]:
+              - generic [ref=e36]:
+                - img [ref=e37]
+                - generic [ref=e39]: Send
+                - generic [ref=e40]: Send
+            - button "Receive Receive" [ref=e41] [cursor=pointer]:
+              - generic [ref=e43]:
+                - img [ref=e44]
+                - generic [ref=e46]: Receive
+                - generic [ref=e47]: Receive
+            - button "Buy Buy" [ref=e48] [cursor=pointer]:
+              - generic [ref=e50]:
+                - img [ref=e51]
+                - generic [ref=e53]: Buy
+                - generic [ref=e54]: Buy
+            - button "Swap Swap" [disabled] [ref=e56]:
+              - generic [ref=e58]:
+                - img [ref=e59]
+                - generic [ref=e61]: Swap
+                - generic [ref=e62]: Swap
+        - generic [ref=e63]:
+          - generic [ref=e66] [cursor=pointer]:
+            - generic [ref=e67]:
+              - img "USDCx is live on Stacks! Bridge your USDC now." [ref=e69]
+              - paragraph [ref=e71]: USDCx is live on Stacks! Bridge your USDC now.
+            - button "Close" [ref=e72]:
+              - generic [ref=e74]:
+                - img [ref=e75]
+                - generic [ref=e77]: Close
+          - generic [ref=e81]:
+            - img "Mobile app is here for iOS and Android" [ref=e83]
+            - paragraph [ref=e85]: Mobile app is here for iOS and Android
+          - generic [ref=e89]:
+            - img "Lock STX, earn BTC" [ref=e91]
+            - paragraph [ref=e93]: Lock STX, earn BTC
+          - generic [ref=e97]:
+            - img "Grow your sBTC" [ref=e99]
+            - paragraph [ref=e101]: Grow your sBTC
+      - button "Give feedback" [ref=e102] [cursor=pointer]:
+        - generic [ref=e104]:
+          - img [ref=e106]
+          - text: Give feedback
+      - generic [ref=e108]:
+        - tablist [ref=e110]:
+          - tab "Assets" [selected] [ref=e111] [cursor=pointer]
+          - tab "Activity" [ref=e112] [cursor=pointer]
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - generic [ref=e158]:
+              - generic [ref=e160]:
+                - img [ref=e164]
+                - generic [ref=e169]:
+                  - generic [ref=e170]:
+                    - generic [ref=e172]: LONGcoin
+                    - generic [ref=e173]: LONG
+                  - generic [ref=e175]:
+                    - generic [ref=e177]: 1.89M
+                    - generic [ref=e179]: $0.80
+              - generic [ref=e181]:
+                - img [ref=e185]
+                - generic [ref=e190]:
+                  - generic [ref=e191]:
+                    - generic [ref=e193]: Leather test token
+                    - generic [ref=e194]: LTT
+                  - generic [ref=e196]:
+                    - generic [ref=e198]: "0.1147"
+                    - generic [ref=e200]: $0.00
+            - generic [ref=e202]:
+              - generic [ref=e204]:
+                - img [ref=e205]
+                - img [ref=e207]
+              - generic [ref=e211]:
+                - generic [ref=e212]:
+                  - generic [ref=e214]: PXL
+                  - generic [ref=e215]: SRC-20
+                - generic [ref=e219]: 6,182.00
+          - button "Manage Tokens" [ref=e220] [cursor=pointer]:
+            - generic [ref=e221]:
+              - generic [ref=e222]: Manage Tokens
+              - img [ref=e223]
+          - generic [ref=e226]:
+            - button "Collectibles" [ref=e228] [cursor=pointer]:
+              - generic [ref=e229]:
+                - img [ref=e231]
+                - generic [ref=e233]: Collectibles
+            - generic [ref=e235]: Loading...
+          - generic [ref=e236]:
+            - generic [ref=e242] [cursor=pointer]:
+              - generic [ref=e243]: Add new
+              - generic [ref=e244]: Collectible
+            - generic [ref=e246]:
+              - button "ExternalLink" [ref=e252] [cursor=pointer]:
+                - generic [ref=e254]:
+                  - img [ref=e255]
+                  - generic [ref=e257]: ExternalLink
+              - generic [ref=e259]:
+                - generic [ref=e260]: "# 259109"
+                - generic [ref=e261]: Bitcoin Stamp
+            - generic [ref=e265]:
+              - img [ref=e270]
+              - generic [ref=e275]:
+                - generic [ref=e276]: "# 10371348"
+                - generic [ref=e277]: Ordinal inscription
+              - button "Send" [ref=e279] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
+```

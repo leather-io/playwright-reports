@@ -1,0 +1,74 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - button "ArrowLeft" [ref=e10] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img [ref=e13]
+            - generic [ref=e15]: ArrowLeft
+        - generic:
+          - generic:
+            - button
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - heading "Settings" [level=1] [ref=e19]
+        - generic [ref=e20]:
+          - button "Secret Key" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]:
+              - img [ref=e25]
+              - generic [ref=e29]:
+                - generic [ref=e32]: Secret Key
+                - img [ref=e34]
+          - button "Theme" [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]:
+              - img [ref=e40]
+              - generic [ref=e43]:
+                - generic [ref=e46]: Theme
+                - img [ref=e48]
+          - button "Network" [ref=e50] [cursor=pointer]:
+            - generic [ref=e51]:
+              - img [ref=e54]
+              - generic [ref=e57]:
+                - generic [ref=e60]: Network
+                - img [ref=e62]
+          - button "Notification" [ref=e64] [cursor=pointer]:
+            - generic [ref=e65]:
+              - img [ref=e68]
+              - generic [ref=e71]:
+                - generic [ref=e74]:
+                  - text: Notification
+                  - button [ref=e75]:
+                    - img [ref=e76]
+                - switch [checked] [ref=e79]
+          - button "Help" [active] [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - img [ref=e85]
+              - generic [ref=e88]:
+                - generic [ref=e90]: Help
+                - img [ref=e92]
+          - button "Dev docs" [ref=e94] [cursor=pointer]:
+            - generic [ref=e95]:
+              - img [ref=e98]
+              - generic [ref=e101]:
+                - generic [ref=e103]: Dev docs
+                - img [ref=e105]
+          - button "Feedback" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - img [ref=e111]
+              - generic [ref=e114]:
+                - generic [ref=e116]: Feedback
+                - img [ref=e118]
+          - generic [ref=e120]:
+            - paragraph [ref=e121]: Version
+            - paragraph [ref=e122]: v6.92.4.801
+      - generic [ref=e123]:
+        - button "Lock App" [ref=e124] [cursor=pointer]:
+          - generic [ref=e125]: Lock App
+        - button "Sign Out" [ref=e126] [cursor=pointer]:
+          - generic [ref=e127]: Sign Out
+  - region "Notifications (F8)":
+    - list
+```

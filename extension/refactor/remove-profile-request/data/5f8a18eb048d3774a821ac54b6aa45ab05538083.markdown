@@ -1,0 +1,64 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]: Account 1
+          - img [ref=e14]
+        - button [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - button "Total balance" [ref=e28] [cursor=pointer]:
+              - generic [ref=e29]:
+                - img [ref=e31]
+                - heading "Total balance" [level=2] [ref=e35]
+            - button
+          - heading "$192.33" [level=1] [ref=e39]:
+            - generic [ref=e40]: $192.33
+        - generic [ref=e41]:
+          - button "Buy" [ref=e42] [cursor=pointer]:
+            - generic [ref=e43]: Buy
+          - button "Send" [ref=e44] [cursor=pointer]:
+            - generic [ref=e45]: Send
+          - button "Receive" [ref=e46] [cursor=pointer]:
+            - generic [ref=e47]: Receive
+          - button "Swap" [ref=e48] [cursor=pointer]:
+            - generic [ref=e49]: Swap
+        - generic [ref=e50]:
+          - generic [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - img "USDCx is live on Stacks! Bridge your USDC now." [ref=e56]
+              - paragraph [ref=e58]: USDCx is live on Stacks! Bridge your USDC now.
+            - button "Close" [ref=e59]:
+              - generic [ref=e61]:
+                - img [ref=e62]
+                - generic [ref=e64]: Close
+          - generic [ref=e68]:
+            - img "Mobile app is here for iOS and Android" [ref=e70]
+            - paragraph [ref=e72]: Mobile app is here for iOS and Android
+          - generic [ref=e76]:
+            - img "Lock STX, earn BTC" [ref=e78]
+            - paragraph [ref=e80]: Lock STX, earn BTC
+          - generic [ref=e84]:
+            - img "Grow your sBTC" [ref=e86]
+            - paragraph [ref=e88]: Grow your sBTC
+      - button "Give feedback" [ref=e89] [cursor=pointer]:
+        - generic [ref=e91]:
+          - img [ref=e93]
+          - text: Give feedback
+      - generic [ref=e95]:
+        - tablist [ref=e97]:
+          - tab "Assets" [ref=e98] [cursor=pointer]
+          - tab "Activity" [active] [selected] [ref=e99] [cursor=pointer]
+        - generic [ref=e102]:
+          - img
+          - generic [ref=e103]: No activity yet
+  - region "Notifications (F8)":
+    - list
+```

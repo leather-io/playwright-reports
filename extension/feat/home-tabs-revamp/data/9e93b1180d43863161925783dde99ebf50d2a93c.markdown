@@ -1,0 +1,128 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]: Account 1
+          - img [ref=e14]
+        - button [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - button "Total balance" [ref=e28] [cursor=pointer]:
+              - generic [ref=e29]:
+                - img [ref=e31]
+                - heading "Total balance" [level=2] [ref=e35]
+            - button "Testnet4" [ref=e36] [cursor=pointer]:
+              - generic [ref=e38]: Testnet4
+          - heading "$12.33" [level=1] [ref=e42]:
+            - generic [ref=e43]: $12.33
+        - generic [ref=e44]:
+          - button "Buy" [ref=e45] [cursor=pointer]:
+            - generic [ref=e46]: Buy
+          - button "Send" [ref=e47] [cursor=pointer]:
+            - generic [ref=e48]: Send
+          - button "Receive" [ref=e49] [cursor=pointer]:
+            - generic [ref=e50]: Receive
+          - button "Swap" [disabled] [ref=e51]:
+            - generic [ref=e52]: Swap
+        - generic [ref=e53]:
+          - generic [ref=e56] [cursor=pointer]:
+            - generic [ref=e57]:
+              - img "USDCx is live on Stacks! Bridge your USDC now." [ref=e59]
+              - paragraph [ref=e61]: USDCx is live on Stacks! Bridge your USDC now.
+            - button "Close" [ref=e62]:
+              - generic [ref=e64]:
+                - img [ref=e65]
+                - generic [ref=e67]: Close
+          - generic [ref=e71]:
+            - img "Mobile app is here for iOS and Android" [ref=e73]
+            - paragraph [ref=e75]: Mobile app is here for iOS and Android
+          - generic [ref=e79]:
+            - img "Lock STX, earn BTC" [ref=e81]
+            - paragraph [ref=e83]: Lock STX, earn BTC
+          - generic [ref=e87]:
+            - img "Grow your sBTC" [ref=e89]
+            - paragraph [ref=e91]: Grow your sBTC
+      - button "Give feedback" [ref=e92] [cursor=pointer]:
+        - generic [ref=e94]:
+          - img [ref=e96]
+          - text: Give feedback
+      - generic [ref=e98]:
+        - tablist [ref=e100]:
+          - tab "Assets" [selected] [ref=e101] [cursor=pointer]
+          - tab "Collectibles" [ref=e102] [cursor=pointer]
+          - tab "Activity" [ref=e103] [cursor=pointer]
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - generic [ref=e108]:
+              - generic [ref=e110]:
+                - img [ref=e111]
+                - img [ref=e115]
+              - generic [ref=e119]:
+                - generic [ref=e120]:
+                  - generic [ref=e122]: Bitcoin
+                  - generic [ref=e123]: BTC
+                - generic [ref=e127]: "0.00"
+            - generic [ref=e129]:
+              - generic [ref=e131]:
+                - img [ref=e132]
+                - img [ref=e137]
+              - generic [ref=e142]:
+                - generic [ref=e143]:
+                  - generic [ref=e145]: Stacks
+                  - generic [ref=e146]: STX
+                - generic [ref=e148]:
+                  - generic [ref=e150]: "13.568"
+                  - generic [ref=e152]: $11.53
+            - generic [ref=e154]:
+              - generic [ref=e156]:
+                - img [ref=e157]
+                - img [ref=e162]
+              - generic [ref=e167]:
+                - generic [ref=e168]:
+                  - generic [ref=e170]: USDCx
+                  - generic [ref=e171]: USDCx
+                - generic [ref=e175]: "0.00"
+            - generic [ref=e176]:
+              - generic [ref=e178]:
+                - img [ref=e182]
+                - generic [ref=e187]:
+                  - generic [ref=e188]:
+                    - generic [ref=e190]: LONGcoin
+                    - generic [ref=e191]: LONG
+                  - generic [ref=e193]:
+                    - generic [ref=e195]: 1.89M
+                    - generic [ref=e197]: $0.80
+              - generic [ref=e199]:
+                - generic [ref=e201]:
+                  - img "Leather test token" [ref=e202]
+                  - img [ref=e204]
+                - generic [ref=e209]:
+                  - generic [ref=e210]:
+                    - generic [ref=e212]: Leather test token
+                    - generic [ref=e213]: LTT
+                  - generic [ref=e215]:
+                    - generic [ref=e217]: "0.1147"
+                    - generic [ref=e219]: $0.00
+            - generic [ref=e221]:
+              - generic [ref=e223]:
+                - img [ref=e224]
+                - img [ref=e226]
+              - generic [ref=e230]:
+                - generic [ref=e231]:
+                  - generic [ref=e233]: PXL
+                  - generic [ref=e234]: SRC-20
+                - generic [ref=e238]: 6,182.00
+          - button "Manage Tokens" [ref=e239] [cursor=pointer]:
+            - generic [ref=e240]:
+              - generic [ref=e241]: Manage Tokens
+              - img [ref=e242]
+  - region "Notifications (F8)":
+    - list
+```

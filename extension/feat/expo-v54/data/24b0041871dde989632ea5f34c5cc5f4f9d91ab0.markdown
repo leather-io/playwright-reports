@@ -1,0 +1,49 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e8]:
+          - button "ArrowLeft" [ref=e9] [cursor=pointer]:
+            - generic [ref=e11]:
+              - img [ref=e12]
+              - generic [ref=e14]: ArrowLeft
+          - button [ref=e16] [cursor=pointer]:
+            - img [ref=e17]
+        - generic [ref=e19]: Send
+        - button [ref=e23] [cursor=pointer]:
+          - img [ref=e24]
+    - generic [ref=e30]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e35]:
+            - textbox "0" [ref=e36]: "0.000001"
+            - generic [ref=e37]: LTT
+          - generic [ref=e38] [cursor=pointer]: Send max
+        - generic [ref=e41]:
+          - img "Leather test token" [ref=e44]
+          - generic [ref=e45]: LTT
+        - generic [ref=e47]:
+          - button "Select account" [ref=e49] [cursor=pointer]
+          - button [ref=e51] [cursor=pointer]:
+            - generic [ref=e52]:
+              - img [ref=e54]
+              - generic [ref=e56]: Address
+          - textbox "Recipient" [ref=e57]: SPXH3HNBPM5YP15VH16ZXZ9AX6CK289K3MCXRKCB
+        - generic [ref=e59]:
+          - generic: Memo
+          - textbox [ref=e60]
+        - generic [ref=e63] [cursor=pointer]: Edit nonce
+      - generic [ref=e65]:
+        - button "Continue" [ref=e66] [cursor=pointer]:
+          - generic [ref=e67]: Continue
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e70]: Available balance
+            - img [ref=e72]
+          - generic [ref=e75]: 0.114736 LTT
+  - region "Notifications (F8)":
+    - list
+```

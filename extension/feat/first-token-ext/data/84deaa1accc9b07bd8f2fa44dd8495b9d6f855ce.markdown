@@ -37,7 +37,7 @@
             - generic [ref=e51]: $0.85
           - generic [ref=e52]:
             - generic [ref=e53]: Price change (24hr)
-            - generic [ref=e54]: "-2.24% (-$0.02)"
+            - generic [ref=e54]: "-2.11% (-$0.02)"
           - generic [ref=e55]:
             - generic [ref=e56]: Layer
             - generic [ref=e57]: Layer 2 (Stacks)

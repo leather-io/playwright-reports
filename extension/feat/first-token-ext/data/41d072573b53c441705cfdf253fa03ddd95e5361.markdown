@@ -37,7 +37,7 @@
             - generic [ref=e50]: $45,000.00
           - generic [ref=e51]:
             - generic [ref=e52]: Price change (24hr)
-            - generic [ref=e53]: "-1.05% (-$472.50)"
+            - generic [ref=e53]: "-0.90% (-$405.00)"
           - generic [ref=e54]:
             - generic [ref=e55]: Layer
             - generic [ref=e56]: Layer 1 (Bitcoin)

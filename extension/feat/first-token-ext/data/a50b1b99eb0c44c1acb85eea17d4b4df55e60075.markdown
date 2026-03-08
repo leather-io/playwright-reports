@@ -1,0 +1,166 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]: Account 1
+          - img [ref=e14]
+        - button [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - button "Total balance" [ref=e28] [cursor=pointer]:
+              - generic [ref=e29]:
+                - img [ref=e31]
+                - heading "Total balance" [level=2] [ref=e35]
+            - button
+          - heading "$22,862.33" [level=1] [ref=e39]:
+            - generic [ref=e40]: $22,862.33
+        - generic [ref=e41]:
+          - button "Buy" [ref=e42] [cursor=pointer]:
+            - generic [ref=e43]: Buy
+          - button "Send" [ref=e44] [cursor=pointer]:
+            - generic [ref=e45]: Send
+          - button "Receive" [ref=e46] [cursor=pointer]:
+            - generic [ref=e47]: Receive
+          - button "Swap" [ref=e48] [cursor=pointer]:
+            - generic [ref=e49]: Swap
+        - generic [ref=e50]:
+          - generic [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]:
+              - img "USDCx is live on Stacks! Bridge your USDC now." [ref=e56]
+              - paragraph [ref=e58]: USDCx is live on Stacks! Bridge your USDC now.
+            - button "Close" [ref=e59]:
+              - generic [ref=e61]:
+                - img [ref=e62]
+                - generic [ref=e64]: Close
+          - generic [ref=e68]:
+            - img "Mobile app is here for iOS and Android" [ref=e70]
+            - paragraph [ref=e72]: Mobile app is here for iOS and Android
+          - generic [ref=e76]:
+            - img "Lock STX, earn BTC" [ref=e78]
+            - paragraph [ref=e80]: Lock STX, earn BTC
+          - generic [ref=e84]:
+            - img "Grow your sBTC" [ref=e86]
+            - paragraph [ref=e88]: Grow your sBTC
+      - button "Give feedback" [ref=e89] [cursor=pointer]:
+        - generic [ref=e91]:
+          - img [ref=e93]
+          - text: Give feedback
+      - generic [ref=e95]:
+        - tablist [ref=e97]:
+          - tab "Tokens" [selected] [ref=e98] [cursor=pointer]
+          - tab "Collectibles" [ref=e99] [cursor=pointer]
+          - tab "Activity" [ref=e100] [cursor=pointer]
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - heading "Get your first token" [level=3] [ref=e105]
+              - paragraph [ref=e106]: Fund your wallet by buying tokens or transferring from another account.
+            - img "Exchange icons" [ref=e107]
+          - generic [ref=e108]:
+            - generic [ref=e110]:
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - img [ref=e117]
+              - generic [ref=e121]:
+                - generic [ref=e122]:
+                  - generic [ref=e124]: Bitcoin
+                  - generic [ref=e125]: BTC
+                - button "Connect Bitcoin" [ref=e128] [cursor=pointer]:
+                  - generic [ref=e130]:
+                    - img [ref=e131]
+                    - generic [ref=e133]: Connect Bitcoin
+            - generic [ref=e135]:
+              - generic [ref=e137]:
+                - img [ref=e138]
+                - img [ref=e143]
+              - generic [ref=e148]:
+                - generic [ref=e149]:
+                  - generic [ref=e151]: Stacks
+                  - generic [ref=e152]: STX
+                - button "Buy" [ref=e155] [cursor=pointer]:
+                  - generic [ref=e156]: Buy
+            - button "USDCx USDCx $250.00 250.00" [ref=e157] [cursor=pointer]:
+              - generic [ref=e158]:
+                - generic [ref=e160]:
+                  - img [ref=e161]
+                  - img [ref=e166]
+                - generic [ref=e171]:
+                  - generic [ref=e172]:
+                    - generic [ref=e174]: USDCx
+                    - generic [ref=e175]: USDCx
+                  - generic [ref=e177]:
+                    - generic [ref=e179]: $250.00
+                    - generic [ref=e182]: "250.00"
+            - generic [ref=e183]:
+              - button "sBTC sBTC $22,500.00 0.50" [ref=e184] [cursor=pointer]:
+                - generic [ref=e185]:
+                  - generic [ref=e187]:
+                    - img [ref=e188]
+                    - img [ref=e193]
+                  - generic [ref=e198]:
+                    - generic [ref=e199]:
+                      - generic [ref=e201]: sBTC
+                      - generic [ref=e202]: sBTC
+                    - generic [ref=e204]:
+                      - generic [ref=e206]: $22,500.00
+                      - generic [ref=e209]: "0.50"
+              - button "WR Wrapped USDC aeUSDC $100.00 100.00" [ref=e210] [cursor=pointer]:
+                - generic [ref=e211]:
+                  - generic [ref=e213]:
+                    - generic [ref=e214]: WR
+                    - img [ref=e216]
+                  - generic [ref=e221]:
+                    - generic [ref=e222]:
+                      - generic [ref=e224]: Wrapped USDC
+                      - generic [ref=e225]: aeUSDC
+                    - generic [ref=e227]:
+                      - generic [ref=e229]: $100.00
+                      - generic [ref=e232]: "100.00"
+              - button "LO LONGcoin LONG $0.80 1.89M" [ref=e233] [cursor=pointer]:
+                - generic [ref=e234]:
+                  - generic [ref=e236]:
+                    - generic [ref=e237]: LO
+                    - img [ref=e239]
+                  - generic [ref=e244]:
+                    - generic [ref=e245]:
+                      - generic [ref=e247]: LONGcoin
+                      - generic [ref=e248]: LONG
+                    - generic [ref=e250]:
+                      - generic [ref=e252]: $0.80
+                      - generic [ref=e255]: 1.89M
+              - button "Leather test token Leather test token LTT $0.00 0.1147" [ref=e256] [cursor=pointer]:
+                - generic [ref=e257]:
+                  - generic [ref=e259]:
+                    - img "Leather test token" [ref=e260]
+                    - img [ref=e262]
+                  - generic [ref=e267]:
+                    - generic [ref=e268]:
+                      - generic [ref=e270]: Leather test token
+                      - generic [ref=e271]: LTT
+                    - generic [ref=e273]:
+                      - generic [ref=e275]: $0.00
+                      - generic [ref=e278]: "0.1147"
+          - generic [ref=e279]:
+            - heading "Learn" [level=2] [ref=e281]
+            - button "Getting Started with Leather" [ref=e282] [cursor=pointer]:
+              - generic [ref=e283]:
+                - img [ref=e285]
+                - generic [ref=e287]: Getting Started with Leather
+            - button "What is sBTC?" [ref=e288] [cursor=pointer]:
+              - generic [ref=e289]:
+                - img [ref=e291]
+                - generic [ref=e293]: What is sBTC?
+            - button "Learn more about stacking" [ref=e294] [cursor=pointer]:
+              - generic [ref=e295]:
+                - img [ref=e297]
+                - generic [ref=e299]: Learn more about stacking
+  - region "Notifications (F8)":
+    - list
+```

@@ -1,0 +1,49 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e6]:
+    - banner [ref=e7]:
+      - generic [ref=e9]:
+        - button "ArrowLeft" [ref=e12] [cursor=pointer]:
+          - generic [ref=e14]:
+            - img [ref=e15]
+            - generic [ref=e17]: ArrowLeft
+        - generic [ref=e18]: Stacks
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - img [ref=e24]
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - text: "13.568037"
+            - generic [ref=e30]: STX
+          - generic [ref=e31]: $11.53
+        - generic [ref=e32]:
+          - button "Send" [ref=e33] [cursor=pointer]
+          - button "Receive" [ref=e34] [cursor=pointer]
+          - button "Buy" [ref=e35] [cursor=pointer]
+          - button "Swap" [ref=e36] [cursor=pointer]
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e40]: Description
+          - paragraph [ref=e42]: Stacks (STX) is the native token of the Stacks blockchain, which brings smart contracts and decentralized applications to Bitcoin. STX is used for transaction fees, protocol governance, and 'stacking'—a unique consensus mechanism that rewards participants in Bitcoin for securing the network and supporting the Stacks ecosystem.
+        - generic [ref=e43]:
+          - generic [ref=e45]: Token details
+          - generic [ref=e46]:
+            - generic [ref=e47]: Name
+            - generic [ref=e48]: Stacks (STX)
+          - generic [ref=e49]:
+            - generic [ref=e50]: Price
+            - generic [ref=e51]: $0.85
+          - generic [ref=e52]:
+            - generic [ref=e53]: Price change (24hr)
+            - generic [ref=e54]: "-1.31% (-$0.01)"
+          - generic [ref=e55]:
+            - generic [ref=e56]: Layer
+            - generic [ref=e57]: Layer 2 (Stacks)
+          - generic [ref=e58]:
+            - generic [ref=e59]: Contract details
+            - generic [ref=e60]: —
+  - region "Notifications (F8)":
+    - list
+```

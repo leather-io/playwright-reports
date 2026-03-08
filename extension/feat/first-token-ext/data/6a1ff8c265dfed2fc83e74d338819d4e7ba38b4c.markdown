@@ -1,0 +1,79 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e6]:
+    - banner [ref=e7]:
+      - generic [ref=e9]:
+        - button "ArrowLeft" [ref=e12] [cursor=pointer]:
+          - generic [ref=e14]:
+            - img [ref=e15]
+            - generic [ref=e17]: ArrowLeft
+        - generic [ref=e18]: Bitcoin
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - img [ref=e24]
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - text: "0.01"
+            - generic [ref=e29]: BTC
+          - generic [ref=e30]: $450.00
+        - generic [ref=e31]:
+          - button "Send" [ref=e32] [cursor=pointer]
+          - button "Receive" [ref=e33] [cursor=pointer]
+          - button "Buy" [ref=e34] [cursor=pointer]
+          - button "Swap" [ref=e35] [cursor=pointer]
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e39]: Description
+          - paragraph [ref=e41]: Bitcoin (BTC) is the original decentralized digital currency, operating on a peer-to-peer network without intermediaries. Launched in 2009, Bitcoin allows anyone to send, receive, and store value globally, secured by a proof-of-work blockchain and widely recognized as the most established and valuable cryptocurrency.
+        - generic [ref=e42]:
+          - generic [ref=e44]: Token details
+          - generic [ref=e45]:
+            - generic [ref=e46]: Name
+            - generic [ref=e47]: Bitcoin (BTC)
+          - generic [ref=e48]:
+            - generic [ref=e49]: Price
+            - generic [ref=e50]: $45,000.00
+          - generic [ref=e51]:
+            - generic [ref=e52]: Price change (24hr)
+            - generic [ref=e53]: "-1.05% (-$472.50)"
+          - generic [ref=e54]:
+            - generic [ref=e55]: Layer
+            - generic [ref=e56]: Layer 1 (Bitcoin)
+          - generic [ref=e57]:
+            - generic [ref=e58]: Contract details
+            - generic [ref=e59]: —
+        - generic [ref=e60]:
+          - generic [ref=e62]: Balances
+          - button "Native Segwit tb1q4q…z5522d 0.00500000 BTC $225.00" [ref=e63] [cursor=pointer]:
+            - generic [ref=e64]:
+              - generic [ref=e65]: Native Segwit
+              - button "tb1q4q…z5522d" [ref=e66]
+            - generic [ref=e67]:
+              - generic [ref=e68]: 0.00500000 BTC
+              - generic [ref=e69]: $225.00
+          - button "Taproot tb1pve…j2nj6w 0.00500000 BTC $225.00" [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]:
+              - generic [ref=e72]: Taproot
+              - button "tb1pve…j2nj6w" [ref=e73]
+            - generic [ref=e74]:
+              - generic [ref=e75]: 0.00500000 BTC
+              - generic [ref=e76]: $225.00
+        - generic [ref=e77]:
+          - generic [ref=e79]: Activity
+          - button "Received 6mo ago + $90.00 0.002" [ref=e80] [cursor=pointer]:
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - img [ref=e84]
+                  - img [ref=e88]
+                - generic [ref=e92]:
+                  - paragraph [ref=e93]: Received
+                  - paragraph [ref=e94]: 6mo ago
+              - generic [ref=e95]:
+                - generic [ref=e96]: + $90.00
+                - generic [ref=e97]: "0.002"
+  - region "Notifications (F8)":
+    - list
+```
